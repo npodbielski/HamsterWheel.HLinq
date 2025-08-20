@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\HamsterWheel.HLinq.PgSql\HamsterWheel.HLinq.PgSql.csproj" />
+        <ProjectReference Include="..\..\src\HamsterWheel.HLinq\HamsterWheel.HLinq.csproj" />
+    </ItemGroup>
+  
+    <ItemGroup>
+        <Compile Update="Filter.cs">
+            <DependentUpon>ExpressionBuilderUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Order.cs">
+            <DependentUpon>ExpressionBuilderUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="QueryCount.cs">
+            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="QueryOrderBy.cs">
+            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="QuerySelect.cs">
+            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="QueryWhere.cs">
+            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Select.cs">
+            <DependentUpon>ExpressionBuilderUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="WhiteSpace.cs">
+            <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="DifferentCase.cs">
+            <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Data\Converter\ConvertToT1.cs">
+          <DependentUpon>DefaultConverterUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Data\Converter\ConvertTo.cs">
+          <DependentUpon>DefaultConverterUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Data\Converter\ConvertToBoolean.cs">
+          <DependentUpon>DefaultConverterUnitTests.cs</DependentUpon>
+        </Compile>
+    </ItemGroup>
+</Project>

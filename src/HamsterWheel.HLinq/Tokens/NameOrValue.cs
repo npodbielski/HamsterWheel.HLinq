@@ -1,0 +1,56 @@
+using HamsterWheel.HLinq.Tokens.Filter;
+using HamsterWheel.HLinq.Tokens.Select;
+
+
+namespace HamsterWheel.HLinq.Tokens;
+
+public sealed class NameOrValue(Range range) : TokenBase(range)
+{
+    public sealed class Possibility() : TokenPossibility<NameOrValue>(delimiters:
+    [
+        //TODO: we could share the grammar in different way? delimiters are practically the same as PreviousTokenMatchImpl but from previous token point of view
+        Equality.TokenValue.AsSpan()[0],
+        Inequality.TokenValue.AsSpan()[0],
+        LessThan.TokenValue.AsSpan()[0],
+        LessOrEqualThan.TokenValue.AsSpan()[0],
+        GreaterThan.TokenValue.AsSpan()[0],
+        GreaterOrEqualThan.TokenValue.AsSpan()[0],
+        RightSquareBracket.TokenValue.AsSpan()[0],
+        RightCircleBracket.TokenValue.AsSpan()[0],
+        And.TokenValue.AsSpan()[0],
+        Or.TokenValue.AsSpan()[0],
+        //TODO: we need to be able to disable some delimiters based on possibility of next token -> if value of equality comparison (x.Value==1,1) comma can only be part of number value since we are allowing onlu commas inside method calls
+        //..but should we allow ',' as part of constant, number values since it is part of (1,2) method grammar?
+        //..or maybe we should just tokenize everything and lets parsers, parse and analyze contents? 
+        Comma.TokenValue.AsSpan()[0]
+    ])
+    {
+        protected override bool PreviousTokensMatch(List<IToken> previousTokens)
+        {
+            if (previousTokens.Count < 2)
+            {
+                return false;
+            }
+
+            return previousTokens[^1] is IComparisonToken or LeftCircleBracket or LeftSquareBracket or Comma or Assignment;
+        }
+
+        public override int CanBeAt(int index, ReadOnlySpan<char> subset, char? next, List<IToken> previousToken)
+        {
+            if (!PreviousTokensMatch(previousToken)) return 0;
+
+            var possibility = 50;
+            if (subset.Length == 1 && subset is "x" && next is '.')
+            {
+                possibility = 0;
+                return possibility;
+            }
+
+            if (next is not null && Delimiters?.Contains(next.Value) == true) possibility += 50;
+
+            return possibility;
+        }
+
+        protected override NameOrValue BuildImpl(Range range) => new(range);
+    }
+}
