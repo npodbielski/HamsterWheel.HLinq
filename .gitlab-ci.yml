@@ -8,7 +8,7 @@ services:
 variables:
   OBJECTS_DIRECTORY: 'obj'
   NUGET_PACKAGES_DIRECTORY: '.nuget'
-  SOURCE_CODE_PATH: 'src'
+  SOURCE_CODE_PATH: ''
 
 cache:
   key: "$CI_JOB_STAGE-$CI_COMMIT_REF_SLUG"
@@ -19,17 +19,17 @@ cache:
   policy: pull-push
 
 before_script:
-  - 'dotnet restore $SOURCE_CODE_PATH/HLinq.slnx --packages $NUGET_PACKAGES_DIRECTORY'
+  - 'dotnet restore HLinq.slnx --packages $NUGET_PACKAGES_DIRECTORY'
 
 build:
   stage: build
   script:
-    - 'dotnet build SOURCE_CODE_PATH/HLinq.slnx --no-restore'
+    - 'dotnet build HLinq.slnx --no-restore'
 
 tests:
   stage: test
   script:
-    - 'dotnet test $SOURCE_CODE_PATH/HLinq.slnx --logger:"junit;LogFileName=$SOURCE_CODE_PATH/rspec.xml"'
+    - 'dotnet test HLinq.slnx --logger:"junit;LogFileName=$SOURCE_CODE_PATH/rspec.xml"'
   artifacts:
     when: always
     paths:
