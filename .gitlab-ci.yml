@@ -29,7 +29,7 @@ tests:
         POSTGRES_PASSWORD: outflank-outage-undoing
   stage: test
   script:
-    - 'dotnet test HLinq.slnx --no-restore --logger:"junit;LogFileName=$SOURCE_CODE_PATH/rspec.xml"'
+    - 'dotnet test HLinq.slnx --no-restore --logger:"junit;LogFileName=rspec.xml"'
   artifacts:
     when: always
     paths:
