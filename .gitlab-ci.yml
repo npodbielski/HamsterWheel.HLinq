@@ -29,7 +29,7 @@ build:
 tests:
   stage: test
   script:
-    - 'dotnet test HLinq.slnx --logger:"junit;LogFileName=$SOURCE_CODE_PATH/rspec.xml" -no-build --no-restore'
+    - 'dotnet test HLinq.slnx --no-build --no-restore --logger:"junit;LogFileName=$SOURCE_CODE_PATH/rspec.xml"'
   artifacts:
     when: always
     paths:
