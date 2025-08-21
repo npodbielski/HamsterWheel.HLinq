@@ -31,7 +31,8 @@ tests:
   stage: test
   script:
     - echo $CI_BUILDS_DIR
-    - 'dotnet test --no-restore --logger:"junit;LogFileName=rspec.xml"'
+    - 'dotnet test --no-restore --collect:"XPlat Code Coverage" --logger:"junit;LogFileName=rspec.xml"'
+  coverage: '/Total\s*\|*\s(\d+(?:\.\d+)?)/'
   artifacts:
     when: always
     paths:
@@ -39,6 +40,9 @@ tests:
     reports:
       junit:
         - $TEST_CODE_PATH/**/rspec.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: $TEST_CODE_PATH/**/coverage.cobertura.xml
 
 package-alpha:
   stage: deploy
