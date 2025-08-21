@@ -4,6 +4,7 @@ variables:
   OBJECTS_DIRECTORY: 'obj'
   NUGET_PACKAGES_DIRECTORY: '.nuget'
   SOURCE_CODE_PATH: ''
+  TEST_CODE_PATH: '/builds/hamster-wheel/hlinq/test'
 
 cache:
   key: "$CI_JOB_STAGE-$CI_COMMIT_REF_SLUG"
@@ -19,7 +20,7 @@ before_script:
 build:
   stage: build
   script:
-    - 'dotnet build HLinq.slnx --no-restore'
+    - 'dotnet build --no-restore'
 
 tests:
   services:
@@ -29,21 +30,22 @@ tests:
         POSTGRES_PASSWORD: outflank-outage-undoing
   stage: test
   script:
-    - 'dotnet test HLinq.slnx --no-restore --logger:"junit;LogFileName=rspec.xml"'
+    - echo $CI_BUILDS_DIR
+    - 'dotnet test --no-restore --logger:"junit;LogFileName=rspec.xml"'
   artifacts:
     when: always
     paths:
-      - rspec.xml
+      - $TEST_CODE_PATH/**/rspec.xml
     reports:
       junit:
-        - rspec.xml
+        - $TEST_CODE_PATH/**/rspec.xml
 
 package-alpha:
   stage: deploy
   rules:
     - if: $CI_COMMIT_BRANCH == "alpha"
   script:
-    - dotnet pack HLinq.slnx -c Release --version-suffix $CI_COMMIT_BRANCH-$CI_JOB_ID
+    - dotnet pack -c Release --version-suffix $CI_COMMIT_BRANCH-$CI_JOB_ID
     # Configure GitLab package registry as a NuGet source
     - dotnet nuget add source "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/nuget/index.json" --name gitlab --username gitlab-ci-token --password $CI_JOB_TOKEN --store-password-in-clear-text
     # Push the package to the project's package registry
