@@ -1,14 +1,9 @@
 image: mcr.microsoft.com/dotnet/sdk:9.0
-services:
-  - name: postgres
-    variables:
-      POSTGRES_DB: Demo
-      POSTGRES_PASSWORD: outflank-outage-undoing
 
 variables:
   OBJECTS_DIRECTORY: 'obj'
   NUGET_PACKAGES_DIRECTORY: '.nuget'
-  SOURCE_CODE_PATH: 'src'
+  SOURCE_CODE_PATH: ''
 
 cache:
   key: "$CI_JOB_STAGE-$CI_COMMIT_REF_SLUG"
@@ -19,17 +14,22 @@ cache:
   policy: pull-push
 
 before_script:
-  - 'dotnet restore $SOURCE_CODE_PATH/HLinq.slnx --packages $NUGET_PACKAGES_DIRECTORY'
+  - 'dotnet restore HLinq.slnx --packages $NUGET_PACKAGES_DIRECTORY'
 
 build:
   stage: build
   script:
-    - 'dotnet build SOURCE_CODE_PATH/HLinq.slnx --no-restore'
+    - 'dotnet build HLinq.slnx --no-restore'
 
 tests:
+  services:
+    - name: postgres
+      variables:
+        POSTGRES_DB: Demo
+        POSTGRES_PASSWORD: outflank-outage-undoing
   stage: test
   script:
-    - 'dotnet test $SOURCE_CODE_PATH/HLinq.slnx --logger:"junit;LogFileName=$SOURCE_CODE_PATH/rspec.xml"'
+    - 'dotnet test HLinq.slnx --no-restore --logger:"junit;LogFileName=rspec.xml"'
   artifacts:
     when: always
     paths:
@@ -38,9 +38,26 @@ tests:
       junit:
         - rspec.xml
 
+package-alpha:
+  stage: deploy
+  rules:
+    - if: $CI_COMMIT_BRANCH == "alpha"
+  script:
+    - dotnet pack HLinq.slnx -c Release --version-suffix $CI_COMMIT_BRANCH-$CI_JOB_ID
+    # Configure GitLab package registry as a NuGet source
+    - dotnet nuget add source "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/nuget/index.json" --name gitlab --username gitlab-ci-token --password $CI_JOB_TOKEN --store-password-in-clear-text
+    # Push the package to the project's package registry
+    - dotnet nuget push "src/**/bin/Release/*.nupkg" --source gitlab
+  environment: production
+
 package:
   stage: deploy
   rules:
     - if: $CI_COMMIT_BRANCH == "master"
-  script: echo "Define your deployment script!"
+  script:
+    - dotnet pack HLinq.slnx -c Release
+    # Configure GitLab package registry as a NuGet source
+    - dotnet nuget add source "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/nuget/index.json" --name gitlab --username gitlab-ci-token --password $CI_JOB_TOKEN --store-password-in-clear-text
+    # Push the package to the project's package registry
+    - dotnet nuget push "src/**/bin/Release/*.nupkg" --source gitlab
   environment: production
