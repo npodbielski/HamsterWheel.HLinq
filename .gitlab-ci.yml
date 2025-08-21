@@ -30,7 +30,7 @@ tests:
         POSTGRES_PASSWORD: outflank-outage-undoing
   stage: test
   script:
-    - 'dotnet test --no-restore --collect:"XPlat Code Coverage" --logger:"junit;LogFileName=rspec.xml"'
+    - 'dotnet test --no-restore /p:CollectCoverage=true --collect:"XPlat Code Coverage" --logger:"junit;LogFileName=rspec.xml"'
   coverage: '/Total\s*\|*\s(\d+(?:\.\d+)?)/'
   artifacts:
     when: always
