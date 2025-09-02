@@ -1,8 +1,8 @@
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tokens;
-using HamsterWheel.HLinq.UnitTests.Extensions.Assertions;
+using HamsterWheel.HLinq.UnitTests.Assertions;
 
-namespace HamsterWheel.HLinq.UnitTests.Extensions;
+namespace HamsterWheel.HLinq.UnitTests;
 
 public static class FluentValidationExtensions
 {

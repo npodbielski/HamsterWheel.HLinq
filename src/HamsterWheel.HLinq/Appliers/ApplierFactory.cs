@@ -1,7 +1,6 @@
-using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.Parsers;
 
-namespace HamsterWheel.HLinq.Applier;
+namespace HamsterWheel.HLinq.Appliers;
 
 public sealed class ApplierFactory(IEnumerable<IApplier> appliers) : IApplierFactory
 {

@@ -5,10 +5,9 @@ using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filter;
 using HamsterWheel.HLinq.Tokens.Select;
 using HamsterWheel.HLinq.Tree.Filter;
+using HamsterWheel.HLinq.UnitTests.Assertions;
 using HamsterWheel.HLinq.UnitTests.Dummies;
-using HamsterWheel.HLinq.UnitTests.Extensions;
-using HamsterWheel.HLinq.UnitTests.Extensions.Assertions;
-using static HamsterWheel.HLinq.UnitTests.Extensions.Assertions.ExpectedTreeElement;
+using static HamsterWheel.HLinq.UnitTests.Assertions.ExpectedTreeElement;
 using Property = HamsterWheel.HLinq.Tree.Property;
 
 namespace HamsterWheel.HLinq.UnitTests;

@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace HamsterWheel.Common.Reflection;
+namespace HamsterWheel.HLinq.Reflection;
 
 public interface IPropertiesCache
 {
