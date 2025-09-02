@@ -6,7 +6,7 @@ using HamsterWheel.HLinq.Tree;
 using HamsterWheel.HLinq.Tree.Filter;
 using HamsterWheel.HLinq.Tree.Select;
 
-namespace HamsterWheel.HLinq.UnitTests.Extensions.Assertions;
+namespace HamsterWheel.HLinq.UnitTests.Assertions;
 
 public class HLinqITreeBranchAssertions(ITreeBranch instance) :
     ReferenceTypeAssertions<ITreeBranch, HLinqITreeBranchAssertions>(instance, AssertionChain.GetOrCreate())

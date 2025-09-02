@@ -2,7 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
-namespace System;
+namespace HamsterWheel.HLinq;
 
 //"This is added just to enable range syntax for .net standard version of the library and this code is not actually used."
 [ExcludeFromCodeCoverage]

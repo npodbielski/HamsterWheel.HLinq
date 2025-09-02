@@ -1,10 +1,10 @@
 using System.Linq.Expressions;
 using System.Reflection;
-using HamsterWheel.Common.Reflection;
 using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filter;
 using HamsterWheel.HLinq.Tokens.Select;

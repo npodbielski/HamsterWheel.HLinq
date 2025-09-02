@@ -1,3 +1,5 @@
+namespace HamsterWheel.HLinq.Demo.Data;
+
 public record Superhero(string Name, string? RealName, Look Look)
 {
     public static Superhero[] Superheroes =

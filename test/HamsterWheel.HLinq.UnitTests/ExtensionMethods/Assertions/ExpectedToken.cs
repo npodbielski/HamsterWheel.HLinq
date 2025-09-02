@@ -4,7 +4,7 @@ using HamsterWheel.HLinq.Tokens.Order;
 using HamsterWheel.HLinq.Tokens.Paging;
 using HamsterWheel.HLinq.Tokens.Select;
 
-namespace HamsterWheel.HLinq.UnitTests.Extensions.Assertions;
+namespace HamsterWheel.HLinq.UnitTests.Assertions;
 
 public class ExpectedToken(Type type, string value)
 {

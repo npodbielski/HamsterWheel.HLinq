@@ -1,6 +1,4 @@
 using System.Reflection;
-using HamsterWheel.Common.Reflection;
-using HamsterWheel.HLinq.Applier;
 using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Data.Converters;
