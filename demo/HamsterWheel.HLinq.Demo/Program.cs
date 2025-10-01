@@ -1,7 +1,6 @@
 using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.AspNet;
 using HamsterWheel.HLinq.Demo.Data;
-using HamsterWheel.HLinq.PgSql;
 using HamsterWheel.HLinq.Request;
 using Microsoft.EntityFrameworkCore;
 
