@@ -1,6 +1,3 @@
-using HamsterWheel.HLinq.Parsers;
-using HamsterWheel.HLinq.Reflection;
-using HamsterWheel.HLinq.Tokens;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace HamsterWheel.HLinq.AspNet.Binder;
@@ -11,8 +8,7 @@ namespace HamsterWheel.HLinq.AspNet.Binder;
 /// <param name="parser"></param>
 /// <param name="tokenizer"></param>
 /// <param name="methodsCache"></param>
-public class WebHLinqQueryBinder(IHLinqParser parser, IHLinqTokenizer tokenizer, IMethodsCache methodsCache)
-    : HLinqQueryBinder(parser, tokenizer, methodsCache), IModelBinder
+public class WebHLinqQueryBinder(IHLinqCore core) : HLinqQueryBinder(core), IModelBinder
 {
     public Task BindModelAsync(ModelBindingContext bindingContext)
     {

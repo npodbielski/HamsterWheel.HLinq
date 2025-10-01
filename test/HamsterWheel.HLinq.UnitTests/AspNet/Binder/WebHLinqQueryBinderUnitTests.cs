@@ -8,6 +8,7 @@ using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.UnitTests.Dummies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 
 namespace HamsterWheel.HLinq.UnitTests.AspNet.Binder;
@@ -22,7 +23,11 @@ public class WebHLinqQueryBinderUnitTests
         var parser = Substitute.For<IHLinqParser>();
         var tokenizer = Substitute.For<IHLinqTokenizer>();
         var methodsCache = Substitute.For<IMethodsCache>();
-        var sut = new WebHLinqQueryBinder(parser, tokenizer, methodsCache);
+        var services = new ServiceCollection();
+        services.AddSingleton(parser);
+        services.AddSingleton(methodsCache);
+        services.AddSingleton(tokenizer);
+        var sut = new WebHLinqQueryBinder(new HLinqCore(services.BuildServiceProvider()));
         var action = () => sut.BindModelAsync(null);
 
         //act && assert
@@ -37,12 +42,16 @@ public class WebHLinqQueryBinderUnitTests
         var parser = Substitute.For<IHLinqParser>();
         var tokenizer = Substitute.For<IHLinqTokenizer>();
         var methodsCache = Substitute.For<IMethodsCache>();
+        var services = new ServiceCollection();
+        services.AddSingleton(parser);
+        services.AddSingleton(methodsCache);
+        services.AddSingleton(tokenizer);
         var method = typeof(IHLinqParser).GetMethods().First(m => m.Name == "Parse").MakeGenericMethod(typeof(DummyEntity));
         methodsCache.GetInstanceGeneric(Arg.Any<Type>(), Arg.Any<string>(), Arg.Any<Func<ParameterInfo[], bool>>(), Arg.Any<Type[]>())
             .Returns(method);
         var query = new HLinqQuery<DummyEntity>();
         parser.Parse<DummyEntity>(Arg.Any<IToken[]>(), Arg.Any<string>()).Returns(query);
-        var sut = new WebHLinqQueryBinder(parser, tokenizer, methodsCache);
+        var sut = new WebHLinqQueryBinder(new HLinqCore(services.BuildServiceProvider()));
         var context = Substitute.For<ModelBindingContext>();
         context.HttpContext.Request.QueryString.Returns(new QueryString("?key=value"));
         context.ModelType.Returns(typeof(HLinqQuery<DummyEntity>));

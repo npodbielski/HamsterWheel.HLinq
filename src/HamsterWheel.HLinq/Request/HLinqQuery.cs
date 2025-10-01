@@ -49,6 +49,13 @@ public class HLinqQuery<T> : IHLinqQuery
     {
         var queryString = context.Request.QueryString.Value ?? "";
 
+        var query = Parse(context.RequestServices.GetRequiredService<IHLinqCore>(), queryString);
+
+        return ValueTask.FromResult(query);
+    }
+
+    public static HLinqQuery<T> Parse(IHLinqCore core, string queryString)
+    {
         if (queryString.StartsWith('?'))
         {
             queryString = queryString[1..];
@@ -56,14 +63,6 @@ public class HLinqQuery<T> : IHLinqQuery
 
         queryString = HttpUtility.UrlDecode(queryString);
 
-        var query = Parse(context.RequestServices, queryString);
-
-        return ValueTask.FromResult(query);
-    }
-
-    private static HLinqQuery<T> Parse(IServiceProvider services, string queryString)
-    {
-        var core = services.GetRequiredService<IHLinqCore>();
         var parser = core.HLinqParser;
         var tokenizer = core.Tokenizer;
         var methodsCache = core.MethodsCache;

@@ -12,8 +12,7 @@ public static class HLinqObjectExtensions
 
     private static readonly MethodsCache MethodsCache = new();
 
-    private static readonly HLinqQueryBinder Binder = new(new HLinqParser(new HLinqServicesCollection(Core)),
-        new HLinqTokenizer(new HLinqServicesCollection(Core)), MethodsCache);
+    private static readonly HLinqQueryBinder Binder = new(Core);
 
     public static object? ExecuteHLinq<T>(this T? obj, string query) where T : class
     {
