@@ -25,9 +25,14 @@ public class HLinqQueryBinderUnitTests
         services.AddSingleton(parser);
         services.AddSingleton(methodsCache);
         services.AddSingleton(tokenizer);
-        var method = typeof(IHLinqParser).GetMethods().First(m => m.Name == "Parse").MakeGenericMethod(typeof(DummyEntity));
-        methodsCache.GetInstanceGeneric(Arg.Any<Type>(), Arg.Any<string>(), Arg.Any<Func<ParameterInfo[], bool>>(), Arg.Any<Type[]>())
-            .Returns(method);
+        var parserMethod = typeof(IHLinqParser).GetMethods().First(m => m.Name == "Parse")
+            .MakeGenericMethod(typeof(DummyEntity));
+        methodsCache
+            .GetInstanceGeneric(Arg.Any<Type>(), Arg.Any<string>(), Arg.Any<Func<ParameterInfo[], bool>>(),
+                Arg.Any<Type[]>()).Returns(parserMethod);
+        var hlinqQueryMethod = typeof(HLinqQuery<DummyEntity>).GetMethods().First(m => m.Name == "Parse");
+        methodsCache.GetStatic(Arg.Any<Type>(), Arg.Any<string>(), Arg.Any<Func<ParameterInfo[], bool>>())
+            .Returns(hlinqQueryMethod);
         var sut = new HLinqQueryBinder(new HLinqCore(services.BuildServiceProvider()));
 
         //act

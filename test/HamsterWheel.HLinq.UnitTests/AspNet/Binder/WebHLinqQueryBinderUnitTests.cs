@@ -49,6 +49,9 @@ public class WebHLinqQueryBinderUnitTests
         var method = typeof(IHLinqParser).GetMethods().First(m => m.Name == "Parse").MakeGenericMethod(typeof(DummyEntity));
         methodsCache.GetInstanceGeneric(Arg.Any<Type>(), Arg.Any<string>(), Arg.Any<Func<ParameterInfo[], bool>>(), Arg.Any<Type[]>())
             .Returns(method);
+        var hlinqQueryMethod = typeof(HLinqQuery<DummyEntity>).GetMethods().First(m => m.Name == "Parse");
+        methodsCache.GetStatic(Arg.Any<Type>(), Arg.Any<string>(), Arg.Any<Func<ParameterInfo[], bool>>())
+            .Returns(hlinqQueryMethod);
         var query = new HLinqQuery<DummyEntity>();
         parser.Parse<DummyEntity>(Arg.Any<IToken[]>(), Arg.Any<string>()).Returns(query);
         var sut = new WebHLinqQueryBinder(new HLinqCore(services.BuildServiceProvider()));
