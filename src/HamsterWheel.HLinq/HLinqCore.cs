@@ -40,6 +40,7 @@ internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
 
     public IConverterFactory ConverterFactory => Provider.GetRequiredService<IConverterFactory>();
     public IHLinqQueryApplier QueryApplier => Provider.GetRequiredService<IHLinqQueryApplier>();
+    public IHLinqOptions Options => Provider.GetRequiredService<IHLinqOptions>();
     public IHLinqParser HLinqParser => Provider.GetRequiredService<IHLinqParser>();
     public IHLinqTokenizer Tokenizer => Provider.GetRequiredService<IHLinqTokenizer>();
     public IMethodsCache MethodsCache => Provider.GetRequiredService<IMethodsCache>();
@@ -127,6 +128,7 @@ internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
         servicesCollection.AddSingleton<IHLinqTokenizer, HLinqTokenizer>();
         servicesCollection.AddSingleton<IHLinqParsersCollection, HLinqServicesCollection>();
         servicesCollection.AddSingleton<IDefaultConverter, DefaultConverter>();
+        servicesCollection.AddSingleton<IHLinqOptions, HLinqOptions>();
 
         if (apiServicesCollection is not null)
         {

@@ -8,14 +8,35 @@ using HamsterWheel.HLinq.ValueConverters;
 
 namespace HamsterWheel.HLinq.Tree.Paging;
 
-public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
+public sealed class TakeRoot : TreeBranch, ITreeRoot
 {
-    public string GetTakeNumber(string query)
+    /// <summary>
+    /// If nothing in HTTP query was specified to limit number of records to fetch, it could potentially cause HLinq to query and return entire database data.
+    /// To limit this default   
+    /// </summary>
+    private readonly int? _settingsTakeValue;
+
+    public TakeRoot(int settingsTakeValue) : this([])
     {
-        return (GetChildOfType<SkipOrTakeConstant>() ??
-                throw new InvalidOperationException(
-                    "take query method needs to have number parameter")).Value
-            .GetValue(query);
+        _settingsTakeValue = settingsTakeValue;
+    }
+
+    public TakeRoot(IToken[] tokens) : base(tokens)
+    {
+    }
+
+    private int GetTakeNumber(string query, IValueConverter converter)
+    {
+        if (_settingsTakeValue is not null)
+        {
+            return _settingsTakeValue.Value;
+        }
+
+        var takeNumberAsString = (GetChildOfType<SkipOrTakeConstant>() ??
+                                  throw new InvalidOperationException(
+                                      "take query method needs to have number parameter")).Value.GetValue(query);
+
+        return (int)converter.Convert(takeNumberAsString)!;
     }
 
     public sealed class Parser : ElementParserBase<TakeRoot>
@@ -47,23 +68,20 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 
     public sealed class Applier(IValueConverterFactory factory, IMethodsCache methodsCache) : RootApplierBase<TakeRoot>
     {
-        protected override QueryableContext ApplyImpl(IQueryableContext context, TakeRoot skip,
+        protected override QueryableContext ApplyImpl(IQueryableContext context, TakeRoot take,
             string hLinqQuery)
         {
             var type = typeof(int);
             var converter = factory.GetConverterFor(type);
 
-            var numberAsString = skip.GetTakeNumber(hLinqQuery);
-
-            var skipNumber = (int)converter.Convert(numberAsString)!;
-            var parameters = new[] { typeof(IQueryable<>).MakeGenericType(context.CurrentResultType), typeof(int) };
+            var takeNumber = take.GetTakeNumber(hLinqQuery, converter);
 
             //TODO: add support of queryable.Take(0..19) which would be mych nicer to query specific range of items
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Take),
                 infos => infos[1].ParameterType == typeof(int),
                 context.CurrentResultType);
 
-            return new QueryableContext((IQueryable)method.Invoke(null, [context.Queryable, skipNumber])!,
+            return new QueryableContext((IQueryable)method.Invoke(null, [context.Queryable, takeNumber])!,
                 context.CurrentResultType, context.Count);
             ;
         }

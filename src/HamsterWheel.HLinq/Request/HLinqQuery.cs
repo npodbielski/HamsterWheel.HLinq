@@ -6,6 +6,7 @@ using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
+using HamsterWheel.HLinq.Tree.Paging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -22,6 +23,8 @@ public class HLinqQuery<T> : IHLinqQuery where T : class
     /// Instance of current HttpContext <see cref="IHLinqQueryApplier"/> if <see cref="HLinqQuery{T}"/> was obtained from the binder. Otherwise, null.
     /// </summary>
     internal IHLinqQueryApplier? QueryApplier { get; set; }
+
+    internal IHLinqOptions? Options { get; set; }
 
     IEnumerable<T1> ITreeElement.GetAll<T1>() => ThisTree.Children.OfType<T1>();
     bool ITreeElement.IsBranch => true;
@@ -45,10 +48,18 @@ public class HLinqQuery<T> : IHLinqQuery where T : class
 
     private bool _finished;
 
-    public object? ApplyTo(IQueryable<T> queryable, CancellationToken token = default) =>
-        QueryApplier is null
-            ? throw new HLinqQueryQueryApplierNullException(this)
-            : QueryApplier?.Apply(queryable, this, token);
+    public object? ApplyTo(IQueryable<T> queryable, CancellationToken token = default)
+    {
+        if (QueryApplier is null)
+            throw new HLinqQueryQueryApplierNullException(this);
+
+        if (!ThisTree.Children.Any(t => t is TakeRoot or CountRoot) && Options?.HttpDefaultMaxTakeRecords is not null)
+        {
+            Children = [..ThisTree.Children, new TakeRoot(Options.HttpDefaultMaxTakeRecords)];
+        }
+
+        return QueryApplier?.Apply(queryable, this, token);
+    }
 
     /// <summary>
     /// Used from Minimal APIs to bind Parameters of <see cref="HLinqQuery{T}"/>
@@ -88,6 +99,7 @@ public class HLinqQuery<T> : IHLinqQuery where T : class
             methodsCache.GetInstanceGeneric(parser.GetType(), nameof(parser.Parse), typeParams: typeof(T));
         var query = (HLinqQuery<T>)parserMethod.Invoke(parser, [tokens, queryString])!;
         query.QueryApplier = core.QueryApplier;
+        query.Options = core.Options;
         return query;
     }
 
