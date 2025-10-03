@@ -1,5 +1,6 @@
 using System.Reflection;
 using FluentAssertions;
+using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.AspNet.Binder;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Reflection;
@@ -42,10 +43,12 @@ public class WebHLinqQueryBinderUnitTests
         var parser = Substitute.For<IHLinqParser>();
         var tokenizer = Substitute.For<IHLinqTokenizer>();
         var methodsCache = Substitute.For<IMethodsCache>();
+        var queryApplier = Substitute.For<IHLinqQueryApplier>();
         var services = new ServiceCollection();
         services.AddSingleton(parser);
         services.AddSingleton(methodsCache);
         services.AddSingleton(tokenizer);
+        services.AddSingleton(queryApplier);
         var method = typeof(IHLinqParser).GetMethods().First(m => m.Name == "Parse").MakeGenericMethod(typeof(DummyEntity));
         methodsCache.GetInstanceGeneric(Arg.Any<Type>(), Arg.Any<string>(), Arg.Any<Func<ParameterInfo[], bool>>(), Arg.Any<Type[]>())
             .Returns(method);

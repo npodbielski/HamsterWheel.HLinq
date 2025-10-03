@@ -1,5 +1,6 @@
 using System.Reflection;
 using FluentAssertions;
+using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Request;
@@ -21,10 +22,12 @@ public class HLinqQueryBinderUnitTests
         parser.Parse<DummyEntity>(Arg.Any<IToken[]>(), Arg.Any<string>()).Returns(expected);
         var tokenizer = Substitute.For<IHLinqTokenizer>();
         var methodsCache = Substitute.For<IMethodsCache>();
+        var queryApplier = Substitute.For<IHLinqQueryApplier>();
         var services = new ServiceCollection();
         services.AddSingleton(parser);
         services.AddSingleton(methodsCache);
         services.AddSingleton(tokenizer);
+        services.AddSingleton(queryApplier);
         var parserMethod = typeof(IHLinqParser).GetMethods().First(m => m.Name == "Parse")
             .MakeGenericMethod(typeof(DummyEntity));
         methodsCache
