@@ -15,7 +15,7 @@ partial class MemoryDataTests
         var response = await fixture.Client.GetAsync("/demo/memory?where[]");
 
         //assert
-        var data = await response.Content.ReadFromJsonAsync<Superhero[]>();
+        var data = await response.Content.ReadFromJsonAsync<Superhero[]>(ResponseHLinqClientQueryBuilder.DefaultJsonSerializerOptions);
         data.Should().BeEquivalentTo(Superhero.Superheroes);
     }
 
