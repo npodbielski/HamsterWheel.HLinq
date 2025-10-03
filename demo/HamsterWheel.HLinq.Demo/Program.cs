@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using HamsterWheel.HLinq.AspNet;
 using HamsterWheel.HLinq.Demo.Data;
 using HamsterWheel.HLinq.Request;
@@ -12,6 +13,7 @@ builder.Services.AddOpenApi()
     .AddDbContext<DemoContext>(o => { o.UseNpgsql(builder.Configuration.GetConnectionString("Demo")); });
 
 builder.Services.AddControllers();
+builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 var app = builder.Build();
 app.MapControllers();
