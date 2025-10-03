@@ -1,4 +1,3 @@
-using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.AspNet;
 using HamsterWheel.HLinq.Demo.Data;
 using HamsterWheel.HLinq.Request;
@@ -26,18 +25,17 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.MapGet("/demo/memory",
-    (IHLinqQueryApplier applier, HLinqQuery<Superhero> query, CancellationToken cancellationToken) =>
-        applier.Apply(Superhero.Superheroes.AsQueryable(), query, cancellationToken)).WithName("demo-memory");
+    (HLinqQuery<Superhero> query, CancellationToken cancellationToken) =>
+        query.ApplyTo(Superhero.Superheroes.AsQueryable(), cancellationToken)).WithName("demo-memory");
 
 app.MapGet("/demo/random",
-    (IHLinqQueryApplier applier, HLinqQuery<Superhero> query, CancellationToken cancellationToken) =>
-        applier.Apply(RandomData.Get().AsQueryable(), query, cancellationToken)).WithName("demo-random");
+    (HLinqQuery<RandomData> query, CancellationToken cancellationToken) =>
+        query.ApplyTo(RandomData.Get().AsQueryable(), cancellationToken)).WithName("demo-random");
 
-app.MapGet("/demo/db", async (IHLinqQueryApplier applier, HLinqQuery<Person> query, DemoContext demoContext,
-        CancellationToken cancellationToken) =>
+app.MapGet("/demo/db", async (HLinqQuery<Person> query, DemoContext demoContext, CancellationToken cancellationToken) =>
     {
         await demoContext.EnsureDbAndData(cancellationToken);
-        return applier.Apply(demoContext.Persons, query, cancellationToken);
+        return query.ApplyTo(demoContext.Persons, cancellationToken);
     })
     .WithName("demo-db");
 

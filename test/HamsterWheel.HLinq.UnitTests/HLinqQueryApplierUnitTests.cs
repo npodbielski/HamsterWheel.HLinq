@@ -10,5 +10,5 @@ public partial class HLinqQueryApplierUnitTests
     private readonly HLinqParser _parser = new(ServicesCollection);
     private static readonly HLinqCore HLinqCore = new();
     private static readonly HLinqServicesCollection ServicesCollection = new(HLinqCore);
-    private readonly HLinqQuery<object>.QueryApplier _sut = (HLinqQuery<object>.QueryApplier)HLinqCore.QueryApplier;
+    private readonly HLinqQuery<object>.HLinqQueryApplier _sut = (HLinqQuery<object>.HLinqQueryApplier)HLinqCore.QueryApplier;
 }

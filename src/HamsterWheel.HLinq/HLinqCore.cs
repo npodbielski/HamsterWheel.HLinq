@@ -114,7 +114,7 @@ internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
         foreach (var c in appliers) servicesCollection.AddSingleton(typeof(IApplier), c);
 
         servicesCollection.AddSingleton<IApplierFactory, ApplierFactory>();
-        servicesCollection.AddSingleton<IHLinqQueryApplier, HLinqQuery<object>.QueryApplier>();
+        servicesCollection.AddSingleton<IHLinqQueryApplier, HLinqQuery<object>.HLinqQueryApplier>();
 
         //builders
         servicesCollection.AddSingleton<IExpressionBuilder, ExpressionBuilder>();

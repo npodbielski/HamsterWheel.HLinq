@@ -5,9 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace HamsterWheel.HLinq.Demo;
 
 [Route("demo/controller")]
-public class DemoController(IHLinqQueryApplier applier) : ControllerBase
+public class DemoController : ControllerBase
 {
     [HttpGet("memory")]
     public IActionResult QueryMemory(HLinqQuery<Superhero> query, CancellationToken cancellationToken) =>
-        Ok(applier.Apply(Superhero.Superheroes.AsQueryable(), query, cancellationToken));
+        Ok(query.ApplyTo(Superhero.Superheroes.AsQueryable(), cancellationToken));
 }

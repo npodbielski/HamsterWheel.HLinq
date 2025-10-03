@@ -11,22 +11,27 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HamsterWheel.HLinq.Request;
 
-public class HLinqQuery<T> : IHLinqQuery
+public class HLinqQuery<T> : IHLinqQuery where T : class
 {
-    private ITreeBranch ThisTree => this;
+    public ITreeElement[] Children { get; private set; } = [];
     public string SourceQueryString { get; init; } = null!;
-
     public bool IsLeaf => false;
+    public bool NoChildren => Children.Length == 0;
 
     /// <summary>
-    ///     If query is valid this should always be null. If not then we should have an error in <see cref="Finish()" />
+    /// Instance of current HttpContext <see cref="IHLinqQueryApplier"/> if <see cref="HLinqQuery{T}"/> was obtained from the binder. Otherwise, null.
+    /// </summary>
+    internal IHLinqQueryApplier? QueryApplier { get; set; }
+
+    IEnumerable<T1> ITreeElement.GetAll<T1>() => ThisTree.Children.OfType<T1>();
+    bool ITreeElement.IsBranch => true;
+    bool ITreeElement.Finished => _finished;
+    private ITreeBranch ThisTree => this;
+
+    /// <summary>
+    ///     If query is valid this should always be empty. If not then we should have an error in <see cref="Finish" />
     /// </summary>
     IToken[] ITreeElement.Tokens => [];
-
-    bool ITreeElement.IsBranch => true;
-
-    bool ITreeElement.Finished => _finished;
-    public bool NoChildren => _children.Length == 0;
 
     void ITreeElement.Finish(IParsingContext context, IToken[] _)
     {
@@ -35,16 +40,20 @@ public class HLinqQuery<T> : IHLinqQuery
             throw new NonParsableTokenSequenceException(context.Tokens, []);
 
         _finished = true;
-        _children = context.Current.Children.ToArray();
+        Children = context.Current.Children.ToArray();
     }
 
-    IEnumerable<T1> ITreeElement.GetAll<T1>() => ThisTree.Children.OfType<T1>();
-
-    public ITreeElement[] Children => _children;
-    private ITreeElement[] _children = [];
     private bool _finished;
 
-    ///Used from Minimap APIs to bind Parameters of HLinqQuery
+    public object? ApplyTo(IQueryable<T> queryable, CancellationToken token = default) =>
+        QueryApplier is null
+            ? throw new HLinqQueryQueryApplierNullException(this)
+            : QueryApplier?.Apply(queryable, this, token);
+
+    /// <summary>
+    /// Used from Minimal APIs to bind Parameters of <see cref="HLinqQuery{T}"/>
+    /// </summary>
+    /// <returns>Instance of <see cref="HLinqQuery{T}"/> that can be applied to <see cref="IQueryable{T}"/></returns>
     public static ValueTask<HLinqQuery<T>> BindAsync(HttpContext context, ParameterInfo parameter)
     {
         var queryString = context.Request.QueryString.Value ?? "";
@@ -54,6 +63,12 @@ public class HLinqQuery<T> : IHLinqQuery
         return ValueTask.FromResult(query);
     }
 
+    /// <summary>
+    /// Used via Asp.Net controllers and Minimal APIs endpoint binders to parse query string into instance of <see cref="HLinqQuery{T}"/> 
+    /// </summary>
+    /// <param name="core">Instance of <see cref="IHLinqCore"/> from DI</param>
+    /// <param name="queryString">HTTP query string</param>
+    /// <returns>Instance of <see cref="HLinqQuery{T}"/></returns>
     public static HLinqQuery<T> Parse(IHLinqCore core, string queryString)
     {
         if (queryString.StartsWith('?'))
@@ -71,17 +86,16 @@ public class HLinqQuery<T> : IHLinqQuery
 
         var parserMethod =
             methodsCache.GetInstanceGeneric(parser.GetType(), nameof(parser.Parse), typeParams: typeof(T));
-        var query = parserMethod.Invoke(parser, [tokens, queryString]);
-        return (HLinqQuery<T>)query!;
+        var query = (HLinqQuery<T>)parserMethod.Invoke(parser, [tokens, queryString])!;
+        query.QueryApplier = core.QueryApplier;
+        return query;
     }
 
-    public class QueryApplier(IApplierFactory applierFactory, IMethodsCache methodsCache) : IHLinqQueryApplier
+    public class HLinqQueryApplier(IApplierFactory applierFactory, IMethodsCache methodsCache) : IHLinqQueryApplier
     {
         public object Apply<T1>(IQueryable<T1> queryable, IHLinqQuery hLinqQuery,
-            CancellationToken cancellationToken = default) where T1 : class
-        {
-            return Apply(queryable, typeof(T1), hLinqQuery, cancellationToken);
-        }
+            CancellationToken cancellationToken = default) where T1 : class =>
+            Apply(queryable, typeof(T1), hLinqQuery, cancellationToken);
 
         public object Apply(IQueryable queryable, Type itemType, IHLinqQuery hLinqQuery,
             CancellationToken token = default)
@@ -97,10 +111,8 @@ public class HLinqQuery<T> : IHLinqQuery
         }
 
         public IResult ApplyGetType<T1>(IQueryable<T1> queryable, IHLinqQuery hLinqQuery,
-            CancellationToken cancellationToken = default) where T1 : class
-        {
-            return ApplyGetType(queryable, hLinqQuery, typeof(T1), cancellationToken);
-        }
+            CancellationToken cancellationToken = default) where T1 : class =>
+            ApplyGetType(queryable, hLinqQuery, typeof(T1), cancellationToken);
 
         public IResult ApplyGetType(IQueryable queryable, IHLinqQuery hLinqQuery, Type itemType,
             CancellationToken cancellationToken = default)
