@@ -18,6 +18,8 @@ before_script:
   # Configure GitLab package registry as a NuGet source
   - 'dotnet nuget add source "${CI_API_V4_URL}/groups/69/-/packages/nuget/index.json" --name group --username gitlab-ci-token --password $CI_JOB_TOKEN --store-password-in-clear-text'
   - 'dotnet restore HLinq.slnx --packages $NUGET_PACKAGES_DIRECTORY'
+  - 'dotnet tool install --global dotnet-coverage'
+  - 'dotnet tool install --global dotnet-reportgenerator-globaltool'
 
 build:
   stage: build
@@ -32,8 +34,11 @@ tests:
         POSTGRES_PASSWORD: outflank-outage-undoing
   stage: test
   script:
-    - 'dotnet test --no-restore /p:CollectCoverage=true --collect:"XPlat Code Coverage" --logger:"junit;LogFileName=rspec.xml"'
-  coverage: '/Total\s*\|*\s(\d+(?:\.\d+)?)/'
+    - 'dotnet test --no-restore /p:CollectCoverage=true --collect:"XPlat Code Coverage" --logger:"junit;LogFileName=rspec.xml" /p:Exclude="[HamsterWheel.HLinq.Demo*]*"'
+    - 'dotnet-coverage merge -o $TEST_CODE_PATH/merged.cobertura.xml -f cobertura $TEST_CODE_PATH/**/coverage.cobertura.xml'
+    - 'reportgenerator -reports:cobertura.xml -targetdir:coveragereport -reporttypes:Badges'
+    - 'cat coveragereport/badge_combined.svg | grep "text class=\"linecoverage\""'
+  coverage: '/\>(\d+?)%/'
   artifacts:
     when: always
     paths:
@@ -43,7 +48,7 @@ tests:
         - $TEST_CODE_PATH/**/rspec.xml
       coverage_report:
         coverage_format: cobertura
-        path: $TEST_CODE_PATH/**/coverage.cobertura.xml
+        path: $TEST_CODE_PATH/merged.cobertura.xml
 
 package-alpha:
   stage: deploy
