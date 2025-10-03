@@ -35,5 +35,11 @@
     <Compile Update="DbTake.cs">
       <DependentUpon>DbDataTests.cs</DependentUpon>
     </Compile>
+    <Compile Update="Skip.cs">
+      <DependentUpon>MemoryDataTests.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Take.cs">
+      <DependentUpon>MemoryDataTests.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
 </Project>

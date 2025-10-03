@@ -9,9 +9,9 @@ public class DemoFixture : IAsyncLifetime
 
     public string ConnectionString =>
         IsInCi
-            ? $"Host=postgres;Port=5432;" +
-              $"Database={Environment.GetEnvironmentVariable("POSTGRES_ENV_POSTGRES_DB")};Username=postgres;" +
-              $"Password={Environment.GetEnvironmentVariable("POSTGRES_ENV_POSTGRES_PASSWORD")};Include Error Detail=true"
+            ? $"Host={Environment.GetEnvironmentVariable("POSTGRES_HOST")};Port=5432;" +
+              $"Database={Environment.GetEnvironmentVariable("POSTGRES_DB")};Username=postgres;" +
+              $"Password={Environment.GetEnvironmentVariable("POSTGRES_PASSWORD")};Include Error Detail=true"
             : "Host=localhost;Port=55432;Database=Demo;Username=postgres;Password=outflank-outage-undoing;Include Error Detail=true";
 
     public PostGreSqlFixture PgSqlFixture { get; set; }
@@ -30,5 +30,9 @@ public class DemoFixture : IAsyncLifetime
         Client = DemoTestHost.CreateClient();
     }
 
-    public async Task DisposeAsync() => await PgSqlFixture.DisposeAsync();
+    public async Task DisposeAsync()
+    {
+        await DemoTestHost.DisposeAsync();
+        await PgSqlFixture.DisposeAsync();
+    }
 }

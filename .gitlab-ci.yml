@@ -5,6 +5,7 @@ variables:
   NUGET_PACKAGES_DIRECTORY: '.nuget'
   SOURCE_CODE_PATH: ''
   TEST_CODE_PATH: '/builds/hamster-wheel/hlinq/test'
+  FF_NETWORK_PER_BUILD: "true"
 
 cache:
   key: "$CI_JOB_STAGE-$CI_COMMIT_REF_SLUG"
@@ -18,8 +19,6 @@ before_script:
   # Configure GitLab package registry as a NuGet source
   - 'dotnet nuget add source "${CI_API_V4_URL}/groups/69/-/packages/nuget/index.json" --name group --username gitlab-ci-token --password $CI_JOB_TOKEN --store-password-in-clear-text'
   - 'dotnet restore HLinq.slnx --packages $NUGET_PACKAGES_DIRECTORY'
-  - 'dotnet tool install --global dotnet-coverage'
-  - 'dotnet tool install --global dotnet-reportgenerator-globaltool'
 
 build:
   stage: build
@@ -29,16 +28,20 @@ build:
 tests:
   services:
     - name: postgres
-      variables:
-        POSTGRES_DB: Demo
-        POSTGRES_PASSWORD: outflank-outage-undoing
+  variables:
+    FF_NETWORK_PER_BUILD: 1
+    POSTGRES_PASSWORD: outflank-outage-undoing
+    POSTGRES_DB: Demo
+    POSTGRES_HOST: postgres
   stage: test
   script:
+    - 'dotnet tool install --local dotnet-coverage --create-manifest-if-needed'
+    - 'dotnet tool install --local dotnet-reportgenerator-globaltool'
     - 'dotnet test --no-restore /p:CollectCoverage=true --collect:"XPlat Code Coverage" --logger:"junit;LogFileName=rspec.xml" /p:Exclude="[HamsterWheel.HLinq.Demo*]*"'
-    - 'dotnet-coverage merge -o $TEST_CODE_PATH/merged.cobertura.xml -f cobertura $TEST_CODE_PATH/**/coverage.cobertura.xml'
-    - 'reportgenerator -reports:cobertura.xml -targetdir:coveragereport -reporttypes:Badges'
-    - 'cat coveragereport/badge_combined.svg | grep "text class=\"linecoverage\""'
-  coverage: '/\>(\d+?)%/'
+    - 'dotnet tool run dotnet-coverage merge -o $TEST_CODE_PATH/merged.cobertura.xml -f cobertura $TEST_CODE_PATH/**/coverage.cobertura.xml'
+    - 'dotnet tool run reportgenerator -reports:$TEST_CODE_PATH/merged.cobertura.xml -targetdir:coveragereport -reporttypes:JsonSummary'
+    - 'cat coveragereport/Summary.json | grep linecoverage'
+  coverage: '/linecoverage":\s(\d+?),/'
   artifacts:
     when: always
     paths:
