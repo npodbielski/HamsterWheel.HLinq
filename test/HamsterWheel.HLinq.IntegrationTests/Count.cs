@@ -1,5 +1,6 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.Client;
+using HamsterWheel.HLinq.Demo.Data;
 
 namespace HamsterWheel.HLinq.IntegrationTests;
 

@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using System.Reflection;
-using HamsterWheel.Common.Reflection;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Reflection;

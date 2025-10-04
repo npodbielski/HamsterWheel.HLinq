@@ -1,5 +1,4 @@
-using HamsterWheel.HLinq.UnitTests.Extensions;
-using static HamsterWheel.HLinq.UnitTests.Extensions.Assertions.ExpectedToken;
+using static HamsterWheel.HLinq.UnitTests.Assertions.ExpectedToken;
 
 namespace HamsterWheel.HLinq.UnitTests;
 

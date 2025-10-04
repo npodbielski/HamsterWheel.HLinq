@@ -1,12 +1,9 @@
 using System.Reflection;
 using FluentAssertions;
-using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.Parsers;
-using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.UnitTests.Dummies;
-using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 
 namespace HamsterWheel.HLinq.UnitTests;
@@ -34,6 +31,6 @@ public class HLinqQueryBinderUnitTests
         var actual = sut.BindQuery("where[x.name==test]", typeof(DummyEntity));
 
         //assert
-        actual.Should().Be(expected);
+        actual.Should().BeOfType<HLinqQuery<DummyEntity>>().Subject.Should().BeSameAs(expected);
     }
 }
