@@ -10,7 +10,7 @@ public sealed class HLinqParser(IHLinqParsersCollection parsersCollection) : IHL
 
     private IElementParser[] RootParsers { get; } = parsersCollection.Parsers.Where(p => p.IsRoot).ToArray();
 
-    public IHLinqQuery Parse<T>(IToken[] tokens, string stringQuery)
+    public IHLinqQuery Parse<T>(IToken[] tokens, string stringQuery) where T : class
     {
         var query = new HLinqQuery<T>
         {

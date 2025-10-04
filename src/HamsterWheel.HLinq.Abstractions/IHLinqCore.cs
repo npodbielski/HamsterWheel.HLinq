@@ -15,6 +15,7 @@ public interface IHLinqCore
     IElementToMemberAssignmentConverter[] AssignmentConverters { get; }
     IValueConverterFactory ValueConverterFactory { get; }
     IHLinqQueryApplier QueryApplier { get; }
+    IHLinqOptions Options { get; }
     IHLinqParser HLinqParser { get; }
     IHLinqTokenizer Tokenizer { get; }
     IMethodsCache MethodsCache { get; }

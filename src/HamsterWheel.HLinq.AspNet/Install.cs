@@ -20,6 +20,10 @@ public static class AspNetInstaller
         serviceCollection.AddSingleton<WebHLinqQueryBinder>();
         serviceCollection.AddSingleton<IHLinqQueryBinder>(c => c.GetRequiredService<WebHLinqQueryBinder>());
         serviceCollection.AddExceptionHandler<HLinqQueryExceptionHandler>();
+        serviceCollection.AddSingleton<IHLinqOptions>(new HLinqOptions
+        {
+            HttpDefaultMaxTakeRecords = configuration.HLinqOptions.HttpDefaultMaxTakeRecords
+        });
         serviceCollection.AddControllers(options =>
         {
             options.ModelBinderProviders.Insert(0, new HLinqQueryBinderProvider());

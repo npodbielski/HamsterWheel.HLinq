@@ -8,11 +8,8 @@ public static class HttpClientExtensions
         var queryBuilder = new HLinqClientQueryBuilderFactory();
         var hLinqClient = builder(queryBuilder);
         var response = await client.GetAsync($"{path}?{hLinqClient.BuildQuery()}");
-        if (response.IsSuccessStatusCode)
-        {
-            return hLinqClient.Deserialize(await response.Content.ReadAsStringAsync());
-        }
-
-        throw new HttpRequestException(await response.Content.ReadAsStringAsync());
+        return response.IsSuccessStatusCode
+            ? hLinqClient.Deserialize(await response.Content.ReadAsStringAsync())
+            : throw new HttpRequestException(await response.Content.ReadAsStringAsync());
     }
 }

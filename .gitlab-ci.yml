@@ -5,6 +5,7 @@ variables:
   NUGET_PACKAGES_DIRECTORY: '.nuget'
   SOURCE_CODE_PATH: ''
   TEST_CODE_PATH: '/builds/hamster-wheel/hlinq/test'
+  FF_NETWORK_PER_BUILD: "true"
 
 cache:
   key: "$CI_JOB_STAGE-$CI_COMMIT_REF_SLUG"
@@ -27,13 +28,20 @@ build:
 tests:
   services:
     - name: postgres
-      variables:
-        POSTGRES_DB: Demo
-        POSTGRES_PASSWORD: outflank-outage-undoing
+  variables:
+    FF_NETWORK_PER_BUILD: 1
+    POSTGRES_PASSWORD: outflank-outage-undoing
+    POSTGRES_DB: Demo
+    POSTGRES_HOST: postgres
   stage: test
   script:
-    - 'dotnet test --no-restore /p:CollectCoverage=true --collect:"XPlat Code Coverage" --logger:"junit;LogFileName=rspec.xml"'
-  coverage: '/Total\s*\|*\s(\d+(?:\.\d+)?)/'
+    - 'dotnet tool install --local dotnet-coverage --create-manifest-if-needed'
+    - 'dotnet tool install --local dotnet-reportgenerator-globaltool'
+    - 'dotnet test --no-restore /p:CollectCoverage=true --collect:"XPlat Code Coverage" --logger:"junit;LogFileName=rspec.xml" /p:Exclude="[HamsterWheel.HLinq.Demo*]*"'
+    - 'dotnet tool run dotnet-coverage merge -o $TEST_CODE_PATH/merged.cobertura.xml -f cobertura $TEST_CODE_PATH/**/coverage.cobertura.xml'
+    - 'dotnet tool run reportgenerator -reports:$TEST_CODE_PATH/merged.cobertura.xml -targetdir:coveragereport -reporttypes:JsonSummary'
+    - 'cat coveragereport/Summary.json | grep linecoverage'
+  coverage: '/linecoverage":\s(\d+?),/'
   artifacts:
     when: always
     paths:
@@ -43,7 +51,7 @@ tests:
         - $TEST_CODE_PATH/**/rspec.xml
       coverage_report:
         coverage_format: cobertura
-        path: $TEST_CODE_PATH/**/coverage.cobertura.xml
+        path: $TEST_CODE_PATH/merged.cobertura.xml
 
 package-alpha:
   stage: deploy

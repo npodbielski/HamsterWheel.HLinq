@@ -1,6 +1,20 @@
-@HamsterWheel.HLinq.Demo_HostAddress = http://localhost:5087
+@HostAddress = http://localhost:5087
 
-GET {{HamsterWheel.HLinq.Demo_HostAddress}}/weatherforecast/
+###
+
+GET {{HostAddress}}/demo/memory?orderBy[x.name].take[1]
+Accept: application/json###
+
+###
+GET {{HostAddress}}/demo/db?where[x.id == 1]
+Accept: application/json###
+
+###
+GET {{HostAddress}}/demo/random
+Accept: application/json###
+
+###
+GET {{HostAddress}}/demo/controller/memory?take[1]
 Accept: application/json
 
 ###
