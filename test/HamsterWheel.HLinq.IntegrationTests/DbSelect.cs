@@ -21,20 +21,20 @@ partial class DbDataTests
     public async Task WhenEmptyQuery_ThenReturnsCollectionAsIs()
     {
         //act
-        var response = await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>());
+        var response = await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>().Take(100));
     
         //assert
-        response.Should().BeEquivalentTo(Persons);
+        response.Should().BeEquivalentTo(Persons.Take(100));
     }
     
     [Fact]
     public async Task WhenSinglePropertySelect_ThenReturnsCorrectResult()
     {
         //act
-        var response = await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>().Select(x => x.FirstName));
+        var response = await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>().Select(x => x.FirstName).Take(100));
     
         //assert
-        response.Should().BeEquivalentTo(Persons.Select(x => x.FirstName));
+        response.Should().BeEquivalentTo(Persons.Select(x => x.FirstName).Take(100));
     }
     
     [Fact]
@@ -43,10 +43,10 @@ partial class DbDataTests
         //act
         var response =
             await fixture.Client.GetWithHLinq("/demo/db",
-                q => q.For<Person>().Select(x => new { N = x.FirstName }));
+                q => q.For<Person>().Select(x => new { N = x.FirstName }).Take(100));
     
         //assert
-        response.Should().BeEquivalentTo(Persons.Select(x => new { N = x.FirstName }));
+        response.Should().BeEquivalentTo(Persons.Select(x => new { N = x.FirstName }).Take(100));
     }
     
     [Fact]
@@ -55,10 +55,10 @@ partial class DbDataTests
         //act
         var response =
             await fixture.Client.GetWithHLinq("/demo/db",
-                q => q.For<Person>().Select(x => new { x.FirstName, x.Email }));
+                q => q.For<Person>().Select(x => new { x.FirstName, x.Email }).Take(100));
     
         //assert
-        response.Should().BeEquivalentTo(Persons.Select(x => new { x.FirstName, x.Email }));
+        response.Should().BeEquivalentTo(Persons.Select(x => new { x.FirstName, x.Email }).Take(100));
     }
     
     [Fact]
@@ -67,10 +67,10 @@ partial class DbDataTests
         //act
         var response =
             await fixture.Client.GetWithHLinq("/demo/db",
-                q => q.For<Person>().Select(x => new { x.FirstName, x.Email, x.LastName }));
+                q => q.For<Person>().Select(x => new { x.FirstName, x.Email, x.LastName }).Take(100));
     
         //assert
-        response.Should().BeEquivalentTo(Persons.Select(x => new { x.FirstName, x.Email, x.LastName }));
+        response.Should().BeEquivalentTo(Persons.Select(x => new { x.FirstName, x.Email, x.LastName }).Take(100));
     }
 
     [Fact]
@@ -88,7 +88,7 @@ partial class DbDataTests
                     x.LastName,
                     Name = x.FirstName,
                     SurName = x.LastName
-                }));
+                }).Take(100));
 
         //assert
         response.Should().BeEquivalentTo(Persons.Select(x => new
@@ -100,6 +100,6 @@ partial class DbDataTests
             x.LastName,
             Name = x.FirstName,
             SurName = x.LastName
-        }));
+        }).Take(100).ToArray());
     }
 }

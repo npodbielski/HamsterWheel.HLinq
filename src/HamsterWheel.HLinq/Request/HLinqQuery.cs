@@ -58,6 +58,11 @@ public class HLinqQuery<T> : IHLinqQuery where T : class
             Children = [..ThisTree.Children, new TakeRoot(Options.HttpDefaultMaxTakeRecords)];
         }
 
+        if (ThisTree.Children.All(t => t is not CountRoot) && ThisTree.Children.LastOrDefault() is TakeRoot take)
+        {
+            take.MaxTake = Options?.HttpDefaultMaxTakeRecords ?? HLinqOptions.DefaultMaxTakeRecords;
+        }
+
         return QueryApplier?.Apply(queryable, this, token);
     }
 

@@ -8,35 +8,39 @@ using HamsterWheel.HLinq.ValueConverters;
 
 namespace HamsterWheel.HLinq.Tree.Paging;
 
-public sealed class TakeRoot : TreeBranch, ITreeRoot
+public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 {
+    public TakeRoot(int maxTakeValueFromSettings) : this([]) => _maxTakeValueFromSettings = maxTakeValueFromSettings;
+
     /// <summary>
     /// If nothing in HTTP query was specified to limit number of records to fetch, it could potentially cause HLinq to query and return entire database data.
     /// To limit this default   
     /// </summary>
-    private readonly int? _settingsTakeValue;
+    private readonly int? _maxTakeValueFromSettings;
 
-    public TakeRoot(int settingsTakeValue) : this([])
-    {
-        _settingsTakeValue = settingsTakeValue;
-    }
-
-    public TakeRoot(IToken[] tokens) : base(tokens)
-    {
-    }
+    /// <summary>
+    /// To make sure that silly or malicious user will not overload the system by fetching big quantities of data limit max take to this value. If user provide bigger value then <see cref="MaxTake"/> is used instead.
+    /// </summary>
+    public int MaxTake { get; set; }
 
     private int GetTakeNumber(string query, IValueConverter converter)
     {
-        if (_settingsTakeValue is not null)
+        if (_maxTakeValueFromSettings is not null)
         {
-            return _settingsTakeValue.Value;
+            return _maxTakeValueFromSettings.Value;
         }
 
         var takeNumberAsString = (GetChildOfType<SkipOrTakeConstant>() ??
                                   throw new InvalidOperationException(
                                       "take query method needs to have number parameter")).Value.GetValue(query);
 
-        return (int)converter.Convert(takeNumberAsString)!;
+        var takeNumber = (int)converter.Convert(takeNumberAsString)!;
+        if (MaxTake > 0 && takeNumber > MaxTake)
+        {
+            return MaxTake;
+        }
+
+        return takeNumber;
     }
 
     public sealed class Parser : ElementParserBase<TakeRoot>
@@ -45,6 +49,7 @@ public sealed class TakeRoot : TreeBranch, ITreeRoot
         {
             return context.Tokens switch
             {
+                [Take, LeftSquareBracket, RightSquareBracket] => ThrowOnEmpty(context),
                 [Take, LeftSquareBracket, ..] => new TakeRoot(context.Tokens[..2]),
                 [Dot, Take, LeftSquareBracket, ..] => new TakeRoot(context.Tokens[..3]),
                 _ => default
@@ -64,6 +69,13 @@ public sealed class TakeRoot : TreeBranch, ITreeRoot
             throw new InvalidTokenCollectionException(context.Tokens.GetFirstItems(5).ToArray(),
                 [new RightSquareBracket(default)]);
         }
+
+        private static TakeRoot ThrowOnEmpty(IParsingContext context) =>
+            throw new InvalidTokenCollectionException(
+                context.Tokens.GetFirstItems(3).ToArray(), [
+                    new Take(default), new LeftSquareBracket(default), new NameOrValue(default),
+                    new RightSquareBracket(default)
+                ]);
     }
 
     public sealed class Applier(IValueConverterFactory factory, IMethodsCache methodsCache) : RootApplierBase<TakeRoot>

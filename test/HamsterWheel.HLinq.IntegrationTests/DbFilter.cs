@@ -9,14 +9,14 @@ namespace HamsterWheel.HLinq.IntegrationTests;
 partial class DbDataTests
 {
     [Fact]
-    public async Task WhenEmptyWhere_ThenReturnsNotFilteredCollection()
+    public async Task WhenEmptyWhere_ThenReturnsNotFilteredCollectionButWithMaxTakeApplied()
     {
         //act
         var response = await fixture.Client.GetAsync("/demo/db?where[]");
 
         //assert
         var data = await response.Content.ReadFromJsonAsync<Person[]>();
-        data.Should().BeEquivalentTo(Persons);
+        data.Should().BeEquivalentTo(Persons.Take(HLinqOptions.DefaultMaxTakeRecords));
     }
 
     [Fact]
@@ -67,10 +67,10 @@ partial class DbDataTests
     {
         //act
         var response =
-            await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>().Where(x => x.FirstName != "Billy"));
+            await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>().Where(x => x.FirstName != "Billy").Take(100));
 
         //assert
-        response.Should().BeEquivalentTo(Persons.Where(x => x.FirstName != "Billy"));
+        response.Should().BeEquivalentTo(Persons.Where(x => x.FirstName != "Billy").Take(100));
     }
 
     [Fact]

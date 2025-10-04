@@ -11,10 +11,30 @@ partial class DbDataTests
     public async Task WhenEmptyTake_ThenReturns400()
     {
         //act
-        var response = await fixture.Client.GetAsync("/demo/db?skip[]");
+        var response = await fixture.Client.GetAsync("/demo/db?take[]");
 
         //assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task WhenNoTake_ThenReturnsAtMost1000Items()
+    {
+        //act
+        var response = await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>());
+
+        //assert
+        response.Length.Should().Be(HLinqOptions.DefaultMaxTakeRecords);
+    }
+
+    [Fact]
+    public async Task WhenUserTriesToTakeToMuch_ThenLimitsTo1000Items()
+    {
+        //act
+        var response = await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>().Take(1000_000));
+
+        //assert
+        response.Length.Should().Be(HLinqOptions.DefaultMaxTakeRecords);
     }
 
     [Theory]
