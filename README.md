@@ -1,4 +1,4 @@
-![Latest Release](https://g.np0.pl/hamster-wheel/hlinq/-/badges/release.svg) ![Status](https://g.np0.pl/hamster-wheel/hlinq/badges/master/pipeline.svg?ignore_skipped=true) ![Coverage](https://g.np0.pl/hamster-wheel/hlinq/badges/master/coverage.svg)
+![Latest Release](https://internetexception.com/wp-content/uploads/hlinq-badges/release.svg) ![Status](https://internetexception.com/wp-content/uploads/hlinq-badges/pipeline.svg) ![Coverage](https://internetexception.com/wp-content/uploads/hlinq-badges/coverage.svg)
 
 
 # Introduction
@@ -40,28 +40,26 @@ services.ConfigureHLinq();
 To actually make it useful you need to add it to the endpoint. In example if you fetch data from the database in this way:
 ```csharp
 app.MapGet("/endpoint",
-    (DbContext dbContext,CancellationToken cancellationToken) =>
+    (DbContext dbContext, CancellationToken cancellationToken) =>
     {
         return dbContext.MySet.Take(10).ToArrayAsync(cancellationToken);
     });
 ```
 
-You need to add two services into this endpoint:
-- `IHLinqQueryApplier` implements service that applies HLinq query to any implementation of `IQueryable`. Does not matter if this is in memory collection, enumerator or database set. If this is supported by Linq and EF it is supported by HLinq
-- `HLinqQuery<MyEntity>` which is actual HLinq query mapped from HTTP Query String into type safe structure. `MyEntity` type is important to be the actual type you intend your users to query. 
+You need to add `HLinqQuery<MyEntity>` model into your endpoint which is actual HLinq query mapped from HTTP Query String into type safe structure. `MyEntity` type is important to be the actual type you intend your users to query. 
 
 So in above example it will become:
 ```csharp
 app.MapGet("/endpoint",
-    (DbContext dbContext, IHLinqQueryApplier applier, HLinqQuery<Superhero> query, CancellationToken cancellationToken) =>
+    (DbContext dbContext, HLinqQuery<Superhero> query, CancellationToken cancellationToken) =>
     {
         var queryable = dbContext.MySet; 
-        return applier.Apply(queryable, query, cancellationToken);
+        return query.ApplyTo(queryable, cancellationToken);
     });
 ```
 
 And that is it!
-You can now call this endpoint with HLinq query filters, paging and selects!
+You can now call this endpoint with HLinq query filters, ordering, paging and selects!
 
 ## Usage inside Controller
 
@@ -79,19 +77,22 @@ Initialize HLinq:
 services.ConfigureHLinq();
 ```
 
-Then inject `IHlingQueryApplier` service into your controller:
+Then you must add `HLinqQuery<MyEntity>` into your endpoint method:
 ```csharp
-public class MyController(IHLinqQueryApplier applier) : ControllerBase
+[HttpGet("my-endpoint")]
+public IActionResult GetData(HLinqQuery<MyEntity> query, CancellationToken cancellationToken) =>
+    Ok(query.ApplyTo(dbContext.MySet, cancellationToken));
 ```
-
-After that you can add `HLinqQuery<MyEntity>` into your endpoint method:
-```csharp
-HttpGet("my-endpoint")]
-    public IActionResult GetData(HLinqQuery<MyEntity> query, CancellationToken cancellationToken) =>
-        Ok(applier.Apply(dbContext.MySet, query, cancellationToken));
-```
-
 And that is all. Very similar to minimal APIs and also very simple.
+
+## Configuring HLinq inside API
+
+### Default limit of records returned
+If you are using HLinq entirely within bounds of one application, there is no default limit of how many records you will fetch. And it is not really a problem. You can do that too with just Linq to SQL, i.e. call `ToArray` or `ToList` on entire DB collection. But on the API side you do not really have control on what yours users will do and calling and API endpoint without any query modifiers, me personally it is first thing I do, just to see what kind of result it will return, with what information. Since HLinq requires `skip[].take[]` to be provided this would cause entire data to be serialized and sent to the client. At once. This would be very problematic. Of course this is also not desired by 99% of cases. To fix this HLinq limits records returned to maximum value of 1k. If you do not like the default limit you can change it:
+```csharp
+builder.Services.ConfigureHLinq(c => c.HLinqOptions.HttpDefaultMaxTakeRecords = 100);
+```
+This will limit number of records returned by default to 100. 
 
 # How to use on the client
 
@@ -145,7 +146,8 @@ GET /data?where[x.Id==1]
 ### OR
 GET /data?where[x.Id==77774169-BB9D-4DF9-A4A7-52019C4A445D]
 ```
-Notice double `=` sign in comparison. It is consistent with how Linq works in C#. Single equals (`=`) sign is used in `select[NewName=x.Property]` only.
+Notice double `=` sign in comparison. It is consistent with how Linq works in C#. Single equals (`=`) sign is used in selectors (`select[NewName=x.Property]`) only.
+
 
 
 
