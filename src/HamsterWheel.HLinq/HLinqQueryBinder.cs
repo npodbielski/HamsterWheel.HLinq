@@ -1,19 +1,17 @@
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Parsers;
-using HamsterWheel.HLinq.Reflection;
-using HamsterWheel.HLinq.Tokens;
+using HamsterWheel.HLinq.Request;
 
 namespace HamsterWheel.HLinq;
 
-public class HLinqQueryBinder(IHLinqParser parser, IHLinqTokenizer tokenizer, IMethodsCache methodsCache)
+public class HLinqQueryBinder(IHLinqCore core)
     : IHLinqQueryBinder
 {
     public IHLinqQuery BindQuery(string queryString, Type model)
     {
-        var tokens = tokenizer.Tokenize(queryString);
-        var parserMethod = methodsCache.GetInstanceGeneric(parser.GetType(), nameof(parser.Parse),
-            typeParams: model);
-        return (IHLinqQuery?)parserMethod.Invoke(parser, [tokens, queryString]) ??
+        var methodsCache = core.MethodsCache;
+        var parserMethod = methodsCache.GetStatic(typeof(HLinqQuery<>).MakeGenericType(model), nameof(HLinqQuery<object>.Parse), null)
+            ?? throw new MissingMethodException($"Could not find HLinqQuery<{model.Name}>.Parse method");
+        return (IHLinqQuery?)parserMethod.Invoke(null, [core, queryString]) ??
                throw new HLinqQueryParserReturnedNullException();
     }
 }

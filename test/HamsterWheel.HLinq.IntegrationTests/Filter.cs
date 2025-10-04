@@ -15,7 +15,7 @@ partial class MemoryDataTests
         var response = await fixture.Client.GetAsync("/demo/memory?where[]");
 
         //assert
-        var data = await response.Content.ReadFromJsonAsync<Superhero[]>();
+        var data = await response.Content.ReadFromJsonAsync<Superhero[]>(ResponseHLinqClientQueryBuilder.DefaultJsonSerializerOptions);
         data.Should().BeEquivalentTo(Superhero.Superheroes);
     }
 
@@ -443,10 +443,6 @@ partial class MemoryDataTests
 
     public static TheoryData<RandomEnum> EnumData =>
     [
-        (RandomEnum)0,
-        (RandomEnum)1,
-        (RandomEnum)2,
-        (RandomEnum)30,
         (RandomEnum)(-2),
         RandomEnum.Zero,
         RandomEnum.One,
@@ -461,8 +457,8 @@ partial class MemoryDataTests
     [
         TimeOnly.MinValue,
         TimeOnly.MaxValue,
-        TimeOnly.Parse("00:00:00"),
-        TimeOnly.Parse("23:59:59.99999999"),
+        TimeOnly.Parse("01:00:00"),
+        TimeOnly.Parse("23:59:59"),
         TimeOnly.Parse("15:13:23.000"),
         TimeOnly.Parse("23:59:33.999"),
         TimeOnly.Parse("01:45:21.321"),
@@ -475,7 +471,7 @@ partial class MemoryDataTests
     [
         DateTime.MinValue,
         DateTime.MaxValue,
-        DateTime.Parse("0001-01-01 00:00:00"),
+        DateTime.Parse("0002-01-01 00:00:00"),
         DateTime.Parse("9999-01-01 00:00"),
         DateTime.Parse("2000-02-27 15:13:23.000"),
         DateTime.Parse("2024-10-11 23:59:33.999"),

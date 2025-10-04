@@ -77,5 +77,5 @@ public enum RandomEnum
     One = 1,
     Two = 2,
     Longer = 30,
-    Negative = -2
+    Negative = -1
 }
