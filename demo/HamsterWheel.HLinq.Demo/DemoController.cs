@@ -1,4 +1,4 @@
-using HamsterWheel.HLinq.Appliers;
+using HamsterWheel.HLinq.Demo.Data;
 using HamsterWheel.HLinq.Request;
 using Microsoft.AspNetCore.Mvc;
 
