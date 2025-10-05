@@ -63,6 +63,17 @@ partial class DbDataTests
     }
 
     [Fact]
+    public async Task WhenStringPropertyEqualsAndDataIsNotInFirst1000Records_ThenCanFilter()
+    {
+        //act
+        var response =
+            await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>().Where(x => x.FirstName == "Montgomery"));
+
+        //assert
+        response.Should().BeEquivalentTo(Persons.Where(x => x.FirstName == "Montgomery"));
+    }
+
+    [Fact]
     public async Task WhenStringPropertyNotEquals_ThenCanFilter()
     {
         //act
