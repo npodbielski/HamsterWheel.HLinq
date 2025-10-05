@@ -2,7 +2,7 @@ using static HamsterWheel.HLinq.UnitTests.Assertions.ExpectedToken;
 
 namespace HamsterWheel.HLinq.UnitTests;
 
-public partial class HLinqTokenizerUnitTests
+partial class HLinqTokenizerUnitTests
 {
     [Fact]
     public void Tokenize_WhenLeadingUpperCase_CanParse()

@@ -1,6 +1,5 @@
 using System.Reflection;
 using FluentAssertions;
-using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.AspNet.Binder;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Reflection;

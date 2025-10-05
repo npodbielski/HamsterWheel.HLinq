@@ -1,5 +1,4 @@
 using System.Reflection;
-using FluentAssertions;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.Tokens;
