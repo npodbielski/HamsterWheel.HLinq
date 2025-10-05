@@ -1,9 +1,11 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using HamsterWheel.HLinq.Builders;
+using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filter;
+using HamsterWheel.HLinq.Tokens.Select;
 using PropertyAccessToken = HamsterWheel.HLinq.Tokens.Filter.PropertyAccess;
 
 namespace HamsterWheel.HLinq.Tree.Filter;
@@ -38,18 +40,23 @@ public sealed class Condition : TreeBranch, ILogicalOperationGroupBranch
     {
         protected override Type[] ValidParents => [typeof(WhereRoot), typeof(ConditionGroup)];
 
-        protected override Condition? BuildBranch(IParsingContext context)
-        {
-            return context.Tokens switch
+        protected override Condition? BuildBranch(IParsingContext context) =>
+            context.Tokens switch
             {
+                [NameOrValue, Assignment, NameOrValue, ..] => ThrowOnReverseComparison(context),
                 [IConditionalLogicalOperationToken conditionalLogicalOp, ..] => new Condition(conditionalLogicalOp),
                 [Entity, Dot, PropertyAccessToken, ..] => new Condition(),
                 [MethodCall, ..] => new Condition(),
-                //TODO: this will not work with filter like where[[1,2,3].Contains(x.Id)] -> probably condition should be split into multiple subclasses with different implementations for easier parsing and conversion to expression
-                [NameOrValue _, IComparisonToken, ..] => new Condition(),
                 _ => null
             };
-        }
+
+        private static Condition ThrowOnReverseComparison(IParsingContext context) =>
+            throw new InvalidTokenCollectionException(
+                context.Tokens.GetFirstItems(3).ToArray(), 
+                [new Entity(default), new Dot(default), new PropertyAccessToken(default)],
+                [new LeftCircleBracket(default)],
+                [new MethodCall(default)]
+                );
     }
 
     public sealed class Converter : ElementToExpressionConverter<Condition>
@@ -102,6 +109,7 @@ public sealed class Condition : TreeBranch, ILogicalOperationGroupBranch
                     _ => throw new ArgumentOutOfRangeException()
                 };
             }
+
             if (condition.IsFlagCheck)
             {
                 var left = context.ToExpression(condition.Left);

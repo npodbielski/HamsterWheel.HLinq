@@ -16,10 +16,9 @@ public sealed class UnknownTokenException(Range range, IToken[] expectedTokens)
         $" Was expecting one of: {string.Join(", ", expectedTokens.Select(t => t.ToString()))}");
 
 //TODO: write better exception messages
-public sealed class InvalidTokenCollectionException(IToken[] actual, IToken[] expected)
+public sealed class InvalidTokenCollectionException(IToken[] actual, IToken[] expected, params IToken[][] orExpected)
     : HLinqQueryException(
-        $"HLinq query was invalid: '{string.Join(", ", actual.Select(a => a.GetType().Name))}'." +
-        $" Was expecting one of: [{string.Join(", ", expected.Select(a => a.GetType().Name))}]");
+        $"HLinq query was invalid: '{string.Join(", ", actual.Select(a => a.GetType().Name))}'. Was expecting one of: [{string.Join(", ", expected.Select(a => a.GetType().Name))}{(orExpected.Length != 0 ? $"], or [{string.Join("], or [", orExpected.SelectMany(a => a.Select(t => t.GetType().Name)))}" : "")}]");
 
 public sealed class NonParsableTokenSequenceException(IToken[] actual, IElementParser[] expected)
     : HLinqQueryException($"HLinq query was invalid: '{string.Join(", ", actual.Select(a => a.GetType().Name))}'." +

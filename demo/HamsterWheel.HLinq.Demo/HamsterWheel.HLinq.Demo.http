@@ -3,15 +3,19 @@
 ###
 
 GET {{HostAddress}}/demo/memory?orderBy[x.name].take[1]
-Accept: application/json###
+Accept: application/json
 
 ###
-GET {{HostAddress}}/demo/db
-Accept: application/json###
+GET {{HostAddress}}/demo/db?where[John==x.firstName]
+Accept: application/json
+
+###
+GET {{HostAddress}}/demo/db?where[x.firstName==John]
+Accept: application/json
 
 ###
 GET {{HostAddress}}/demo/random
-Accept: application/json###
+Accept: application/json
 
 ###
 GET {{HostAddress}}/demo/controller/memory?take[1]
