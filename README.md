@@ -6,7 +6,7 @@
 ## Reference links
 
 - [Hamster Wheel](https://internetexception.com/why-hamster-wheel/)
-- 
+- [HLinq design decisions]()
 
 # What's contained in this project
 
@@ -102,8 +102,103 @@ builder.Services.ConfigureHLinq(c => c.HLinqOptions.HttpDefaultMaxTakeRecords = 
 
 # How to use on the client
 
-HLinq libraries includes also client implementation that allows you to build HLinq queries in more type safe manner using `Expressio`s syntax of Linq. Not full Linq is supported in HLinq (mostly because limited support of URLs characters), but many of filtering methods, ordering, selects, skip, take directives are possible.
-Using any specific client is not required though. You can use any HTTP client with Query String support.
+HLinq have a client that allows you to build HLinq queries in a more type safe manner using `Expression`s syntax of Linq. Not full Linq is supported in HLinq (mostly because limited support of URLs characters), but many of filtering methods, ordering, selects, skip, take directives are possible.
+Using any specific client is not required, though. You can use any HTTP client with Query String support.
+
+## Syntax
+
+HLinq syntax is very similar to Linq syntax. It contains roots, that are equivalent to Linq methods (like `Where`, `Select`, `OrderBy`, `Skip`, `Take`) which are parametrized by providing `[]` with appropriate arguments values. 
+Supported roots are:
+- `where`
+- `select`
+- `orderBy`
+- `orderByDescending`
+- `skip`
+- `take`
+- `count`
+
+Roots are chained together using `.` character. For example:
+```http request
+GET where[x.Name==John].skip[10].take[20].select[fullName=x.Name]
+```
+
+Casing in root names is not important. For example, `WHERE` and `where` are equivalent. Or example even `wHeRe` is valid to harder to read.
+The same applies to property names, though JSON property names are preferred. So for example `x.firstName` is preferred when `x.FirstName` is also possible and it is a valid CLR property name.
+
+Roots order matters. For example, if you are querying `Person` type that have `FirstName` property, querying the API with `where[x.firstName==John].select[name=x.firstName]` will first filter the collection selecting all the persons with `firstName` being `John` and then will select only `firstName` property as new `name` property. Resulting json will be:
+```json
+[
+  {
+    "name": "John"
+  }
+]
+```
+On the other hand, when you will query API with `select[name=x.firstName].where[x.firstName==John]` query will return an error.
+```json
+{
+  "title": "Invalid property path 'firstName' for entity 'DynamicAnonymousType0`1'. Available properties at this point are: name ",
+  "status": 400
+}
+```
+This is because `firstName` is property of `Person` type, but when you applying `select[name=x.firstName]` you are effectively changing `IQueryable` to being a collection of new type. C# equivalent of this query would be:
+```csharp
+personQueryable.Select(x => new { Name = x.FirstName });
+```
+As you can see, `FirstName` does not exist in a queryable collection anymore.
+
+Parameters of roots depend on the root. 
+
+For example, `count` root does not take any parameters. The only valid usage is `count[]`.
+
+`take` and `skip` roots single number as a parameter (i.e. `take[10]`, `skip[20]`).
+
+`orderBy` and `orderByDescending` roots take a single parameter, which is a property name to order by.
+
+`select` root takes unspecified number of parameters, separated by `,`, parameters with two variants:
+- `select[x.name]` selects property as is
+- `select[newName=x.name]` renames selected property.
+
+`select` allow to select as many properties with both. The order of properties or renames is not important.
+
+`where` root also takes unspecified number of parameters. Parameters are separated by `,`. Syntax depends on the following:
+- type of property
+- comparison operator or comparison method
+- value you are comparing to
+
+For example, when you are comparing to constant value:
+```http request
+GET /data?where[x.{property name}{operator}{constant value}]
+```
+But if you want to filter a property containing a specific value:
+```http request
+GET /data?where[x.{property name}.Contains({constant value})]
+```
+The same can be achieved with an EF method call:
+```http request
+GET /data?where[ilike(x.{property name},{constant value})]
+```
+or the same can be achieved with `string.Contains(property, StringComparison.InvariantCultureIgnoreCase)` (or similar instance of a property type) method:
+```http request
+GET where[x.{property name}.{property type method}({constant value},{constant argument})]
+```
+Constant value within where parameters can be almost any value. How it is treated depends on the type of the property. I.e. `int` will be converted to `int` before comparison. String will not be converted and will be taken as is from Query String. 
+
+It is possible to use () in `where`. This effectively allows grouping of conditions. For example 
+```http request
+GET where[(x.Id==1||x.Name.StartsWith(d))&&x.DateOfBith>=2010-08-31 00:00]
+```
+will return either record with Id=1 or records with Name starting with `d` when date of birth is after 2010-08-31 00:00.
+But
+```http request
+GET where[x.Id==1||x.Name.StartsWith(d)&&x.DateOfBith>=2010-08-31 00:00]
+```
+will return either with Id=1 OR records with Name starting with `d` AND date of birth is after 2010-08-31 00:00.
+This works the same as in Linq.
+
+Constant values do not need to be quoted. If you are looking for a person with their full name, put space in a string between first and last name:
+```http request
+GET where[x.firstName==John Doe]
+```
 
 ## HTTP Queries
 Lets use demo endpoint `/demo/memory` that returns `SuperHero` type data.
@@ -111,7 +206,7 @@ Lets use demo endpoint `/demo/memory` that returns `SuperHero` type data.
 ```http request
 GET /demo/memory
 ```
-returns data as is.
+returns data as is, which one exception being the maximum limit of records returned (by default 1k).
 
 ### Paging
 
@@ -125,7 +220,7 @@ Adding `skip[20].take[10]` instructs HLinq to return only 10 records after skipp
 GET /demo/memory?skip[20].take[10]
 ```
 
-This allows for simple and expressive paging of data on the client side. I.e. if default page size is 10 rows, just call endpoint with:
+This allows for simple and expressive paging of data on the client side. I.e., if the default page size is 10 rows, call the endpoint with:
 ```csharp
 await httpClient.GetAsync($"/demo/memory?skip[{pageSize*page}].take[{pageSize}]");
 ```
@@ -149,11 +244,29 @@ If this is not enough you can write your own extension to support new operators 
 In example to look for entity with specific Id:
 ```http request
 GET /data?where[x.Id==1]
-### OR
+```
+```http request
 GET /data?where[x.Id==77774169-BB9D-4DF9-A4A7-52019C4A445D]
+```
+```http request
+GET /data?where[x.Name==John]
+```
+```http request
+GET /data?where[x.Name=="John Smith"]
 ```
 Notice double `=` sign in comparison. It is consistent with how Linq works in C#. Single equals (`=`) sign is used in selectors (`select[NewName=x.Property]`) only.
 
+### Not equals
+```http request
+GET /data?where[x.Id!=1]
+### OR
+GET /data?where[x.Id!=77774169-BB9D-4DF9-A4A7-52019C4A445D]
+```
+Not equals comparison operator is `!=` which is consistent with C# syntax of Linq.
 
+### Greater
+```http request
+GET /data?where[x.Id>1]
+```
 
 

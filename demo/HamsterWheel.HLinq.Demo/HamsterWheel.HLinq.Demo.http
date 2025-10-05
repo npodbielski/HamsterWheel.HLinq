@@ -10,7 +10,7 @@ GET {{HostAddress}}/demo/db?where[John==x.firstName]
 Accept: application/json
 
 ###
-GET {{HostAddress}}/demo/db?where[x.firstName==John]
+GET {{HostAddress}}/demo/db?where[x.firstName==John Doe]
 Accept: application/json
 
 ###
