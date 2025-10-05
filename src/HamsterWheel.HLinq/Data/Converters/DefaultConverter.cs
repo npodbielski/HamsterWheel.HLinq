@@ -25,6 +25,13 @@ public class DefaultConverter(IFallbackConverter? fallbackSerializer = null) : I
             { typeof(uint), c => c.ToUInt32(CultureInfo.InvariantCulture) }
         };
 
+    private static readonly Dictionary<Type, Func<IFormattable, object>> FormattableMethods =
+        new()
+        {
+            { typeof(DateTimeOffset), c => c.ToString("O", CultureInfo.InvariantCulture) },
+            { typeof(DateTime), c => c.ToString("O", CultureInfo.InvariantCulture) }
+        };
+
     [return: NotNullIfNotNull(nameof(value))]
     public T? ConvertTo<T>(object? value)
     {
@@ -44,9 +51,12 @@ public class DefaultConverter(IFallbackConverter? fallbackSerializer = null) : I
             return ConvertToBoolean(value);
         }
 
-        if (value is IConvertible convertible && ConvertibleMethods.TryGetValue(targetType, out var func))
+        switch (value)
         {
-            return func(convertible);
+            case IFormattable formattable when FormattableMethods.TryGetValue(value.GetType(), out var formattableFunc):
+                return formattableFunc(formattable);
+            case IConvertible convertible when ConvertibleMethods.TryGetValue(targetType, out var convertibleFunc):
+                return convertibleFunc(convertible);
         }
 
         if (targetType == typeof(DateTimeOffset) && value is string stringValue)

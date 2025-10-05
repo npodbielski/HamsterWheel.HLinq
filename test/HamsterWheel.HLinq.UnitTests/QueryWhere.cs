@@ -69,7 +69,7 @@ partial class HLinqQueryApplierUnitTests
     public void Apply_WhenUnequal_ThenCanApply(DummyEntity[] entities)
     {
         //arrange
-        const string queryString = $"where[x.Int!=100]";
+        const string queryString = "where[x.Int!=100]";
         var tokens = _tokenizer.Tokenize(queryString);
         var query = _parser.Parse<DummyEntity>(tokens, queryString);
         var queryable = entities.AsQueryable();

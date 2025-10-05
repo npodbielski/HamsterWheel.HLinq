@@ -366,4 +366,30 @@ partial class DefaultConverterUnitTests
             Name = entity.Name
         });
     }
+
+    [Fact]
+    public void ConvertTo_WhenWithDateTimeOffsetToString_ThenReturnsCorrectValue()
+    {
+        //arrange 
+        var dateTimeOffset = DateTimeOffset.UtcNow;
+
+        //act
+        var actual = _sut.ConvertTo(typeof(string), dateTimeOffset);
+
+        //assert
+        actual.Should().Be(dateTimeOffset.ToString("O"));
+    }
+
+    [Fact]
+    public void ConvertTo_WhenWithDateTimeToString_ThenReturnsCorrectValue()
+    {
+        //arrange 
+        var dateTime = DateTime.UtcNow;
+
+        //act
+        var actual = _sut.ConvertTo(typeof(string), dateTime);
+
+        //assert
+        actual.Should().Be(dateTime.ToString("O"));
+    }
 }
