@@ -6,14 +6,9 @@ public sealed class OrderByDescending(Range range) : TokenBase(range)
 
     public sealed class Possibility() : TokenPossibility<OrderByDescending>(HLinqQueryToken)
     {
-        protected override bool PreviousTokensMatch(List<IToken> previousTokens)
-        {
-            return previousTokens.Count == 0 || previousTokens is [.., RightSquareBracket, Dot];
-        }
+        protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
+            previousTokens.Count == 0 || previousTokens is [.., RightSquareBracket, Dot];
 
-        protected override OrderByDescending BuildImpl(Range range)
-        {
-            return new OrderByDescending(range);
-        }
+        protected override OrderByDescending BuildImpl(Range range) => new(range);
     }
 }

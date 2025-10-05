@@ -3,7 +3,6 @@ namespace HamsterWheel.HLinq.Tokens.Select;
 public sealed class Assignment(Range range) : TokenBase(range), IComparisonToken
 {
     public const string TokenValue = "=";
-    public IToken Token => this;
 
     public sealed class Possibility() : TokenPossibility<Assignment>(TokenValue)
     {

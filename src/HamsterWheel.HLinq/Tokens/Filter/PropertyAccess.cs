@@ -17,15 +17,10 @@ public sealed class PropertyAccess(Range range) : MemberAccess(range)
         Comma.TokenValue.AsSpan()[0]
     ])
     {
-        protected override bool PreviousTokensMatch(List<IToken> previousTokens)
-        {
-            return previousTokens.Count >= 4 &&
-                   previousTokens is [.., Entity, Dot] or [.., PropertyAccess, Dot];
-        }
+        protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
+            previousTokens.Count >= 4 &&
+            previousTokens is [.., Entity, Dot] or [.., PropertyAccess, Dot];
 
-        protected override PropertyAccess BuildImpl(Range range)
-        {
-            return new PropertyAccess(range);
-        }
+        protected override PropertyAccess BuildImpl(Range range) => new(range);
     }
 }

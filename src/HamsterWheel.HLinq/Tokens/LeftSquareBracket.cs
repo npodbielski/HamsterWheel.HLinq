@@ -10,15 +10,10 @@ public sealed class LeftSquareBracket(Range range) : TokenBase(range)
 
     public sealed class Possibility() : TokenPossibility<LeftSquareBracket>(TokenValue)
     {
-        protected override bool PreviousTokenMatchImpl(IToken previousToken)
-        {
-            return previousToken is Where or Skip or Take or OrderBy or OrderByDescending or ThenBy or ThenByDescending
+        protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
+            previousToken is Where or Skip or Take or OrderBy or OrderByDescending or ThenBy or ThenByDescending
                 or Select.Select or Count;
-        }
 
-        protected override LeftSquareBracket BuildImpl(Range range)
-        {
-            return new LeftSquareBracket(range);
-        }
+        protected override LeftSquareBracket BuildImpl(Range range) => new(range);
     }
 }

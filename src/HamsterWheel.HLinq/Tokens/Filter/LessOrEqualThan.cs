@@ -3,7 +3,6 @@ namespace HamsterWheel.HLinq.Tokens.Filter;
 public sealed class LessOrEqualThan(Range range) : TokenBase(range), IComparisonToken
 {
     public const string TokenValue = "<=";
-    public IToken Token => this;
 
     public sealed class Possibility() : TokenPossibility<LessOrEqualThan>(TokenValue)
     {

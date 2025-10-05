@@ -49,20 +49,12 @@ public abstract class TokenPossibility(string? keyword = null, char[]? delimiter
 
     public abstract IToken Build(Range range);
 
-    protected virtual bool PreviousTokensMatch(List<IToken> previousTokens)
-    {
-        return previousTokens.Count != 0 && PreviousTokenMatchImpl(previousTokens[^1]);
-    }
+    protected virtual bool PreviousTokensMatch(List<IToken> previousTokens) =>
+        previousTokens.Count != 0 && PreviousTokenMatchImpl(previousTokens[^1]);
 
-    protected virtual bool PreviousTokenMatchImpl(IToken previousToken)
-    {
-        return false;
-    }
+    protected virtual bool PreviousTokenMatchImpl(IToken previousToken) => false;
 
-    protected virtual bool NextIsAllowedWhenKeywordMatch(char? next)
-    {
-        return true;
-    }
+    protected virtual bool NextIsAllowedWhenKeywordMatch(char? next) => true;
 }
 
 public abstract class TokenPossibility<T>(string? tokenString = null, char[]? delimiters = null)
@@ -70,8 +62,5 @@ public abstract class TokenPossibility<T>(string? tokenString = null, char[]? de
 {
     protected abstract T BuildImpl(Range range);
 
-    public override TokenBase Build(Range range)
-    {
-        return BuildImpl(range);
-    }
+    public override TokenBase Build(Range range) => BuildImpl(range);
 }
