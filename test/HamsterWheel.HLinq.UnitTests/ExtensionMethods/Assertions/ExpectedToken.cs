@@ -34,7 +34,7 @@ public class ExpectedToken(Type type, string value)
     public static ExpectedToken Take => new(typeof(Take), "take");
     public static ExpectedToken Skip => new(typeof(Skip), "skip");
     public static ExpectedToken OrderBy => new(typeof(OrderBy), "orderBy");
-    public static ExpectedToken ThenBy => new(typeof(ThenBy), "thanBy");
-    public static ExpectedToken ThenByDescending => new(typeof(ThenByDescending), "thanByDescending");
+    public static ExpectedToken ThenBy => new(typeof(ThenBy), "thenBy");
+    public static ExpectedToken ThenByDescending => new(typeof(ThenByDescending), "thenByDescending");
     public static ExpectedToken OrderByDescending => new(typeof(OrderByDescending), "orderByDescending");
 }

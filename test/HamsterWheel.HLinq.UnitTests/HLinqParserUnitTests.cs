@@ -119,26 +119,19 @@ public class HLinqParserUnitTests
             new RightSquareBracket(default)
         ];
         ITreeBranch tree = _sut.Parse<DummyEntity>(tokens, query);
-        tree.Children.Should().HaveCount(1);
-        var where = tree.Children.FirstOrDefault() as WhereRoot;
-        AssertionExtensions.Should(where).NotBeNull();
-        where!.Children.Should().ContainSingle();
-        var first = where.Children.First();
-        first.Should().BeOfType<Condition>();
-        var condition = (Condition)first;
-        condition.Children.Should().HaveCount(2);
-        first = condition.Children.First();
-        var second = condition.Children.ElementAt(1);
-        first.Should().BeOfType<Property>();
-        second.Should().BeOfType<Method>();
-        var property = (Property)first;
-        var method = (Method)second;
-        AssertionExtensions.Should(property.Tokens).HaveCount(3);
-        method.Children.Should().ContainSingle();
-        var param = method.Children.First();
-        param.Should().BeOfType<MethodConstParam>();
-        var valueParam = (MethodConstParam)param;
-        AssertionExtensions.Should(valueParam.Tokens).ContainSingle();
+
+        tree.Should().HaveStructureOf(query, [
+            WhereRoot(
+                ConditionElement(
+                    Property(
+                        ExpectedToken.Entity(),
+                        ExpectedToken.Dot,
+                        ExpectedToken.Prop("Name")),
+                    MethodElement(
+                        MethodConstParam(ExpectedToken.NameOrValue("test"))
+                    )
+                ))
+        ]);
     }
 
     [Fact]
@@ -184,26 +177,29 @@ public class HLinqParserUnitTests
     {
         const string query = "where[x.Name.Contains(test)&&x.Id==77774169-BB9D-4DF9-A4A7-52019C4A445D]";
         var tokens = new HLinqTokenizer(new HLinqServicesCollection(new HLinqCore())).Tokenize(query);
+
         ITreeBranch tree = _sut.Parse<DummyEntity>(tokens, query);
-        tree.Children.Should().HaveCount(1);
-        var where = tree.Children.FirstOrDefault() as WhereRoot;
-        AssertionExtensions.Should(where).NotBeNull();
-        where!.Children.Should().HaveCount(2);
-        var first = where.Children.First();
-        first.Should().BeOfType<Condition>();
-        var condition = (Condition)first;
-        condition.Children.Should().HaveCount(2);
-        first = condition.Children.First();
-        var second = condition.Children.ElementAt(1);
-        first.Should().BeOfType<Property>();
-        second.Should().BeOfType<Method>();
-        var property = (Property)first;
-        var method = (Method)second;
-        AssertionExtensions.Should(property.Tokens).HaveCount(3);
-        method.Children.Should().ContainSingle();
-        var param = method.Children.First();
-        param.Should().BeOfType<MethodConstParam>();
-        var valueParam = (MethodConstParam)param;
-        AssertionExtensions.Should(valueParam.Tokens).ContainSingle();
+
+        tree.Should().HaveStructureOf(query, [
+            WhereRoot(
+                ConditionElement(
+                    Property(
+                        ExpectedToken.Entity(),
+                        ExpectedToken.Dot,
+                        ExpectedToken.Prop("Name")),
+                    MethodElement(
+                        MethodConstParam(ExpectedToken.NameOrValue("test"))
+                    )
+                ),
+                ConditionElement(
+                    Property(
+                        ExpectedToken.Entity(),
+                        ExpectedToken.Dot,
+                        ExpectedToken.Prop("Id")),
+                    ComparisonOperation(ExpectedToken.Equality),
+                    ComparisonConstant(ExpectedToken.NameOrValue("77774169-BB9D-4DF9-A4A7-52019C4A445D"))
+                )
+            )
+        ]);
     }
 }
