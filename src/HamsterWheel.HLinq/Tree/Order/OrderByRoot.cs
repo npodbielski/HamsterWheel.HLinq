@@ -12,8 +12,6 @@ namespace HamsterWheel.HLinq.Tree.Order;
 
 public sealed class OrderByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 {
-    public Property[] Props => GetAll<Property>().ToArray();
-
     public class Parser : ElementParserBase<OrderByRoot>
     {
         protected override OrderByRoot? BuildBranch(IParsingContext context)
@@ -29,16 +27,15 @@ public sealed class OrderByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 
         protected override void FinishImpl(IParsingContext context)
         {
-            if (context.Tokens is [RightSquareBracket bracket, ..])
+            if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
-                context.CurrentBranch?.Finish(context, [bracket]);
-                context.RemoveTokensFromStart(1);
-                return;
+                //This should contain surrounding tokens, query or whole hLinq query
+                throw new InvalidTokenCollectionException(context.Tokens.Take(5).ToArray(),
+                    [new RightSquareBracket(default)]);
             }
 
-            //This should contain surrounding tokens, query or whole hLinq query
-            throw new InvalidTokenCollectionException(context.Tokens.Take(5).ToArray(),
-                [new RightSquareBracket(default)]);
+            context.CurrentBranch?.Finish(context, [bracket]);
+            context.RemoveTokensFromStart(1);
         }
 
         private static OrderByRoot ThrowOnEmpty(IParsingContext context) =>
@@ -51,7 +48,8 @@ public sealed class OrderByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 
     public sealed class Converter : ElementToExpressionConverter<OrderByRoot>
     {
-        protected override Expression Build(IBuilderContext context, OrderByRoot element) => context.ToExpression(element.Children[0]);
+        protected override Expression Build(IBuilderContext context, OrderByRoot element) =>
+            context.ToExpression(element.Children[0]);
     }
 
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache) : RootApplierBase<OrderByRoot>

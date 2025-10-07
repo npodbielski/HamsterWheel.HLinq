@@ -11,8 +11,6 @@ namespace HamsterWheel.HLinq.Tree.Order;
 
 public sealed class ThanByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 {
-    public Property[] Props => GetAll<Property>().ToArray();
-
     public sealed class Parser : ElementParserBase<ThanByRoot>
     {
         protected override ThanByRoot? BuildBranch(IParsingContext context)
@@ -27,25 +25,21 @@ public sealed class ThanByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 
         protected override void FinishImpl(IParsingContext context)
         {
-            if (context.Tokens is [RightSquareBracket bracket, ..])
+            if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
-                context.CurrentBranch?.Finish(context, [bracket]);
-                context.RemoveTokensFromStart(1);
-                return;
+                //This should contain surrounding tokens, query or whole hLinq query
+                throw new InvalidTokenCollectionException(context.Tokens.Take(5).ToArray(),
+                    [new RightSquareBracket(default)]);
             }
 
-            //This should contain surrounding tokens, query or whole hLinq query
-            throw new InvalidTokenCollectionException(context.Tokens.Take(5).ToArray(),
-                [new RightSquareBracket(default)]);
+            context.CurrentBranch?.Finish(context, [bracket]);
+            context.RemoveTokensFromStart(1);
         }
     }
 
     public sealed class Converter : ElementToExpressionConverter<ThanByRoot>
     {
-        protected override Expression Build(IBuilderContext context, ThanByRoot element)
-        {
-            return context.ToExpression(element.Children[0]);
-        }
+        protected override Expression Build(IBuilderContext context, ThanByRoot element) => context.ToExpression(element.Children[0]);
     }
 
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache) : RootApplierBase<ThanByRoot>
