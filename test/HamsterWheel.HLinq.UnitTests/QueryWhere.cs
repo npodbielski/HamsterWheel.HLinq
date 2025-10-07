@@ -86,7 +86,7 @@ partial class HLinqQueryApplierUnitTests
     public void Apply_WhenEnumOr_ThenCanApply(DummyEntity[] entities)
     {
         //arrange
-        const string queryString = $"where[x.Enum==Longer||x.Enum==Negative]";
+        const string queryString = "where[x.Enum==Longer||x.Enum==Negative]";
         var tokens = _tokenizer.Tokenize(queryString);
         var query = _parser.Parse<DummyEntity>(tokens, queryString);
         var queryable = entities.AsQueryable();
@@ -103,7 +103,7 @@ partial class HLinqQueryApplierUnitTests
     public void Apply_WhenEnumOrInGroup_ThenCanApply(DummyEntity[] entities)
     {
         //arrange
-        const string queryString = $"where[(x.Enum==Longer||x.Enum==Negative)&&x.Int!=100]";
+        const string queryString = "where[(x.Enum==Longer||x.Enum==Negative)&&x.Int!=100]";
         var tokens = _tokenizer.Tokenize(queryString);
         var query = _parser.Parse<DummyEntity>(tokens, queryString);
         var queryable = entities.AsQueryable();
@@ -140,6 +140,7 @@ partial class HLinqQueryApplierUnitTests
     [Theory]
     [InlineAutoData("value", "test", 0)]
     [InlineAutoData("value", "value", 1)]
+    [InlineAutoData("John Doe", "John Doe", 1)]
     public void Apply_WhenWhereOnly_ThenCanApply(string actualName, string searchedName, int expectedCount,
         DummyEntity entity)
     {

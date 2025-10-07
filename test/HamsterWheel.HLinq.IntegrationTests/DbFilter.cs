@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using HamsterWheel.HLinq.Client;
 using HamsterWheel.HLinq.Demo.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace HamsterWheel.HLinq.IntegrationTests;
 
@@ -20,13 +21,14 @@ partial class DbDataTests
     }
 
     [Fact]
-    public async Task WhenILikeUsedOnInMemoryConnection_ThenBadRequest()
+    public async Task WhenILikeUsedOnDb_ThenCanFilter()
     {
         //act
-        var response = await fixture.Client.GetAsync("/demo/db?where[ilike(x.name, billy)]");
+        var response = await fixture.Client.GetAsync("/demo/db?where[ilike(x.firstName, bill)]");
 
         //assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var data = await response.Content.ReadFromJsonAsync<Person[]>();
+        data.Should().BeEquivalentTo(Persons.Where(x => EF.Functions.ILike(x.FirstName, "Bill")));
     }
 
     [Fact]
@@ -40,6 +42,9 @@ partial class DbDataTests
         response.Should().BeEquivalentTo(Persons.Where(x => x.FirstName.Contains("Billy")));
     }
 
+    /// <summary>
+    /// This does not work in EF out of the box either.
+    /// </summary>
     [Fact]
     public async Task WhenStringContainsIgnoreCase_ThenThrows()
     {
@@ -49,6 +54,17 @@ partial class DbDataTests
 
         //assert
         response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+    }
+
+    [Fact]
+    public async Task WhenEFFunction_ThenCanFilter()
+    {
+        //act
+        var response = await fixture.Client.GetWithHLinq("/demo/db",
+            q => q.For<Person>().Where(x => EF.Functions.ILike(x.FirstName, "Billy")));
+
+        //assert
+        response.Should().BeEquivalentTo(Persons.Where(x => EF.Functions.ILike(x.FirstName, "Billy")));
     }
 
     [Fact]
@@ -78,7 +94,8 @@ partial class DbDataTests
     {
         //act
         var response =
-            await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>().Where(x => x.FirstName != "Billy").Take(100));
+            await fixture.Client.GetWithHLinq("/demo/db",
+                q => q.For<Person>().Where(x => x.FirstName != "Billy").Take(100));
 
         //assert
         response.Should().BeEquivalentTo(Persons.Where(x => x.FirstName != "Billy").Take(100));

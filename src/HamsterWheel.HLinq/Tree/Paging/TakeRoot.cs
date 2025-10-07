@@ -60,19 +60,19 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
         {
             if (context.Tokens is [RightSquareBracket bracket, ..])
             {
-                context.CurrentElement.Finish(context, [bracket]);
+                context.CurrentBranch?.Finish(context, [bracket]);
                 context.RemoveTokensFromStart(1);
                 return;
             }
 
             //This should contains surrounding tokens, query or whole hLinq query
-            throw new InvalidTokenCollectionException(context.Tokens.GetFirstItems(5).ToArray(),
+            throw new InvalidTokenCollectionException(context.Tokens.Take(5).ToArray(),
                 [new RightSquareBracket(default)]);
         }
 
         private static TakeRoot ThrowOnEmpty(IParsingContext context) =>
             throw new InvalidTokenCollectionException(
-                context.Tokens.GetFirstItems(3).ToArray(), [
+                context.Tokens.Take(3).ToArray(), [
                     new Take(default), new LeftSquareBracket(default), new NameOrValue(default),
                     new RightSquareBracket(default)
                 ]);

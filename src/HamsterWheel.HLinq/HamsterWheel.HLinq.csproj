@@ -25,4 +25,16 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Update="Builders\ConditionalLogicalOperationConverter.Exceptions.cs">
+        <DependentUpon>ConditionalLogicalOperationConverter.cs</DependentUpon>
+      </Compile>
+      <Compile Update="Builders\ConverterFactory.Exceptions.cs">
+        <DependentUpon>ConverterFactory.cs</DependentUpon>
+      </Compile>
+      <Compile Update="Tree\Filter\Condition.Exceptions.cs">
+        <DependentUpon>Condition.cs</DependentUpon>
+      </Compile>
+    </ItemGroup>
+
 </Project>

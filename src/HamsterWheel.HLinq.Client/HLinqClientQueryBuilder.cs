@@ -37,7 +37,7 @@ public class HLinqClientQueryBuilder<T> : ResponseHLinqClientQueryBuilder<T[]>
             "Microsoft.EntityFrameworkCore.DbFunctions")
         {
             AddDotIfNecessary();
-            Query.Append($"where[{predicate.Body.ToString().Replace("EF.Functions.", "")}]");
+            Query.Append($"where[{predicate.Body.ToString().Replace("EF.Functions.", "").Replace("\"","")}]");
         }
         else if (predicate.Body is BinaryExpression be)
         {

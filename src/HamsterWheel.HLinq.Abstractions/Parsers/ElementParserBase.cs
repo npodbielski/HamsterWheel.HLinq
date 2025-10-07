@@ -22,12 +22,12 @@ public abstract class ElementParserBase<T> : IElementParser where T : ITreeEleme
         }
 
         context.Push(newElement);
-        context.RemoveTokensFromStart(newElement?.Tokens.Length ?? 0);
+        context.RemoveTokensFromStart(newElement.Tokens.Length);
 
         return true;
     }
 
-    protected virtual void FinishImpl(IParsingContext context) => context.CurrentElement.Finish(context, []);
+    protected virtual void FinishImpl(IParsingContext context) => context.CurrentBranch?.Finish(context, []);
 
     protected abstract T? BuildBranch(IParsingContext context);
 }

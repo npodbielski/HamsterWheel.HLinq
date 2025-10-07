@@ -5,6 +5,10 @@ namespace HamsterWheel.HLinq.Reflection;
 
 public sealed class MethodsCache : IMethodsCache
 {
+    private readonly ConcurrentDictionary<Type, MethodInfo[]> _instanceMethodsCache = new();
+    private readonly ConcurrentDictionary<Type, MethodInfo[]> _staticMethodsCache = new();
+    private readonly ConcurrentDictionary<(Type, string, bool, Type[]), MethodInfo> _genericMethodsCache = new();
+
     public MethodInfo[] AllInstance(Type type)
     {
         if (_instanceMethodsCache.TryGetValue(type, out var methods)) return methods;
@@ -24,9 +28,13 @@ public sealed class MethodsCache : IMethodsCache
 
     public MethodInfo[] AllStatic(Type type)
     {
-        if (_staticMethodsCache.TryGetValue(type, out var methods)) return methods;
+        if (_staticMethodsCache.TryGetValue(type, out var methods))
+        {
+            return methods;
+        }
 
-        return _staticMethodsCache[type] = [
+        return _staticMethodsCache[type] =
+        [
             ..type.GetMethods(BindingFlags.Static | BindingFlags.Public),
             ..type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
         ];
@@ -41,21 +49,12 @@ public sealed class MethodsCache : IMethodsCache
     }
 
     public MethodInfo GetStaticGeneric(Type type, string method,
-        Func<ParameterInfo[], bool>? parameterBasedSelector = null, params Type[] typeParams)
-    {
-        return MakedGeneric(type, method, true, typeParams, parameterBasedSelector);
-    }
+        Func<ParameterInfo[], bool>? parameterBasedSelector = null, params Type[] typeParams) =>
+        MakedGeneric(type, method, true, typeParams, parameterBasedSelector);
 
     public MethodInfo GetInstanceGeneric(Type type, string method,
-        Func<ParameterInfo[], bool>? parameterBasedSelector = null, params Type[] typeParams)
-    {
-        return MakedGeneric(type, method, false, typeParams, parameterBasedSelector);
-    }
-
-    private readonly ConcurrentDictionary<Type, MethodInfo[]> _instanceMethodsCache = new();
-    private readonly ConcurrentDictionary<Type, MethodInfo[]> _staticMethodsCache = new();
-
-    private readonly ConcurrentDictionary<(Type, string, bool, Type[]), MethodInfo> _genericMethodsCache = new();
+        Func<ParameterInfo[], bool>? parameterBasedSelector = null, params Type[] typeParams) =>
+        MakedGeneric(type, method, false, typeParams, parameterBasedSelector);
 
     private MethodInfo MakedGeneric(Type type, string name, bool isStatic, Type[] typeParams,
         Func<ParameterInfo[], bool>? parameterBasedSelector = null)

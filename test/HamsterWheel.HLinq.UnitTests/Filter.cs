@@ -25,6 +25,36 @@ public partial class ExpressionBuilderUnitTests
     }
     
     [Fact]
+    public void GetFilter_WhenStringStartsWith_ThenCanFilter()
+    {
+        const string query = "where[x.Name.StartsWith(t)]";
+        var tokens = _tokenizer.Tokenize(query);
+        ITreeBranch tree = _parser.Parse<DummyEntity>(tokens, query);
+        var actual =
+            (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
+                query);
+        actual.Should().NotBeNull();
+        actual.ToString().Should().Be("Param_0 => Param_0.Name.StartsWith(\"t\")");
+        var filter = actual.Compile();
+        filter.Invoke(new DummyEntity("test")).Should().Be(true);
+    }
+    
+    [Fact]
+    public void GetFilter_WhenStringEndsWith_ThenCanFilter()
+    {
+        const string query = "where[x.Name.EndsWith(n)]";
+        var tokens = _tokenizer.Tokenize(query);
+        ITreeBranch tree = _parser.Parse<DummyEntity>(tokens, query);
+        var actual =
+            (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
+                query);
+        actual.Should().NotBeNull();
+        actual.ToString().Should().Be("Param_0 => Param_0.Name.EndsWith(\"n\")");
+        var filter = actual.Compile();
+        filter.Invoke(new DummyEntity("Jan")).Should().Be(true);
+    }
+
+    [Fact]
     public void GetFilter_WhenStringContainsIgnoreCase_ThenCanFilter()
     {
         const string query = "where[x.Name.Contains(test, StringComparison.InvariantCultureIgnoreCase)]";
@@ -144,7 +174,7 @@ public partial class ExpressionBuilderUnitTests
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
         actual.Should().NotBeNull();
-        actual.ToString().Should().Be($"Param_0 => Param_0.Flag");
+        actual.ToString().Should().Be("Param_0 => Param_0.Flag");
         var filter = actual.Compile();
         filter.Invoke(entity).Should().Be(entity.Flag);
     }

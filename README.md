@@ -111,11 +111,13 @@ HLinq syntax is very similar to Linq syntax. It contains roots, that are equival
 Supported roots are:
 - `where`
 - `select`
-- `orderBy`
-- `orderByDescending`
 - `skip`
 - `take`
 - `count`
+- `orderBy`
+- `orderByDescending`
+- `thenBy`
+- `thenByDescending`
 
 Roots are chained together using `.` character. For example:
 ```http request
@@ -200,6 +202,30 @@ Constant values do not need to be quoted. If you are looking for a person with t
 GET where[x.firstName==John Doe]
 ```
 
+### White space management
+White space is not important in HLinq. You can almost use any white space you want. It is mostly ignored by the parser, except for constant values provided by the user. 
+For example, leading or trailing white space before or after the root is allowed.
+```csharp
+"    orderBy[x.Name]          "
+```
+You can put white space between root and `[` character:
+```csharp
+"orderBy  [x.Name]"
+```
+Only space is allowed, but other white space characters are allowed also.
+For example:
+```csharp
+"orderBy[x\r\n.Name]"
+```
+This means that for longer queries you can use new lines to make it more readable.
+```csharp
+"""
+orderBy[x.Name]
+    .skip[10]
+    .take[100]
+"""
+```
+
 ## HTTP Queries
 Lets use demo endpoint `/demo/memory` that returns `SuperHero` type data.
 
@@ -238,7 +264,7 @@ There are various filters possible in HLinq:
 - string starts with (with case-insensitive variant)
 - string ends with (with case-insensitive variant)
 
-If this is not enough you can write your own extension to support new operators or functions.
+If this is not enough, you can write your own extension to support new operators or functions.
 
 ### Equals
 In example to look for entity with specific Id:
@@ -252,11 +278,39 @@ GET /data?where[x.Id==77774169-BB9D-4DF9-A4A7-52019C4A445D]
 GET /data?where[x.Name==John]
 ```
 ```http request
-GET /data?where[x.Name=="John Smith"]
+GET /data?where[x.Name==John Smith]
 ```
 Notice double `=` sign in comparison. It is consistent with how Linq works in C#. Single equals (`=`) sign is used in selectors (`select[NewName=x.Property]`) only.
 
+To filter by records that do not have value use null keyword:
+```http request
+GET /data?where[x.Name==null]
+```
+
+To filter by floating point numeric you can use `.` delimiter for fractions. It is consistent with `CultureInfo.InvariantCulture` numerical format, which HLinq is using by default.
+```http request
+GET where[x.Number==1.2323]
+```
+HLinq does not apply any precision for equality comparison, so due to floating point rounding errors you may get different results. To fix this you can use two values with `>` and `<` operators.
+```http request
+GET where[x.Number>1.2322&&x.Number<1.2324]
+```
+
+For Date Time and Date Time Offset types you can use ISO 8601 format:
+```http request
+GET where[x.DateOfBirth==2025-10-05T19:43:07.3693705Z]
+```
+Or with the time zone part:
+```http request
+GET where[x.Modified==2025-10-05T19:44:10.8405723+00:00]
+```
+Equals can be used inside a group as any other filtering condition:
+```http request
+GET where[(x.Name==John||x.Name==Doe)]
+```
+
 ### Not equals
+Usage is the same as for equals, but with `!=` operator.
 ```http request
 GET /data?where[x.Id!=1]
 ### OR
@@ -265,8 +319,74 @@ GET /data?where[x.Id!=77774169-BB9D-4DF9-A4A7-52019C4A445D]
 Not equals comparison operator is `!=` which is consistent with C# syntax of Linq.
 
 ### Greater
+Usage is the same as for equals, but with `>` operator.
 ```http request
 GET /data?where[x.Id>1]
 ```
 
+### Greater or equal
+Usage is the same as for equals, but with `>=` operator.
+```http request
+GET /data?where[x.Int>=1]
+```
 
+### Lesser
+Usage is the same as for equals, but with `<` operator.
+```http request
+GET /data?where[x.Int<1]
+```
+
+### Lesser or equal
+Usage is the same as for equals, but with `<=` operator.
+```http request
+GET /data?where[x.Int<=1]
+```
+
+### String contains
+Testing for string contents is a bit different but still resembles Linq syntax. 
+```csharp
+queryable.Where(x => x.Name.Contains("John"));
+```
+In HLinq you have to query it like below instead:
+```http request
+GET /data?where[x.Name.Contains(John)]
+```
+You can use the white space in the string:
+```http request
+GET /data?where[x.Name.Contains(John Doe)]
+```
+
+### String contains with case-insensitive
+Of course usage of `string.Contains` is consistent with Linq and is case-sensitive.
+To use a case-insensitive version, you need to add an extra parameter just like in C#:
+```http request
+GET /data?where[x.Name.Contains(John, StringComparison.InvariantCultureIgnoreCase)]
+```
+Also, it is possible to use DB functions in case-insensitive searches:
+```http request
+GET /data?where[ilike(x.Name, n)]
+```
+This is equivalent of a Linq query:
+```csharp
+queryable.Where(x => EF.Functions.ILike(x.Name, "n"));
+```
+
+### String StartsWith
+In the same manner as `Contains` can be used `StartsWith` method:
+```http request
+GET /data?where[x.Name.StartsWith(John)]
+```
+To use a case-insensitive version, you need to add an extra parameter just like in C#:
+```http request
+GET /data?where[x.Name.Contains(John, StringComparison.InvariantCultureIgnoreCase)]
+```
+
+### String EndsWith
+In the same manner as `Contains` and `StartsWith` can be used `EndsWith` method:
+```http request
+GET /data?where[x.Name.EndsWith(n)]
+```
+To use a case-insensitive version, you need to add an extra parameter just like in C#:
+```http request
+GET /data?where[x.Name.Contains(John, StringComparison.InvariantCultureIgnoreCase)]
+```

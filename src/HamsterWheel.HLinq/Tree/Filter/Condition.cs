@@ -10,7 +10,7 @@ using PropertyAccessToken = HamsterWheel.HLinq.Tokens.Filter.PropertyAccess;
 
 namespace HamsterWheel.HLinq.Tree.Filter;
 
-public sealed class Condition : TreeBranch, ILogicalOperationGroupBranch
+public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
 {
     private bool? _isMethod;
     private bool? _isComparison;
@@ -52,11 +52,11 @@ public sealed class Condition : TreeBranch, ILogicalOperationGroupBranch
 
         private static Condition ThrowOnReverseComparison(IParsingContext context) =>
             throw new InvalidTokenCollectionException(
-                context.Tokens.GetFirstItems(3).ToArray(), 
+                context.Tokens.Take(3).ToArray(),
                 [new Entity(default), new Dot(default), new PropertyAccessToken(default)],
                 [new LeftCircleBracket(default)],
                 [new MethodCall(default)]
-                );
+            );
     }
 
     public sealed class Converter : ElementToExpressionConverter<Condition>
@@ -65,7 +65,7 @@ public sealed class Condition : TreeBranch, ILogicalOperationGroupBranch
         {
             if (condition.IsMethod)
             {
-                var property = GetProp(condition);
+                var property = condition.GetChildOfType<Property>();
                 if (property is not null)
                 {
                     var prop = context.ToExpression(property);
@@ -92,14 +92,13 @@ public sealed class Condition : TreeBranch, ILogicalOperationGroupBranch
                 }
 
                 if (left is null || right is null)
-                    throw new InvalidOperationException(
-                        "Cannot build comparison expression if right or left expression is null");
+                {
+                    throw new ConditionElementMustHaveLeftAndRightException();
+                }
 
                 return condition.Comparison?.Comparison switch
                 {
-                    null => throw new NotImplementedException(
-                        "Condition that is comparison need to have comparison token."),
-                    //TODO: probably for == and floating point numbers it should include precision
+                    null => throw new ComparisonConditionMustHaveComparisonTokenException(),
                     Equality => Expression.Equal(left, right),
                     GreaterOrEqualThan => Expression.GreaterThanOrEqual(left, right),
                     GreaterThan => Expression.GreaterThan(left, right),
@@ -119,15 +118,10 @@ public sealed class Condition : TreeBranch, ILogicalOperationGroupBranch
                 }
             }
 
-            throw new NotImplementedException(
-                "Condition need to be either method call: 'x.Name.StartsWith(abc)' or comparison 'x.Name==abc'");
+            throw new NotSupportedConditionException();
         }
 
-        private static Property? GetProp(Condition condition) => condition.GetChildOfType<Property>();
-
         private static Method GetMethod(Condition condition) =>
-            condition.GetChildOfType<Method>() ??
-            throw new InvalidDataException(
-                "Condition is method call condition but method child does not exits");
+            condition.GetChildOfType<Method>() ?? throw new ConditionMethodChildElementMissingException();
     }
 }

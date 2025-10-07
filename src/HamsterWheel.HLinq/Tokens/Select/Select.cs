@@ -2,9 +2,9 @@ namespace HamsterWheel.HLinq.Tokens.Select;
 
 public sealed class Select(Range range) : TokenBase(range)
 {
-    public const string HLinqQueryToken = "select";
+    public const string TokenValue = "select";
 
-    public sealed class Possibility() : TokenPossibility<Select>(HLinqQueryToken)
+    public sealed class Possibility() : TokenPossibility<Select>(TokenValue)
     {
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) => previousTokens.Count == 0 || previousTokens is [.., RightSquareBracket, Dot];
 

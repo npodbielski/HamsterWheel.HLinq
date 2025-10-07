@@ -36,7 +36,7 @@ public class HLinqQuery<T> : IHLinqQuery where T : class
     /// </summary>
     IToken[] ITreeElement.Tokens => [];
 
-    void ITreeElement.Finish(IParsingContext context, IToken[] _)
+    void ITreeBranch.Finish(IParsingContext context, IToken[] _)
     {
         if (context.Tokens.Length > 0)
             //TODO: format better message
@@ -51,7 +51,7 @@ public class HLinqQuery<T> : IHLinqQuery where T : class
     public object? ApplyTo(IQueryable<T> queryable, CancellationToken token = default)
     {
         if (QueryApplier is null)
-            throw new HLinqQueryQueryApplierNullException(this);
+            throw new HLinqQueryQueryApplierNullException();
 
         if (!ThisTree.Children.Any(t => t is TakeRoot or CountRoot) && Options?.HttpDefaultMaxTakeRecords is not null)
         {

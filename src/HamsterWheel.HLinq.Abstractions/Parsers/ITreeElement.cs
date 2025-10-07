@@ -9,6 +9,5 @@ public interface ITreeElement
     IToken[] Tokens { get; }
     public bool Finished { get; }
     bool NoChildren { get; }
-    void Finish(IParsingContext context, IToken[] endingTokens);
     public IEnumerable<T> GetAll<T>() where T : ITreeElement;
 }

@@ -18,10 +18,11 @@ public sealed class HLinqParser(IHLinqParsersCollection parsersCollection) : IHL
         };
         var context = new ParsingContext(query)
         {
+            SourceQueryString = stringQuery,
             Tokens = tokens
         };
         Parse<T>(context);
-        ((ITreeElement)query).Finish(context, context.Tokens);
+        ((ITreeBranch)query).Finish(context, context.Tokens);
         return query;
     }
 
@@ -31,8 +32,10 @@ public sealed class HLinqParser(IHLinqParsersCollection parsersCollection) : IHL
             ? RootParsers
             : Parsers.Where(p => p.ChildOf(context.CurrentElement)).ToArray();
         if (parsers.Length == 0 && !context.CurrentElement.NoChildren)
+        {
             throw new InvalidOperationException(
                 $"Element of type {context.CurrentElement.GetType().Name} does not have any children parsers!");
+        }
 
         var numberOfInvalidParsers = 0;
         while (context.Tokens.Length > 0)
@@ -61,6 +64,8 @@ public sealed class HLinqParser(IHLinqParsersCollection parsersCollection) : IHL
         }
 
         if (context.CurrentElement is IHLinqQuery && numberOfInvalidParsers == parsers.Length)
+        {
             throw new NonParsableTokenSequenceException(context.Tokens, parsers);
+        }
     }
 }

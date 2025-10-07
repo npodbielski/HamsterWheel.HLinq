@@ -12,9 +12,9 @@ public sealed class ConverterFactory : IConverterFactory
         _assignmentConverters = assignmentConverters.ToDictionary(c => c.For(), c => c);
     }
 
-    public IElementToExpressionConverter GetToExpressionConverterFor(Type type) => _expressionConverters[type] ??
-        throw new InvalidOperationException($"No converter for {type} was found");
+    public IElementToExpressionConverter GetToExpressionConverterFor(Type type) =>
+        _expressionConverters[type] ?? throw new MissingConverterException(type);
 
     public IElementToMemberAssignmentConverter GetToMemberAssignmentConverter(Type type) =>
-        _assignmentConverters[type] ?? throw new InvalidOperationException($"No converter for {type} was found");
+        _assignmentConverters[type] ?? throw new MissingConverterException(type);
 }

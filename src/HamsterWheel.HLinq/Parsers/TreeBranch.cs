@@ -21,18 +21,15 @@ public abstract class TreeBranch(IToken[] startingTokens) : ITreeBranch
         AddEndingTokens(endingTokens);
     }
 
-    public IEnumerable<T> GetAll<T>() where T : ITreeElement
+    public IEnumerable<T> GetAll<T>() where T : ITreeElement => Children.SelectMany(b => b.GetAll<T>());
+
+    private void AddEndingTokens(IToken[] endingTokens)
     {
-        return Children.SelectMany(b => b.GetAll<T>());
+        if (endingTokens.Length != 0)
+        {
+            Tokens = Tokens.Concat(endingTokens).ToArray();
+        }
     }
 
-    protected virtual void AddEndingTokens(IToken[] endingTokens)
-    {
-        if (endingTokens.Length != 0) Tokens = Tokens.Concat(endingTokens).ToArray();
-    }
-
-    public T? GetChildOfType<T>() where T : ITreeElement
-    {
-        return Children.OfType<T>().SingleOrDefault();
-    }
+    protected T? GetChildOfType<T>() where T : ITreeElement => Children.OfType<T>().SingleOrDefault();
 }

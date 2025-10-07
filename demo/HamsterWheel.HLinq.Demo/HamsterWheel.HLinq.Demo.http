@@ -14,6 +14,10 @@ GET {{HostAddress}}/demo/db?where[x.firstName==John Doe]
 Accept: application/json
 
 ###
+GET {{HostAddress}}/demo/db?where[ilike(x.firstName, billy)]
+Accept: application/json
+
+###
 GET {{HostAddress}}/demo/random
 Accept: application/json
 

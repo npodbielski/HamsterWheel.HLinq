@@ -2,9 +2,9 @@ namespace HamsterWheel.HLinq.Tokens.Order;
 
 public sealed class ThenBy(Range range) : TokenBase(range)
 {
-    public const string HLinqQueryToken = "thenBy";
+    public const string TokenValue = "thenBy";
 
-    public sealed class Possibility() : TokenPossibility<ThenBy>(HLinqQueryToken)
+    public sealed class Possibility() : TokenPossibility<ThenBy>(TokenValue)
     {
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
             previousTokens.Count == 0 || previousTokens is [.., RightSquareBracket, Dot];

@@ -2,9 +2,9 @@ namespace HamsterWheel.HLinq.Tokens.Order;
 
 public sealed class OrderBy(Range range) : TokenBase(range)
 {
-    public const string HLinqQueryToken = "orderBy";
+    public const string TokenValue = "orderBy";
 
-    public sealed class Possibility() : TokenPossibility<OrderBy>(HLinqQueryToken)
+    public sealed class Possibility() : TokenPossibility<OrderBy>(TokenValue)
     {
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
             previousTokens.Count == 0 || previousTokens is [.., RightSquareBracket, Dot];

@@ -4,7 +4,7 @@ namespace HamsterWheel.HLinq.Tokens;
 
 public sealed class Dot(Range range) : TokenBase(range)
 {
-    public const string? TokenValue = ".";
+    public const string TokenValue = ".";
 
     public sealed class Possibility() : TokenPossibility<Dot>(TokenValue)
     {

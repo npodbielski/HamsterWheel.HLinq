@@ -112,26 +112,23 @@ public sealed class Method(IToken[] tokens) : TreeBranch(tokens)
 
         protected override void FinishImpl(IParsingContext context)
         {
-            if (context.Tokens is [RightCircleBracket bracket, ..])
+            if (context.Tokens is not [RightCircleBracket bracket, ..])
             {
-                context.CurrentElement.Finish(context, [bracket]);
-                context.RemoveTokensFromStart(1);
-                return;
+                throw new InvalidTokenCollectionException(
+                    context.Tokens.Length > 5 ? context.Tokens[..5] : context.Tokens,
+                    [new RightCircleBracket(default)]);
             }
 
-            throw new InvalidTokenCollectionException(
-                context.Tokens.Length > 5 ? context.Tokens[..5] : context.Tokens,
-                [new RightCircleBracket(default)]);
+            context.CurrentBranch?.Finish(context, [bracket]);
+            context.RemoveTokensFromStart(1);
         }
 
-        protected override Method? BuildBranch(IParsingContext context)
-        {
-            return context.Tokens switch
+        protected override Method? BuildBranch(IParsingContext context) =>
+            context.Tokens switch
             {
                 [Dot, MethodCall _, LeftCircleBracket, ..] => new Method(context.Tokens[..3]),
                 [MethodCall _, LeftCircleBracket, ..] => new Method(context.Tokens[..2]),
                 _ => null
             };
-        }
     }
 }

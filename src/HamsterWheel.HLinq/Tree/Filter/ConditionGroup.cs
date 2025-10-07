@@ -37,14 +37,13 @@ public sealed class ConditionGroup : TreeBranch, ILogicalOperationGroupBranch
 
         protected override void FinishImpl(IParsingContext context)
         {
-            if (context.Tokens is [RightCircleBracket bracket, ..])
+            if (context.Tokens is not [RightCircleBracket bracket, ..])
             {
-                context.CurrentElement.Finish(context, [bracket]);
-                context.RemoveTokensFromStart(1);
-                return;
+                throw new InvalidTokenCollectionException(context.Tokens[..5], [new RightCircleBracket(default)]);
             }
 
-            throw new InvalidTokenCollectionException(context.Tokens[..5], [new RightCircleBracket(default)]);
+            context.CurrentBranch?.Finish(context, [bracket]);
+            context.RemoveTokensFromStart(1);
         }
     }
 

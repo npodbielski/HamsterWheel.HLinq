@@ -11,13 +11,11 @@ public sealed class ComparisonOperation(IComparisonToken comparison) : TreeLeaf(
     {
         protected override Type[] ValidParents => [typeof(Condition)];
 
-        protected override ComparisonOperation? BuildBranch(IParsingContext context)
-        {
-            return context.Tokens switch
+        protected override ComparisonOperation? BuildBranch(IParsingContext context) =>
+            context.Tokens switch
             {
                 [IComparisonToken comparison, ..] => new ComparisonOperation(comparison),
                 _ => null
             };
-        }
     }
 }

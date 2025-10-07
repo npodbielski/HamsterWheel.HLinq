@@ -24,7 +24,7 @@ public sealed class ExpressionBuilder(
 
         var delegateType = typeof(Func<,>).MakeGenericType(source, typeof(bool));
 
-        return Expression.Lambda(delegateType, body, (IEnumerable<ParameterExpression>) [context.Param]);
+        return Expression.Lambda(delegateType, body, (IEnumerable<ParameterExpression>)[context.Param]);
     }
 
     public (LambdaExpression Expression, Type PropType) GetProperty(Type source, ITreeRoot query, string hLinqQuery) =>
@@ -51,7 +51,7 @@ public sealed class ExpressionBuilder(
 
         var delegateType = typeof(Func<,>).MakeGenericType(source, resultType);
 
-        return (Expression.Lambda(delegateType, body, (IEnumerable<ParameterExpression>) [context.Param]), resultType);
+        return (Expression.Lambda(delegateType, body, context.Param), resultType);
     }
 
     public Expression BuildBody(IBuilderContext context, ITreeBranch root) => ToExpression(context, root);
@@ -77,44 +77,12 @@ public sealed class ExpressionBuilder(
                 .Distinct();
         }
 
-        return FilterMethodsViaParameterValues(parameters, allMethods, ParametersTransformer)
-            .Select(m => (m, BindingParametersTransformer(m.GetParameters()).ToArray()))
+        return FilterMethodsViaParameterValues(parameters, allMethods, EfFunctionParametersTransformer)
+            .Select(m => (m, StaticMethodSourceWrapper.MapEfDbFunctionParams(m.GetParameters()).ToArray()))
             .ToArray();
 
-        ParameterInfo[] ParametersTransformer(ParameterInfo[] infos)
-        {
-            //TODO: this should be part of IStaticMethodSource
-            if (infos[0].Name == "_" && infos[0].ParameterType.Name == "DbFunctions")
-            {
-                return infos[1..];
-            }
-
-            return infos;
-        }
-
-        IBindingParameterInfo[] BindingParametersTransformer(ParameterInfo[] infos)
-        {
-            var list = new List<BindingParameterInfo>();
-            //TODO: this should be part of IStaticMethodSource
-            foreach (var info in infos)
-            {
-                if (info is { Name: "_", ParameterType.Name: "DbFunctions" })
-                {
-                    list.Add(new BindingParameterInfo
-                    {
-                        Info = info,
-                        ConstantValue = null,
-                        ConstantType = info.ParameterType
-                    });
-                }
-                else
-                {
-                    list.Add(new BindingParameterInfo { Info = info });
-                }
-            }
-
-            return list.ToArray();
-        }
+        ParameterInfo[] EfFunctionParametersTransformer(ParameterInfo[] infos) =>
+            StaticMethodSourceWrapper.IsEfDbFunction(infos) ? infos[1..] : infos;
     }
 
     public MethodInfo[] GetMostProbableMethods(Type propType, string name,
@@ -218,7 +186,7 @@ public sealed class ExpressionBuilder(
 
         var delegateType = typeof(Func<,>).MakeGenericType(source, propType);
 
-        return (Expression.Lambda(delegateType, body, (IEnumerable<ParameterExpression>) [context.Param]), propType);
+        return (Expression.Lambda(delegateType, body, (IEnumerable<ParameterExpression>)[context.Param]), propType);
     }
 
     private IElementToExpressionConverter GetToExpressionConverter<T>(T element) where T : ITreeElement =>

@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using HamsterWheel.HLinq.Builders;
+using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filter;
@@ -32,8 +33,7 @@ public sealed class ComparisonConstant(NameOrValue value) : TreeLeaf([value])
         protected override Expression Build(IBuilderContext context, ComparisonConstant element)
         {
             var propType = context.ComparisonPropertyType ??
-                           //TODO: remove general exceptions from code and write custom ones based on HLinqException
-                           throw new InvalidOperationException("At this point property type needs to have value!");
+                           throw new ElementToExpressionConverterPropertyTypeNullException();
 
             var stringValue = element.Value.GetValue(context.HLinqQuery);
 
@@ -51,7 +51,7 @@ public sealed class ComparisonConstant(NameOrValue value) : TreeLeaf([value])
                 value = factory.GetConverterFor(propType).Convert(stringValue);
             }
 
-            return Expression.Constant(value, propType ?? throw new InvalidOperationException());
+            return Expression.Constant(value, propType);
         }
     }
 }

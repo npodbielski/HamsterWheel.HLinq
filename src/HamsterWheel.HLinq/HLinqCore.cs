@@ -22,7 +22,7 @@ internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
     private IElementToExpressionConverter[]? _coreConverters;
     private IElementToMemberAssignmentConverter[]? _coreMemberAssignmentConverters;
     private IHLinqTokenPossibility[]? _coreTokenPossibilities;
-    
+
     //can we use global provider here? or maybe we should use existing one for extensions only and if those services fail, fallback to core ones
     private IServiceProvider Provider => provider ?? CreateDefault();
     private IElementParser[] CoreParsers => _coreParsers ??= GetFromAssemblyWith<TreeBranch, IElementParser>();
@@ -51,8 +51,6 @@ internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
 
     public T[] GetFromAssemblyWith<TSource, T>() => GetFromAssemblyWithStatic<TSource, T>();
 
-    public TypeInfo[] GetTypesFromAssemblyWith<TSource, T>() => GetTypesFromAssemblyWithStatic<TSource, T>();
-
     public static TypeInfo[] GetTypesFromAssemblyWithStatic<TSource, T>() =>
         typeof(TSource).Assembly.DefinedTypes
             .Where(t => !t.IsAbstract && t.ImplementedInterfaces.Contains(typeof(T)))
@@ -65,8 +63,7 @@ internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
             .Select(Activator.CreateInstance).Cast<T>().ToArray();
     }
 
-    //why concrete class return have better performance
-    private IServiceProvider CreateDefault()
+    private static ServiceProvider CreateDefault()
     {
         var servicesCollection = new ServiceCollection();
         ConfigureServices(servicesCollection);
@@ -110,7 +107,10 @@ internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
         servicesCollection.AddSingleton<IConverterFactory, ConverterFactory>();
 
         var appliers = GetTypesFromAssemblyWithStatic<HLinqCore, IApplier>();
-        foreach (var c in appliers) servicesCollection.AddSingleton(typeof(IApplier), c);
+        foreach (var c in appliers)
+        {
+            servicesCollection.AddSingleton(typeof(IApplier), c);
+        }
 
         servicesCollection.AddSingleton<IApplierFactory, ApplierFactory>();
         servicesCollection.AddSingleton<IHLinqQueryApplier, HLinqQuery<object>.HLinqQueryApplier>();

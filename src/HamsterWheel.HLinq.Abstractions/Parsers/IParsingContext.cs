@@ -6,6 +6,7 @@ public interface IParsingContext
 {
     public IGrowingElementContext Current { get; }
     public ITreeElement CurrentElement { get; }
+    public ITreeBranch? CurrentBranch { get; }
     public IToken[] Tokens { get; }
 
     public Stack<IGrowingElementContext> Parents { get; set; }

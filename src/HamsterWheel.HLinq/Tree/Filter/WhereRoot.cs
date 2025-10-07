@@ -21,28 +21,25 @@ public sealed class WhereRoot(IToken[] tokens) : TreeBranch(tokens), IWhereRoot
 
     public sealed class Parser : ElementParserBase<WhereRoot>
     {
-        protected override WhereRoot? BuildBranch(IParsingContext context)
-        {
-            return context.Tokens switch
+        protected override WhereRoot? BuildBranch(IParsingContext context) =>
+            context.Tokens switch
             {
                 [Where, LeftSquareBracket, ..] => new WhereRoot(context.Tokens[..2]),
                 [Dot, Where, LeftSquareBracket, ..] => new WhereRoot(context.Tokens[..3]),
                 _ => default
             };
-        }
 
         protected override void FinishImpl(IParsingContext context)
         {
-            if (context.Tokens is [RightSquareBracket bracket, ..])
+            if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
-                context.CurrentElement.Finish(context, [bracket]);
-                context.RemoveTokensFromStart(1);
-                return;
+                //This should contain surrounding tokens, query or whole hLinq query
+                throw new InvalidTokenCollectionException(context.Tokens.Take(5).ToArray(),
+                    [new RightSquareBracket(default)]);
             }
 
-            //This should contains surrounding tokens, query or whole hLinq query
-            throw new InvalidTokenCollectionException(context.Tokens.GetFirstItems(5).ToArray(),
-                [new RightSquareBracket(default)]);
+            context.CurrentBranch?.Finish(context, [bracket]);
+            context.RemoveTokensFromStart(1);
         }
     }
 
