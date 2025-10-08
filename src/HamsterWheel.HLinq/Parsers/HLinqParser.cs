@@ -65,7 +65,7 @@ public sealed class HLinqParser(IHLinqParsersCollection parsersCollection) : IHL
 
         if (context.CurrentElement is IHLinqQuery && numberOfInvalidParsers == parsers.Length)
         {
-            throw new NonParsableTokenSequenceException(context.Tokens, parsers);
+            throw new NonParsableTokenSequenceException(context.SourceQueryString, context.Tokens, parsers);
         }
     }
 }

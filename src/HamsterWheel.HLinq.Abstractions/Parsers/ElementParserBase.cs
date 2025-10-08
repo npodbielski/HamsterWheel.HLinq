@@ -1,3 +1,5 @@
+using HamsterWheel.HLinq.Tokens;
+
 namespace HamsterWheel.HLinq.Parsers;
 
 public abstract class ElementParserBase<T> : IElementParser where T : ITreeElement
@@ -8,6 +10,8 @@ public abstract class ElementParserBase<T> : IElementParser where T : ITreeEleme
         ValidParents.Contains(parent.GetType());
 
     public Type ForElement() => typeof(T);
+
+    public abstract IToken[] ExampleTokens { get; }
 
     public bool IsRoot => ValidParents.Length == 0;
 

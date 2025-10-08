@@ -14,6 +14,8 @@ public sealed class ThenByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 {
     public sealed class Parser : ElementParserBase<ThenByRoot>
     {
+        public override IToken[] ExampleTokens { get; } = ThenByRootExampleTokens;
+        
         protected override ThenByRoot? BuildBranch(IParsingContext context)
         {
             return context.Tokens switch
@@ -39,10 +41,13 @@ public sealed class ThenByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 
         private static ThenByRoot ThrowOnEmptySelect(IParsingContext context) =>
             throw new InvalidTokenCollectionException(context.SourceQueryString,
-                context.Tokens.Take(3).ToArray(), [
-                    new ThenBy(default), new LeftSquareBracket(default),
-                    new Entity(default), new Dot(default), new PropertyAccess(default), new RightSquareBracket(default)
-                ]);
+                context.Tokens.Take(3).ToArray(), ThenByRootExampleTokens);
+
+        private static IToken[] ThenByRootExampleTokens =>
+        [
+            new ThenBy(default), new LeftSquareBracket(default),
+            new Entity(default), new Dot(default), new PropertyAccess(default), new RightSquareBracket(default)
+        ];
     }
 
     public sealed class Converter : ElementToExpressionConverter<ThenByRoot>

@@ -30,6 +30,12 @@ public sealed class WhereRoot(IToken[] tokens) : TreeBranch(tokens), IWhereRoot
                 _ => default
             };
 
+        public override IToken[] ExampleTokens { get; } =
+        [
+            new Where(default), new LeftSquareBracket(default), ..Condition.Parser.ConditionExampleTokens,
+            new RightSquareBracket(default)
+        ];
+
         protected override void FinishImpl(IParsingContext context)
         {
             if (context.Tokens is not [RightSquareBracket bracket, ..])

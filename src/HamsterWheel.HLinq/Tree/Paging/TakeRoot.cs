@@ -45,6 +45,8 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 
     public sealed class Parser : ElementParserBase<TakeRoot>
     {
+        public override IToken[] ExampleTokens => TakeRootExampleTokens;
+
         protected override TakeRoot? BuildBranch(IParsingContext context)
         {
             return context.Tokens switch
@@ -70,10 +72,13 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 
         private static TakeRoot ThrowOnEmpty(IParsingContext context) =>
             throw new InvalidTokenCollectionException(context.SourceQueryString,
-                context.Tokens.Take(3).ToArray(), [
-                    new Take(default), new LeftSquareBracket(default), new TokenExample("10"),
-                    new RightSquareBracket(default)
-                ]);
+                context.Tokens.Take(3).ToArray(), TakeRootExampleTokens);
+
+        private static IToken[] TakeRootExampleTokens { get; } =
+        [
+            new Take(default), new LeftSquareBracket(default), new TokenExample("10"),
+            new RightSquareBracket(default)
+        ];
     }
 
     public sealed class Applier(IValueConverterFactory factory, IMethodsCache methodsCache) : RootApplierBase<TakeRoot>

@@ -8,9 +8,12 @@ public abstract class HLinqQueryException(string message) : Exception(message);
 public sealed class InvalidTypeOfTreeRoot<TExpected>(object actual) : HLinqQueryException(
     $"Tree root: '{actual}' is of type: '{actual.GetType()}' but type of {typeof(TExpected)} was expected.");
 
-public sealed class NonParsableTokenSequenceException(IToken[] actual, IElementParser[] expected)
-    : HLinqQueryException($"HLinq query was invalid: '{string.Join(", ", actual.Select(a => a.GetType().Name))}'." +
-                          $" Was expecting one of: [{string.Join(", ", expected.Select(a => a.ForElement().Name))}]");
+public sealed class NonParsableTokenSequenceException(string queryString, IToken[] actual, IElementParser[] expected)
+    : InvalidTokenCollectionException(queryString, actual, expected.First().ExampleTokens, MapParsers(expected))
+{
+    private static IToken[][] MapParsers(IElementParser[] elementParsers) =>
+        elementParsers.Select(p => p.ExampleTokens).ToArray();
+}
 
 public sealed class InvalidPropertyPathException(Type type, string path, string[] availableProps)
     : HLinqQueryException(

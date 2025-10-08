@@ -11,6 +11,7 @@ public sealed class InitializerPropertyName(NameOrValue name) : TreeLeaf([name])
 
     public sealed class Parser : ElementParserBase<InitializerPropertyName>
     {
+        public override IToken[] ExampleTokens { get; } = [new NameOrValue(default)];
         protected override Type[] ValidParents { get; } = [typeof(PropertyAssignment)];
 
         protected override InitializerPropertyName? BuildBranch(IParsingContext context) =>

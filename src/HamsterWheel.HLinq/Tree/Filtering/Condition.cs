@@ -37,7 +37,8 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
 
     public sealed class Parser : ElementParserBase<Condition>
     {
-        protected override Type[] ValidParents => [typeof(WhereRoot), typeof(ConditionGroup)];
+        protected override Type[] ValidParents { get; } = [typeof(WhereRoot), typeof(ConditionGroup)];
+        public override IToken[] ExampleTokens => ConditionExampleTokens;
 
         protected override Condition? BuildBranch(IParsingContext context) =>
             context.Tokens switch
@@ -52,14 +53,17 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
         private static Condition ThrowOnReverseComparison(IParsingContext context) =>
             throw new InvalidTokenCollectionException(context.SourceQueryString,
                 context.Tokens.Take(3).ToArray(),
-                [
-                    new Entity(default), new Dot(default), new PropertyAccess(default), new Equality(default),
-                    new NameOrValue(default)
-                ],
+                ConditionExampleTokens,
                 [new And(default)],
                 [new Or(default)],
                 [new MethodCall(default)]
             );
+
+        public static IToken[] ConditionExampleTokens { get; } =
+        [
+            new Entity(default), new Dot(default), new PropertyAccess(default), new Equality(default),
+            new NameOrValue(default)
+        ];
     }
 
     public sealed class Converter : ElementToExpressionConverter<Condition>

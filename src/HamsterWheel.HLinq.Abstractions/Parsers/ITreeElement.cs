@@ -4,8 +4,6 @@ namespace HamsterWheel.HLinq.Parsers;
 
 public interface ITreeElement
 {
-    bool IsBranch { get; }
-    bool IsLeaf { get; }
     IToken[] Tokens { get; }
     public bool Finished { get; }
     bool NoChildren { get; }

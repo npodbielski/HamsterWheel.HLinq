@@ -118,6 +118,9 @@ public sealed class Method(IToken[] tokens) : TreeBranch(tokens)
     {
         protected override Type[] ValidParents => [typeof(Condition)];
 
+        public override IToken[] ExampleTokens { get; } =
+            [new MethodCall(default), new LeftCircleBracket(default), new RightCircleBracket(default)];
+
         protected override void FinishImpl(IParsingContext context)
         {
             if (context.Tokens is not [RightCircleBracket bracket, ..])

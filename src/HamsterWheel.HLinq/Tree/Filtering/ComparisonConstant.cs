@@ -15,6 +15,7 @@ public sealed class ComparisonConstant(NameOrValue value) : TreeLeaf([value])
     public sealed class Parser : ElementParserBase<ComparisonConstant>
     {
         protected override Type[] ValidParents { get; } = [typeof(Condition)];
+        public override IToken[] ExampleTokens { get; } = [new NameOrValue(default)];
 
         protected override ComparisonConstant? BuildBranch(IParsingContext context)
         {

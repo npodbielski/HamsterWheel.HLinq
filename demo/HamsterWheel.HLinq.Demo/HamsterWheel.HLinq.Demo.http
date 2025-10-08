@@ -37,3 +37,7 @@ Accept: application/json
 ###
 GET {{HostAddress}}/demo/db?skip[]
 Accept: application/json
+
+###non parsable
+GET {{HostAddress}}/demo/db?skip[].select.
+Accept: application/json

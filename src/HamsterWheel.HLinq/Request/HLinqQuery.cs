@@ -26,10 +26,8 @@ public partial class HLinqQuery<T> : IHLinqQuery where T : class
 
     internal IHLinqOptions? Options { get; set; }
 
-    IEnumerable<T1> ITreeElement.GetAll<T1>() => ThisTree.Children.OfType<T1>();
-    bool ITreeElement.IsBranch => true;
+    IEnumerable<T1> ITreeElement.GetAll<T1>() => Children.OfType<T1>();
     bool ITreeElement.Finished => _finished;
-    private ITreeBranch ThisTree => this;
 
     /// <summary>
     ///     If query is valid this should always be empty. If not then we should have an error in <see cref="Finish" />
@@ -40,8 +38,7 @@ public partial class HLinqQuery<T> : IHLinqQuery where T : class
     {
         if (context.Tokens.Length > 0)
         {
-            //TODO: format better message
-            throw new NonParsableTokenSequenceException(context.Tokens, []);
+            throw new NonParsableTokenSequenceException(context.SourceQueryString, context.Tokens, []);
         }
 
         _finished = true;
@@ -57,12 +54,12 @@ public partial class HLinqQuery<T> : IHLinqQuery where T : class
             throw new HLinqQueryQueryApplierNullException();
         }
 
-        if (!ThisTree.Children.Any(t => t is TakeRoot or CountRoot) && Options?.HttpDefaultMaxTakeRecords is not null)
+        if (!Children.Any(t => t is TakeRoot or CountRoot) && Options?.HttpDefaultMaxTakeRecords is not null)
         {
-            Children = [..ThisTree.Children, new TakeRoot(Options.HttpDefaultMaxTakeRecords)];
+            Children = [..Children, new TakeRoot(Options.HttpDefaultMaxTakeRecords)];
         }
 
-        if (ThisTree.Children.All(t => t is not CountRoot) && ThisTree.Children.LastOrDefault() is TakeRoot take)
+        if (Children.All(t => t is not CountRoot) && Children.LastOrDefault() is TakeRoot take)
         {
             take.MaxTake = Options?.HttpDefaultMaxTakeRecords ?? HLinqOptions.DefaultMaxTakeRecords;
         }

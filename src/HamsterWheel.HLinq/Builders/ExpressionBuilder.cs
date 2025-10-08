@@ -147,7 +147,7 @@ public sealed class ExpressionBuilder(
         return methodsWithProbability.OrderBy(p => p.probability).Select(p => p.method).ToArray();
     }
 
-    public IPropertyContext GetPropertyWithType(Type sourceType, Expression source, string[] path)
+    public IPropertyContext GetProperty(Type sourceType, Expression source, string[] path)
     {
         var expression = source;
         var currentType = sourceType;

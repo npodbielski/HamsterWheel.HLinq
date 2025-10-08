@@ -3,7 +3,6 @@ using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
-using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Paging;
 using HamsterWheel.HLinq.ValueConverters;
 
@@ -25,11 +24,13 @@ public sealed partial class SkipRoot(IToken[] tokens) : TreeBranch(tokens), ITre
                 _ => null
             };
 
+        public override IToken[] ExampleTokens { get; } = SkipRootExampleTokens;
+
         protected override void FinishImpl(IParsingContext context)
         {
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
-                throw new InvalidTokenCollectionException(context.SourceQueryString,context.Tokens.Take(5).ToArray(),
+                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
                     [new RightSquareBracket(default)]);
             }
 
@@ -38,11 +39,14 @@ public sealed partial class SkipRoot(IToken[] tokens) : TreeBranch(tokens), ITre
         }
 
         private static SkipRoot ThrowOnEmpty(IParsingContext context) =>
-            throw new InvalidTokenCollectionException(context.SourceQueryString,
-                context.Tokens.Take(3).ToArray(), [
-                    new Skip(default), new LeftSquareBracket(default), new TokenExample("10"),
-                    new RightSquareBracket(default)
-                ]);
+            throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(3).ToArray(),
+                SkipRootExampleTokens);
+
+        private static IToken[] SkipRootExampleTokens =>
+        [
+            new Skip(default), new LeftSquareBracket(default), new TokenExample("10"),
+            new RightSquareBracket(default)
+        ];
     }
 
     public sealed class Applier(IValueConverterFactory factory, IMethodsCache methodsCache) : RootApplierBase<SkipRoot>

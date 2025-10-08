@@ -14,6 +14,8 @@ public sealed class OrderByDescendingRoot(IToken[] tokens) : TreeBranch(tokens),
 {
     public sealed class Parser : ElementParserBase<OrderByDescendingRoot>
     {
+        public override IToken[] ExampleTokens { get; } = OrderRootExampleTokens;
+        
         protected override OrderByDescendingRoot? BuildBranch(IParsingContext context)
         {
             return context.Tokens switch
@@ -39,10 +41,13 @@ public sealed class OrderByDescendingRoot(IToken[] tokens) : TreeBranch(tokens),
 
         private static OrderByDescendingRoot ThrowOnEmptySelect(IParsingContext context) =>
             throw new InvalidTokenCollectionException(context.SourceQueryString,
-                context.Tokens.Take(3).ToArray(), [
-                    new OrderByDescending(default), new LeftSquareBracket(default),
-                    new Entity(default), new Dot(default), new PropertyAccess(default), new RightSquareBracket(default)
-                ]);
+                context.Tokens.Take(3).ToArray(), OrderRootExampleTokens);
+
+        private static IToken[] OrderRootExampleTokens =>
+        [
+            new OrderByDescending(default), new LeftSquareBracket(default),
+            new Entity(default), new Dot(default), new PropertyAccess(default), new RightSquareBracket(default)
+        ];
     }
 
     public sealed class Converter : ElementToExpressionConverter<OrderByDescendingRoot>

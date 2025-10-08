@@ -112,5 +112,6 @@ public class ElementParserBaseUnitTests
 
 public class TestElementParser(SelectRoot? root = null) : ElementParserBase<SelectRoot>
 {
+    public override IToken[] ExampleTokens { get; } = [];
     protected override SelectRoot BuildBranch(IParsingContext context) => root ?? new SelectRoot([]);
 }

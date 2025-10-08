@@ -22,6 +22,9 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
 
     public sealed class Parser : ElementParserBase<Property>
     {
+        public override IToken[] ExampleTokens { get; } =
+            [new Entity(default), new Dot(default), new PropertyAccess(default)];
+
         protected override Type[] ValidParents { get; } =
         [
             typeof(Condition), typeof(Method), typeof(OrderByRoot), typeof(OrderByDescendingRoot), typeof(ThenByRoot),
@@ -61,7 +64,7 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
         protected override Expression Build(IBuilderContext context, Property element)
         {
             var path = element.GetPath(context.HLinqQuery);
-            return context.Builder.GetPropertyWithType(context.Type, context.Param, path).Member;
+            return context.Builder.GetProperty(context.Type, context.Param, path).Member;
         }
     }
 }

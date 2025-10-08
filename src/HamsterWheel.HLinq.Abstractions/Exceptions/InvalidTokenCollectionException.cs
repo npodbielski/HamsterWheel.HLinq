@@ -3,7 +3,7 @@ using HamsterWheel.HLinq.Tokens;
 
 namespace HamsterWheel.HLinq.Exceptions;
 
-public sealed class InvalidTokenCollectionException(
+public class InvalidTokenCollectionException(
     string queryString,
     IToken[] actual,
     IToken[] expected,
@@ -41,7 +41,7 @@ public sealed class InvalidTokenCollectionException(
             {
                 var expectedTokens = orExpected[index];
                 stringBuilder.Append(" - ");
-                var line = string.Join(",", expectedTokens.Select(t => ExampleOfTokenValue(t, t.GetType())));
+                var line = string.Join("", expectedTokens.Select(t => ExampleOfTokenValue(t, t.GetType())));
                 if (index <= expectedTokens.Length)
                 {
                     stringBuilder.AppendLine(line);
@@ -63,48 +63,28 @@ public sealed class InvalidTokenCollectionException(
             return tokenExample.GetValue("");
         }
 
-        switch (type.Name)
+        return type.Name switch
         {
-            case "Select":
-                return "select";
-            case "Where":
-                return "where";
-            case "OrderBy":
-                return "orderby";
-            case "OrderByDescending":
-                return "orderbyDescending";
-            case "ThenBy":
-                return "thenBy";
-            case "ThenByDescending":
-                return "thenByDescending";
-            case "LeftSquareBracket":
-                return "[";
-            case "RightSquareBracket":
-                return "]";
-            case "Entity":
-                return "x";
-            case "Dot":
-                return ".";
-            case "PropertyAccess":
-                return "Name";
-            case "Skip":
-                return "skip";
-            case "Take":
-                return "take";
-            case "Equality":
-                return "==";
-            case "NameOrValue":
-                return "Jan";
-            case "And":
-                return "&&";
-            case "Or":
-                return "||";
-            case "MethodCall":
-                return "MethodCall";
-            case "RightCircleBracket":
-                return ")";
-            default:
-                return type.Name;
-        }
+            "Select" => "select",
+            "Where" => "where",
+            "OrderBy" => "orderby",
+            "OrderByDescending" => "orderbyDescending",
+            "ThenBy" => "thenBy",
+            "ThenByDescending" => "thenByDescending",
+            "LeftSquareBracket" => "[",
+            "RightSquareBracket" => "]",
+            "Entity" => "x",
+            "Dot" => ".",
+            "PropertyAccess" => "Name",
+            "Skip" => "skip",
+            "Take" => "take",
+            "Equality" => "==",
+            "NameOrValue" => "Jan",
+            "And" => "&&",
+            "Or" => "||",
+            "MethodCall" => "MethodCall",
+            "RightCircleBracket" => ")",
+            _ => type.Name
+        };
     }
 }

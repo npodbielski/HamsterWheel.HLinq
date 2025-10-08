@@ -1,5 +1,6 @@
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tokens;
+using HamsterWheel.HLinq.Tokens.Filtering;
 
 namespace HamsterWheel.HLinq.Tree.Filtering;
 
@@ -10,6 +11,7 @@ public sealed class ComparisonOperation(IComparisonToken comparison) : TreeLeaf(
     public sealed class Parser : ElementParserBase<ComparisonOperation>
     {
         protected override Type[] ValidParents => [typeof(Condition)];
+        public override IToken[] ExampleTokens { get; } = [new Equality(default)];
 
         protected override ComparisonOperation? BuildBranch(IParsingContext context) =>
             context.Tokens switch

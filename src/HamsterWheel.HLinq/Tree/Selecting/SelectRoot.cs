@@ -24,16 +24,16 @@ public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoo
 
     public sealed class Parser : ElementParserBase<SelectRoot>
     {
-        protected override SelectRoot? BuildBranch(IParsingContext context)
-        {
-            return context.Tokens switch
+        protected override SelectRoot? BuildBranch(IParsingContext context) =>
+            context.Tokens switch
             {
                 [SelectToken, LeftSquareBracket, RightSquareBracket] => ThrowOnEmptySelect(context),
                 [SelectToken, LeftSquareBracket, ..] => new SelectRoot(context.Tokens[..2]),
                 [Dot, SelectToken, LeftSquareBracket, ..] => new SelectRoot(context.Tokens[..3]),
                 _ => null
             };
-        }
+
+        public override IToken[] ExampleTokens => SelectRootExampleTokens;
 
         protected override void FinishImpl(IParsingContext context)
         {
@@ -49,10 +49,13 @@ public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoo
 
         private static SelectRoot ThrowOnEmptySelect(IParsingContext context) =>
             throw new InvalidTokenCollectionException(context.SourceQueryString,
-                context.Tokens.Take(3).ToArray(), [
-                    new SelectToken(default), new LeftSquareBracket(default),
-                    new Entity(default), new Dot(default), new PropertyAccess(default), new RightSquareBracket(default)
-                ]);
+                context.Tokens.Take(3).ToArray(), SelectRootExampleTokens);
+
+        private static IToken[] SelectRootExampleTokens =>
+        [
+            new SelectToken(default), new LeftSquareBracket(default),
+            new Entity(default), new Dot(default), new PropertyAccess(default), new RightSquareBracket(default)
+        ];
     }
 
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache) : RootApplierBase<ISelectRoot>

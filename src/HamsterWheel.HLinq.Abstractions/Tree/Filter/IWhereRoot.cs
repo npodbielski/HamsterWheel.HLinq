@@ -1,5 +1,3 @@
 namespace HamsterWheel.HLinq.Tree.Filter;
 
-public interface IWhereRoot : ILogicalOperationGroupBranch
-{
-}
+public interface IWhereRoot : ILogicalOperationGroupBranch;

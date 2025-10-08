@@ -28,5 +28,5 @@ public interface IExpressionBuilder
     MethodInfo[] GetMostProbableMethods(Type propType, string name,
         (string value, MemberExpression? expression)[] parameters);
 
-    IPropertyContext GetPropertyWithType(Type sourceType, Expression source, string[] path);
+    IPropertyContext GetProperty(Type sourceType, Expression source, string[] path);
 }

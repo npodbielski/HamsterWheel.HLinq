@@ -32,6 +32,9 @@ public sealed class PropertyAssignment(IToken[] tokens) : TreeBranch(tokens)
     {
         protected override Type[] ValidParents { get; } = [typeof(SelectRoot)];
 
+        public override IToken[] ExampleTokens { get; } =
+            [new Entity(default), new Dot(default), new PropertyAccess(default)];
+
         protected override PropertyAssignment? BuildBranch(IParsingContext context)
         {
             var index = 0;
@@ -64,7 +67,7 @@ public sealed class PropertyAssignment(IToken[] tokens) : TreeBranch(tokens)
             }
 
             var path = element.Property.GetPath(context.HLinqQuery);
-            var expression = context.Builder.GetPropertyWithType(context.Type, context.Param, path).Member;
+            var expression = context.Builder.GetProperty(context.Type, context.Param, path).Member;
             var propertyName = element.NewPropName?.GetName(context.HLinqQuery) ?? expression.Member.Name;
             return new(propertyName, expression.Type);
         }
@@ -96,12 +99,8 @@ public sealed class PropertyAssignment(IToken[] tokens) : TreeBranch(tokens)
             PropertyInfo propertyInfo)
         {
             var value = element.GetValue(context.HLinqQuery);
-            if (propertyInfo.PropertyType == typeof(string) && value is ['"', .., '"'])
-            {
-                return value[1..^1];
-            }
-
-            if (propertyInfo.PropertyType == typeof(char) && value is ['\'', .., '\''])
+            if (propertyInfo.PropertyType == typeof(string) && value is ['"', .., '"'] ||
+                propertyInfo.PropertyType == typeof(char) && value is ['\'', .., '\''])
             {
                 return value[1..^1];
             }

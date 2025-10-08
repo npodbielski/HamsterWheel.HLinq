@@ -6,8 +6,6 @@ public abstract class TreeBranch(IToken[] startingTokens) : ITreeBranch
 {
     private bool _finished;
     public virtual bool NoChildren => false;
-    public bool IsBranch => true;
-    public bool IsLeaf => false;
     public ITreeElement[] Children { get; private set; } = [];
     public IToken[] Tokens { get; private set; } = startingTokens;
 
