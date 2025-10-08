@@ -16,7 +16,10 @@ public abstract class TreeBranch(IToken[] startingTokens) : ITreeBranch
     public void Finish(IParsingContext context, IToken[] endingTokens)
     {
         _finished = true;
-        if (context.Children.Count != 0) Children = context.Children.ToArray();
+        if (context.Children.Count != 0)
+        {
+            Children = context.Children.ToArray();
+        }
 
         AddEndingTokens(endingTokens);
     }

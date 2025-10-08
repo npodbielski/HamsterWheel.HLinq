@@ -26,3 +26,14 @@ GET {{HostAddress}}/demo/controller/memory?take[1]
 Accept: application/json
 
 ###
+#Errors
+###
+GET {{HostAddress}}/demo/db?where[x.firstName==John Doe
+Accept: application/json
+###
+GET {{HostAddress}}/demo/db?where[(x.firstName==John Doe]
+Accept: application/json
+
+###
+GET {{HostAddress}}/demo/db?skip[]
+Accept: application/json

@@ -6,7 +6,7 @@ public sealed class ValueConverterFactory : IValueConverterFactory
     private readonly Dictionary<Type, IValueConverter> _dic;
     private readonly EnumValueConverter _enumValueConverter;
     private readonly NullableEnumValueConverter _nullableEnumValueConverter;
-    
+
     public ValueConverterFactory(IEnumerable<IValueConverter> converters,
         IEnumerable<IConfigurableValueConverter> configurableValueConverters)
     {
@@ -27,14 +27,22 @@ public sealed class ValueConverterFactory : IValueConverterFactory
         }
 
         if (_enumValueConverter.CanConvert(type))
+        {
             return new ConfigurableToPlainValueConverter(type, _enumValueConverter);
+        }
 
         if (_nullableEnumValueConverter.CanConvert(type))
+        {
             return new ConfigurableToPlainValueConverter(type, _nullableEnumValueConverter);
+        }
 
         foreach (var configurableValueConverter in _configurableValueConverters)
+        {
             if (configurableValueConverter.CanConvert(type))
+            {
                 return new ConfigurableToPlainValueConverter(type, configurableValueConverter);
+            }
+        }
 
         //TODO: improve this error message to include reason for Hlinq query trying to do this and why it does not work and how this could be fixed by the user
         // i.e. doing where[x.createdBy=userName] will throw here because there is no conversion between NamedReference and string

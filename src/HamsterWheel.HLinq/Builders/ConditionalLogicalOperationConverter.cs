@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using HamsterWheel.HLinq.Tokens.Filter;
+using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tree;
 
 namespace HamsterWheel.HLinq.Builders;

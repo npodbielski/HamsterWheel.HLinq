@@ -2,11 +2,13 @@ using System.Linq.Expressions;
 using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tokens;
-using HamsterWheel.HLinq.Tokens.Filter;
-using HamsterWheel.HLinq.Tokens.Select;
+using HamsterWheel.HLinq.Tokens.Filtering;
+using HamsterWheel.HLinq.Tokens.Selecting;
 using HamsterWheel.HLinq.Tree.Filter;
-using HamsterWheel.HLinq.Tree.Order;
+using HamsterWheel.HLinq.Tree.Filtering;
+using HamsterWheel.HLinq.Tree.Ordering;
 using HamsterWheel.HLinq.Tree.Select;
+using HamsterWheel.HLinq.Tree.Selecting;
 
 namespace HamsterWheel.HLinq.Tree;
 
@@ -22,8 +24,8 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
     {
         protected override Type[] ValidParents { get; } =
         [
-            typeof(Condition), typeof(Method), typeof(OrderByRoot), typeof(OrderByDescendingRoot), typeof(ThanByRoot),
-            typeof(ThanByDescendingRoot), typeof(PropertyAssignment)
+            typeof(Condition), typeof(Method), typeof(OrderByRoot), typeof(OrderByDescendingRoot), typeof(ThenByRoot),
+            typeof(ThenByDescendingRoot), typeof(PropertyAssignment)
         ];
 
         protected override Property? BuildBranch(IParsingContext context)

@@ -58,22 +58,20 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 
         protected override void FinishImpl(IParsingContext context)
         {
-            if (context.Tokens is [RightSquareBracket bracket, ..])
+            if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
-                context.CurrentBranch?.Finish(context, [bracket]);
-                context.RemoveTokensFromStart(1);
-                return;
+                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
+                    [new RightSquareBracket(default)]);
             }
 
-            //This should contains surrounding tokens, query or whole hLinq query
-            throw new InvalidTokenCollectionException(context.Tokens.Take(5).ToArray(),
-                [new RightSquareBracket(default)]);
+            context.CurrentBranch?.Finish(context, [bracket]);
+            context.RemoveTokensFromStart(1);
         }
 
         private static TakeRoot ThrowOnEmpty(IParsingContext context) =>
-            throw new InvalidTokenCollectionException(
+            throw new InvalidTokenCollectionException(context.SourceQueryString,
                 context.Tokens.Take(3).ToArray(), [
-                    new Take(default), new LeftSquareBracket(default), new NameOrValue(default),
+                    new Take(default), new LeftSquareBracket(default), new TokenExample("10"),
                     new RightSquareBracket(default)
                 ]);
     }
@@ -90,12 +88,11 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 
             //TODO: add support of queryable.Take(0..19) which would be mych nicer to query specific range of items
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Take),
-                infos => infos[1].ParameterType == typeof(int),
+                infos => infos[1].ParameterType == type,
                 context.CurrentResultType);
 
             return new QueryableContext((IQueryable)method.Invoke(null, [context.Queryable, takeNumber])!,
                 context.CurrentResultType, context.Count);
-            ;
         }
     }
 }

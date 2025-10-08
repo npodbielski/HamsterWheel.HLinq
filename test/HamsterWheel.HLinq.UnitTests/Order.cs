@@ -1,6 +1,6 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.Parsers;
-using HamsterWheel.HLinq.Tree.Order;
+using HamsterWheel.HLinq.Tree.Ordering;
 using HamsterWheel.HLinq.UnitTests.Dummies;
 
 namespace HamsterWheel.HLinq.UnitTests;

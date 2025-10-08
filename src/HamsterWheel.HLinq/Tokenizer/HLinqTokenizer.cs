@@ -1,10 +1,10 @@
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tokens;
-using HamsterWheel.HLinq.Tokens.Filter;
-using HamsterWheel.HLinq.Tokens.Order;
+using HamsterWheel.HLinq.Tokens.Filtering;
+using HamsterWheel.HLinq.Tokens.Ordering;
 using HamsterWheel.HLinq.Tokens.Paging;
-using HamsterWheel.HLinq.Tokens.Select;
+using HamsterWheel.HLinq.Tokens.Selecting;
 
 namespace HamsterWheel.HLinq.Tokenizer;
 
@@ -66,13 +66,19 @@ public sealed class HLinqTokenizer(IHLinqParsersCollection services) : IHLinqTok
             }
 
             if (tokens.Count != 0 && tokens[^1] is Unknown)
+            {
                 throw new UnknownTokenException(range,
                 [
                     new Where(default), new Select(default), new Skip(default), new Take(default), new OrderBy(default),
                     new OrderByDescending(default)
                 ]);
+            }
         }
 
         return tokens.ToArray();
     }
+
+    public sealed class UnknownTokenException(Range range, IToken[] expectedTokens)
+        : HLinqQueryException(
+            $"Unknown token exception at ({range.Start}, {range.End}). Was expecting one of: {string.Join(", ", expectedTokens.Select(t => t.ToString()))}");
 }

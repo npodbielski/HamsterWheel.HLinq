@@ -1,4 +1,4 @@
-using HamsterWheel.HLinq.Tokens.Filter;
+using HamsterWheel.HLinq.Tokens.Filtering;
 
 namespace HamsterWheel.HLinq.Tokens;
 

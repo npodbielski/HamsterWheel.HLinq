@@ -1,6 +1,8 @@
 using HamsterWheel.HLinq.Tree;
 using HamsterWheel.HLinq.Tree.Filter;
+using HamsterWheel.HLinq.Tree.Filtering;
 using HamsterWheel.HLinq.Tree.Select;
+using HamsterWheel.HLinq.Tree.Selecting;
 
 namespace HamsterWheel.HLinq.UnitTests.Assertions;
 

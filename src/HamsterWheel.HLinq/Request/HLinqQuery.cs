@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HamsterWheel.HLinq.Request;
 
-public class HLinqQuery<T> : IHLinqQuery where T : class
+public partial class HLinqQuery<T> : IHLinqQuery where T : class
 {
     public ITreeElement[] Children { get; private set; } = [];
     public string SourceQueryString { get; init; } = null!;
@@ -39,8 +39,10 @@ public class HLinqQuery<T> : IHLinqQuery where T : class
     void ITreeBranch.Finish(IParsingContext context, IToken[] _)
     {
         if (context.Tokens.Length > 0)
+        {
             //TODO: format better message
             throw new NonParsableTokenSequenceException(context.Tokens, []);
+        }
 
         _finished = true;
         Children = context.Current.Children.ToArray();
@@ -51,7 +53,9 @@ public class HLinqQuery<T> : IHLinqQuery where T : class
     public object? ApplyTo(IQueryable<T> queryable, CancellationToken token = default)
     {
         if (QueryApplier is null)
+        {
             throw new HLinqQueryQueryApplierNullException();
+        }
 
         if (!ThisTree.Children.Any(t => t is TakeRoot or CountRoot) && Options?.HttpDefaultMaxTakeRecords is not null)
         {

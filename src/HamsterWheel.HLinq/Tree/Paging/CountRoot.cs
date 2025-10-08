@@ -12,19 +12,17 @@ public sealed class CountRoot(IToken[] tokens) : TreeBranch(tokens)
 
     public sealed class Parser : ElementParserBase<CountRoot>
     {
-        protected override CountRoot? BuildBranch(IParsingContext context)
-        {
-            return context.Tokens switch
+        protected override CountRoot? BuildBranch(IParsingContext context) =>
+            context.Tokens switch
             {
                 [Count, LeftSquareBracket, RightSquareBracket] => new CountRoot(context.Tokens[..3]),
                 [Dot, Count, LeftSquareBracket, RightSquareBracket] => new CountRoot(context.Tokens[..4]),
                 _ => default
             };
-        }
 
         protected override void FinishImpl(IParsingContext context)
         {
-            //count have not children so no need to checking finish
+            //count has no children, so no need to Finish checks
         }
     }
 

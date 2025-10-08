@@ -1,8 +1,9 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tokens;
-using HamsterWheel.HLinq.Tree.Order;
+using HamsterWheel.HLinq.Tree.Ordering;
 using HamsterWheel.HLinq.Tree.Select;
+using HamsterWheel.HLinq.Tree.Selecting;
 using NSubstitute;
 
 namespace HamsterWheel.HLinq.UnitTests.Parsers;

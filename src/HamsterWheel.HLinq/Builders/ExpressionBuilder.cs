@@ -196,4 +196,7 @@ public sealed class ExpressionBuilder(
         Expression.Property(source, prop);
 
     public IParametersConverter GetParametersConverter() => parametersConverter;
+
+    public class ExpectedMemberOrMemberInitExpressionException() : HLinqQueryException(
+        $"At this point type of expression should be {nameof(MemberExpression)} or {nameof(MemberInitExpression)}.");
 }

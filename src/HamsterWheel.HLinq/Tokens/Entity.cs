@@ -1,5 +1,5 @@
-using HamsterWheel.HLinq.Tokens.Filter;
-using HamsterWheel.HLinq.Tokens.Select;
+using HamsterWheel.HLinq.Tokens.Filtering;
+using HamsterWheel.HLinq.Tokens.Selecting;
 
 namespace HamsterWheel.HLinq.Tokens;
 

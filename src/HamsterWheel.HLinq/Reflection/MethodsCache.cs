@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Reflection;
+using HamsterWheel.HLinq.Exceptions;
 
 namespace HamsterWheel.HLinq.Reflection;
 
@@ -40,6 +41,9 @@ public sealed class MethodsCache : IMethodsCache
         ];
     }
 
+    public MethodInfo GetStaticOrThrow(Type type, string method, Func<ParameterInfo[], bool>? parameterBasedSelector) =>
+        GetStatic(type, method, parameterBasedSelector) ?? throw new MissingParseMethodException(type, method);
+
     public MethodInfo? GetStatic(Type type, string method, Func<ParameterInfo[], bool>? parameterBasedSelector)
     {
         var methodInfos = AllStatic(type).Where(p => p.Name == method);
@@ -75,4 +79,7 @@ public sealed class MethodsCache : IMethodsCache
 
         return _genericMethodsCache[tuple] = method.MakeGenericMethod(typeParams);
     }
+
+    public sealed class MissingParseMethodException(Type source, string nameOfMethod)
+        : HLinqQueryException($"Could not find {nameof(source.Name)}.{nameOfMethod} method");
 }

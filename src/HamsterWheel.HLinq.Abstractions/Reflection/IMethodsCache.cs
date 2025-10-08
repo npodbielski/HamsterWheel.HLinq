@@ -14,4 +14,6 @@ public interface IMethodsCache
 
     MethodInfo GetInstanceGeneric(Type type, string method, Func<ParameterInfo[], bool>? parameterBasedSelector = null,
         params Type[] typeParams);
+
+    MethodInfo GetStaticOrThrow(Type type, string method, Func<ParameterInfo[], bool>? parameterBasedSelector);
 }

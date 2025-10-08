@@ -1,6 +1,5 @@
-using HamsterWheel.HLinq.Tokens.Filter;
-using HamsterWheel.HLinq.Tokens.Select;
-
+using HamsterWheel.HLinq.Tokens.Filtering;
+using HamsterWheel.HLinq.Tokens.Selecting;
 
 namespace HamsterWheel.HLinq.Tokens;
 
@@ -25,15 +24,12 @@ public sealed class NameOrValue(Range range) : TokenBase(range)
         Comma.TokenValue.AsSpan()[0]
     ])
     {
-        protected override bool PreviousTokensMatch(List<IToken> previousTokens)
-        {
-            if (previousTokens.Count < 2)
-            {
-                return false;
-            }
-
-            return previousTokens[^1] is IComparisonToken or LeftCircleBracket or LeftSquareBracket or Comma or Assignment;
-        }
+        protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
+            previousTokens is
+            [
+                .., _, IComparisonToken or LeftCircleBracket or LeftSquareBracket or Comma
+                or Assignment
+            ];
 
         public override int CanBeAt(int index, ReadOnlySpan<char> subset, char? next, List<IToken> previousToken)
         {

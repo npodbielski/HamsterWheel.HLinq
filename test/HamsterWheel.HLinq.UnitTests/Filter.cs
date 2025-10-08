@@ -3,6 +3,7 @@ using AutoFixture.Xunit2;
 using FluentAssertions;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tree.Filter;
+using HamsterWheel.HLinq.Tree.Filtering;
 using HamsterWheel.HLinq.UnitTests.Dummies;
 
 namespace HamsterWheel.HLinq.UnitTests;

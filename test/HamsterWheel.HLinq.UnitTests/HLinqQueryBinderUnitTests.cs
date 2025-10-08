@@ -22,7 +22,7 @@ public class HLinqQueryBinderUnitTests
             .GetInstanceGeneric(Arg.Any<Type>(), Arg.Any<string>(), Arg.Any<Func<ParameterInfo[], bool>>(),
                 Arg.Any<Type[]>()).Returns(parserMethod);
         var hlinqQueryMethod = typeof(HLinqQuery<DummyEntity>).GetMethods().First(m => m.Name == "Parse");
-        serviceProviderFactory.MethodsCache.GetStatic(Arg.Any<Type>(), Arg.Any<string>(), Arg.Any<Func<ParameterInfo[], bool>>())
+        serviceProviderFactory.MethodsCache.GetStaticOrThrow(Arg.Any<Type>(), Arg.Any<string>(), Arg.Any<Func<ParameterInfo[], bool>>())
             .Returns(hlinqQueryMethod);
         var sut = new HLinqQueryBinder(new HLinqCore(serviceProviderFactory.CreateServiceProvider()));
 

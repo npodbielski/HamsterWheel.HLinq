@@ -29,7 +29,7 @@ internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
 
     private IElementToExpressionConverter[] CoreExpressionConverters =>
         _coreConverters ??= GetFromAssemblyWith<TreeBranch, IElementToExpressionConverter>();
-    
+
     private IElementToMemberAssignmentConverter[] CoreMemberAssignmentConverters =>
         _coreMemberAssignmentConverters ??= GetFromAssemblyWith<TreeBranch, IElementToMemberAssignmentConverter>();
 
@@ -56,12 +56,9 @@ internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
             .Where(t => !t.IsAbstract && t.ImplementedInterfaces.Contains(typeof(T)))
             .ToArray();
 
-    private static T[] GetFromAssemblyWithStatic<TSource, T>()
-    {
+    private static T[] GetFromAssemblyWithStatic<TSource, T>() =>
         //TODO: probably each activator should be wrapped in try, catch to make this code resilient
-        return GetTypesFromAssemblyWithStatic<TSource, T>()
-            .Select(Activator.CreateInstance).Cast<T>().ToArray();
-    }
+        GetTypesFromAssemblyWithStatic<TSource, T>().Select(Activator.CreateInstance).Cast<T>().ToArray();
 
     private static ServiceProvider CreateDefault()
     {
@@ -97,7 +94,7 @@ internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
         {
             servicesCollection.AddSingleton(typeof(IElementToExpressionConverter), c);
         }
-        
+
         var assignmentConverters = GetTypesFromAssemblyWithStatic<HLinqCore, IElementToMemberAssignmentConverter>();
         foreach (var c in assignmentConverters)
         {

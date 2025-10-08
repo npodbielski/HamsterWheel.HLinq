@@ -1,4 +1,3 @@
-
 #if NETSTANDARD2_0
 // ReSharper disable once CheckNamespace; Reason: compiler requires those attributes in this exact namespace  
 // ReSharper disable UnusedType.Global; Reason those files are imported in other projects and used indirectly there via compiler

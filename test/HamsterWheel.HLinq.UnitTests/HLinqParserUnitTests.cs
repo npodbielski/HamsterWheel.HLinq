@@ -1,14 +1,11 @@
-using FluentAssertions;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tokenizer;
 using HamsterWheel.HLinq.Tokens;
-using HamsterWheel.HLinq.Tokens.Filter;
-using HamsterWheel.HLinq.Tokens.Select;
-using HamsterWheel.HLinq.Tree.Filter;
+using HamsterWheel.HLinq.Tokens.Filtering;
+using HamsterWheel.HLinq.Tokens.Selecting;
 using HamsterWheel.HLinq.UnitTests.Assertions;
 using HamsterWheel.HLinq.UnitTests.Dummies;
 using static HamsterWheel.HLinq.UnitTests.Assertions.ExpectedTreeElement;
-using Property = HamsterWheel.HLinq.Tree.Property;
 
 namespace HamsterWheel.HLinq.UnitTests;
 

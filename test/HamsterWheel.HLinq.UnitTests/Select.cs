@@ -2,6 +2,7 @@ using FluentAssertions;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tree.Select;
+using HamsterWheel.HLinq.Tree.Selecting;
 using HamsterWheel.HLinq.UnitTests.Dummies;
 
 namespace HamsterWheel.HLinq.UnitTests;

@@ -11,13 +11,11 @@ public sealed class SkipOrTakeConstant(NameOrValue value) : TreeLeaf([value])
     {
         protected override Type[] ValidParents => [typeof(SkipRoot), typeof(TakeRoot)];
 
-        protected override SkipOrTakeConstant? BuildBranch(IParsingContext context)
-        {
-            return context.Tokens switch
+        protected override SkipOrTakeConstant? BuildBranch(IParsingContext context) =>
+            context.Tokens switch
             {
                 [NameOrValue value, ..] => new SkipOrTakeConstant(value),
                 _ => null
             };
-        }
     }
 }

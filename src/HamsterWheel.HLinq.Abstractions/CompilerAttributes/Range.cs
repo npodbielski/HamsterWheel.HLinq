@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace HamsterWheel.HLinq;
 
-//"This is added just to enable range syntax for .net standard version of the library and this code is not actually used."
+//"This is added just to enable range syntax for .net standard version of the library, and this code is not actually used."
 [ExcludeFromCodeCoverage]
 public readonly struct Range : IEquatable<Range>
 {

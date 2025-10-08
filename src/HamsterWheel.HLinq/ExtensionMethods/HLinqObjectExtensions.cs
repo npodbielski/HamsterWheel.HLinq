@@ -36,4 +36,7 @@ public static class HLinqObjectExtensions
     }
 
     private static List<T> CreateList<T>(this T obj) => [obj];
+
+    public class ExpectedImplementationOfIEnumerableException()
+        : HLinqQueryException($"Expected object that implements: '{nameof(IEnumerable<int>)}' interface");
 }

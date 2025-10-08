@@ -1,6 +1,7 @@
 using System.Text.Json;
 using FluentAssertions;
 using HamsterWheel.HLinq.Tree.Filter;
+using HamsterWheel.HLinq.Tree.Filtering;
 using HamsterWheel.HLinq.UnitTests.Dummies;
 
 #pragma warning disable CA2263

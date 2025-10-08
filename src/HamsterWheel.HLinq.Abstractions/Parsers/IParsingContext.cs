@@ -11,6 +11,7 @@ public interface IParsingContext
 
     public Stack<IGrowingElementContext> Parents { get; set; }
     List<ITreeElement> Children { get; }
+    string SourceQueryString { get; init; }
 
     public void Push(ITreeElement newElement);
     void GoBackInTheTree();
