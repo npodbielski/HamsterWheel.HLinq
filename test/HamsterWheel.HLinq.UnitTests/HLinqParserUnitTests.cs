@@ -11,13 +11,14 @@ namespace HamsterWheel.HLinq.UnitTests;
 
 public class HLinqParserUnitTests
 {
-    private readonly HLinqParser _sut = new(new HLinqCore().Parsers);
+    private static readonly TestServicesCollection TestServicesCollection = new();
+    private readonly HLinqParser _sut = new(TestServicesCollection.Parsers);
 
     [Fact]
     public void Parse_WhenSingleRename_ThenCanParse()
     {
         const string query = "select[x.name]";
-        TokenBase[] tokens =
+        IToken[] tokens =
         [
             new Select(default),
             new LeftSquareBracket(default),
@@ -27,7 +28,7 @@ public class HLinqParserUnitTests
             new RightSquareBracket(default)
         ];
 
-        ITreeBranch tree = _sut.Parse<DummyEntity>(tokens, query);
+        var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
 
         tree.Should().HaveStructureOf(query, [
             SelectRoot(
@@ -42,7 +43,7 @@ public class HLinqParserUnitTests
     public void Parse_WhenPropertyWithConstValue_ThenCanParse()
     {
         const string query = "select[Directory=Core]";
-        TokenBase[] tokens =
+        IToken[] tokens =
         [
             new Select(default),
             new LeftSquareBracket(default),
@@ -52,7 +53,7 @@ public class HLinqParserUnitTests
             new RightSquareBracket(default)
         ];
 
-        ITreeBranch tree = _sut.Parse<DummyEntity>(tokens, query);
+        var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
 
         tree.Should().HaveStructureOf(query, [
             SelectRoot(
@@ -68,7 +69,7 @@ public class HLinqParserUnitTests
     public void Parse_WhenSourcePropertyAndPropertyWithConstValue_ThenCanParse()
     {
         const string query = "select[x.Id,Directory=Core]";
-        TokenBase[] tokens =
+        IToken[] tokens =
         [
             new Select(default),
             new LeftSquareBracket(default),
@@ -82,7 +83,7 @@ public class HLinqParserUnitTests
             new RightSquareBracket(default)
         ];
 
-        ITreeBranch tree = _sut.Parse<DummyEntity>(tokens, query);
+        var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
 
         tree.Should().HaveStructureOf(query, [
             SelectRoot(
@@ -104,14 +105,14 @@ public class HLinqParserUnitTests
     public void Parse_WhenValidAndPropEqual_ThenCanParse()
     {
         const string query = "where[x.Name.Contains(test)]";
-        TokenBase[] tokens =
+        IToken[] tokens =
         [
             new Where(default), new LeftSquareBracket(default), new Entity(default),
             new Dot(default), new PropertyAccess(default), new Dot(default), new MethodCall(default),
             new LeftCircleBracket(default), new NameOrValue(default), new RightCircleBracket(default),
             new RightSquareBracket(default)
         ];
-        ITreeBranch tree = _sut.Parse<DummyEntity>(tokens, query);
+        var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
 
         tree.Should().HaveStructureOf(query, [
             WhereRoot(
@@ -131,7 +132,7 @@ public class HLinqParserUnitTests
     public void Parse_WhenStaticMethodCallWithPropAndConstant_ThenCanParse()
     {
         const string query = "where[ilike(x.Name, test)]";
-        TokenBase[] tokens =
+        IToken[] tokens =
         [
             new Where(default),
             new LeftSquareBracket(default),
@@ -145,7 +146,7 @@ public class HLinqParserUnitTests
             new RightCircleBracket(default),
             new RightSquareBracket(default)
         ];
-        ITreeBranch tree = _sut.Parse<DummyEntity>(tokens, query);
+        var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
         tree.Should().HaveStructureOf(query, [
             WhereRoot(
                 ConditionElement(
@@ -169,9 +170,9 @@ public class HLinqParserUnitTests
     public void Parse_WhenTwoConditions_ThenCanParse()
     {
         const string query = "where[x.Name.Contains(test)&&x.Id==77774169-BB9D-4DF9-A4A7-52019C4A445D]";
-        var tokens = new HLinqTokenizer(new HLinqCore().TokenPossibilities).Tokenize(query);
+        var tokens = new HLinqTokenizer(TestServicesCollection.TokenPossibilities).Tokenize(query);
 
-        ITreeBranch tree = _sut.Parse<DummyEntity>(tokens, query);
+        var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
 
         tree.Should().HaveStructureOf(query, [
             WhereRoot(

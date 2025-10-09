@@ -1,7 +1,7 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
-using HamsterWheel.HLinq.Tree.Select;
+using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.Tree.Selecting;
 using HamsterWheel.HLinq.UnitTests.Dummies;
 
@@ -13,9 +13,13 @@ public partial class ExpressionBuilderUnitTests
     public void GetSelect_WhenNoProp_ThenThrows()
     {
         const string query = "select[]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = query
+        };
         var tokens = _tokenizer.Tokenize(query);
 
-        var action = () => _parser.Parse<DummyEntity>(tokens, query);
+        var action = () => _parser.Parse(hlinqQuery, tokens);
 
         action.Should().Throw<InvalidTokenCollectionException>();
     }
@@ -24,8 +28,12 @@ public partial class ExpressionBuilderUnitTests
     public void GetSelect_WhenSingleProp_ThenCanSelect()
     {
         const string query = "select[x.Name]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = query
+        };
         var tokens = _tokenizer.Tokenize(query);
-        ITreeBranch tree = _parser.Parse<DummyEntity>(tokens, query);
+        ITreeBranch tree = _parser.Parse(hlinqQuery, tokens);
         var actual =
             _sut.GetSelect(typeof(DummyEntity), tree.GetAll<SelectRoot>().First(), query).Expression;
         actual.Should().NotBeNull();
@@ -39,8 +47,12 @@ public partial class ExpressionBuilderUnitTests
     public void GetSelect_WhenPropRename_ThenCanSelect()
     {
         const string query = "select[Mode=x.Name]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = query
+        };
         var tokens = _tokenizer.Tokenize(query);
-        ITreeBranch tree = _parser.Parse<DummyEntity>(tokens, query);
+        ITreeBranch tree = _parser.Parse(hlinqQuery, tokens);
         var actual =
             _sut.GetSelect(typeof(DummyEntity), tree.GetAll<SelectRoot>().First(), query).Expression;
         actual.Should().NotBeNull();
@@ -54,8 +66,12 @@ public partial class ExpressionBuilderUnitTests
     public void GetSelect_WhenNestedProp_ThenCanSelect()
     {
         const string query = "select[x.Nested.Name]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = query
+        };
         var tokens = _tokenizer.Tokenize(query);
-        ITreeBranch tree = _parser.Parse<DummyEntity>(tokens, query);
+        ITreeBranch tree = _parser.Parse(hlinqQuery, tokens);
         var actual = _sut.GetSelect(typeof(DummyEntity), tree.GetAll<SelectRoot>().First(), query).Expression;
         actual.Should().NotBeNull();
         actual.ToString().Should()
@@ -76,8 +92,12 @@ public partial class ExpressionBuilderUnitTests
     public void GetSelect_WhenTwoProps_ThenCanSelect()
     {
         const string query = "select[x.Name,x.Flag]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = query
+        };
         var tokens = _tokenizer.Tokenize(query);
-        ITreeBranch tree = _parser.Parse<DummyEntity>(tokens, query);
+        ITreeBranch tree = _parser.Parse(hlinqQuery, tokens);
         var actual =
             _sut.GetSelect(typeof(DummyEntity), tree.GetAll<SelectRoot>().First(), query).Expression;
         actual.Should().NotBeNull();
@@ -92,8 +112,12 @@ public partial class ExpressionBuilderUnitTests
     public void GetSelect_WhenThreeProps_ThenCanSelect()
     {
         const string query = "select[x.Name,x.Flag,x.DateTimeOffset]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = query
+        };
         var tokens = _tokenizer.Tokenize(query);
-        ITreeBranch tree = _parser.Parse<DummyEntity>(tokens, query);
+        ITreeBranch tree = _parser.Parse(hlinqQuery, tokens);
         var actual =
             _sut.GetSelect(typeof(DummyEntity), tree.GetAll<SelectRoot>().First(), query).Expression;
         actual.Should().NotBeNull();
@@ -113,8 +137,12 @@ public partial class ExpressionBuilderUnitTests
                              "x.Double,x.Float,x.NullableByte,x.NullableShort,x.NullableInt,x.NullableLong," +
                              "x.NullableEnum,x.NullableDecimal,x.NullableDouble,x.NullableFloat,x.NullableString,x.Time," +
                              "x.DateTime,x.DateTimeOffset,x.NullableTime,x.NullableDateTime,x.NullableDateTimeOffset]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = query
+        };
         var tokens = _tokenizer.Tokenize(query);
-        ITreeBranch tree = _parser.Parse<DummyEntity>(tokens, query);
+        ITreeBranch tree = _parser.Parse(hlinqQuery, tokens);
         var actual =
             _sut.GetSelect(typeof(DummyEntity), tree.GetAll<SelectRoot>().First(), query).Expression;
         actual.Should().NotBeNull();

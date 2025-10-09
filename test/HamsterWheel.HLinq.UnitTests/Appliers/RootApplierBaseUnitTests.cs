@@ -2,7 +2,6 @@ using FluentAssertions;
 using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Tree.Ordering;
-using HamsterWheel.HLinq.Tree.Select;
 using HamsterWheel.HLinq.Tree.Selecting;
 using HamsterWheel.HLinq.UnitTests.Dummies;
 

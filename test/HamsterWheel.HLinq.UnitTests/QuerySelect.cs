@@ -1,5 +1,6 @@
 using AutoFixture.Xunit2;
 using FluentAssertions;
+using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.UnitTests.Dummies;
 using HamsterWheel.HLinq.UnitTests.Fixtures.AutoData;
 
@@ -13,12 +14,16 @@ partial class HLinqQueryApplierUnitTests
     {
         //arrange
         var queryString = "select[x.Id,x.Name,x.Int]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = entities.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeEquivalentTo(entities
@@ -38,12 +43,16 @@ partial class HLinqQueryApplierUnitTests
     {
         //arrange
         var queryString = "select[Directory=\"test\"]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = entities.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeEquivalentTo(entities.Select(_ => new { Directory = "test" }));
@@ -56,12 +65,16 @@ partial class HLinqQueryApplierUnitTests
     {
         //arrange
         var queryString = "select[Directory=test]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = entities.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeEquivalentTo(entities.Select(_ => new { Directory = "test" }));
@@ -74,12 +87,16 @@ partial class HLinqQueryApplierUnitTests
     {
         //arrange
         var queryString = "select[Directory=test,x.id]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = entities.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeEquivalentTo(entities.Select(x => new { Directory = "test", x.Id }));
@@ -92,12 +109,16 @@ partial class HLinqQueryApplierUnitTests
     {
         //arrange
         var queryString = "select[Directory='t']";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = entities.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeEquivalentTo(entities.Select(_ => new { Directory = 't' }));
@@ -110,12 +131,16 @@ partial class HLinqQueryApplierUnitTests
     {
         //arrange
         var queryString = "select[Number=1]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = entities.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeEquivalentTo(entities.Select(_ => new { Number = 1 }));
@@ -128,12 +153,16 @@ partial class HLinqQueryApplierUnitTests
     {
         //arrange
         var queryString = "select[Number=1.2323]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = entities.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeEquivalentTo(entities.Select(_ => new { Number = 1.2323 }));

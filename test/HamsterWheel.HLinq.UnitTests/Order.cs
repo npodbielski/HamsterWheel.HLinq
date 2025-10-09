@@ -1,5 +1,6 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.Tree.Ordering;
 using HamsterWheel.HLinq.UnitTests.Dummies;
 
@@ -11,8 +12,12 @@ public partial class ExpressionBuilderUnitTests
     public void GetProperty_WhenStringProp_ThenCanSelect()
     {
         const string query = "orderBy[x.Name]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = query
+        };
         var tokens = _tokenizer.Tokenize(query);
-        ITreeBranch tree = _parser.Parse<DummyEntity>(tokens, query);
+        ITreeBranch tree = _parser.Parse(hlinqQuery, tokens);
         var actual =
             _sut.GetProperty(typeof(DummyEntity), 
                 tree.GetAll<OrderByRoot>().First(), query).Expression;
@@ -28,8 +33,12 @@ public partial class ExpressionBuilderUnitTests
     public void GetProperty_WhenBoolProp_ThenCanSelect()
     {
         const string query = "orderBy[x.Flag]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = query
+        };
         var tokens = _tokenizer.Tokenize(query);
-        ITreeBranch tree = _parser.Parse<DummyEntity>(tokens, query);
+        ITreeBranch tree = _parser.Parse(hlinqQuery, tokens);
         var actual =
             _sut.GetProperty(typeof(DummyEntity), 
                 tree.GetAll<OrderByRoot>().First(), query).Expression;
@@ -45,8 +54,12 @@ public partial class ExpressionBuilderUnitTests
     public void GetProperty_WhenEnumProp_ThenCanSelect()
     {
         const string query = "orderBy[x.Enum]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = query
+        };
         var tokens = _tokenizer.Tokenize(query);
-        ITreeBranch tree = _parser.Parse<DummyEntity>(tokens, query);
+        ITreeBranch tree = _parser.Parse(hlinqQuery, tokens);
         var actual =
             _sut.GetProperty(typeof(DummyEntity), 
                 tree.GetAll<OrderByRoot>().First(), query).Expression;
@@ -62,8 +75,12 @@ public partial class ExpressionBuilderUnitTests
     public void GetProperty_WhenNullableDateTimeOffsetProp_ThenCanSelect()
     {
         const string query = "orderBy[x.NullableDateTimeOffset]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = query
+        };
         var tokens = _tokenizer.Tokenize(query);
-        ITreeBranch tree = _parser.Parse<DummyEntity>(tokens, query);
+        ITreeBranch tree = _parser.Parse(hlinqQuery, tokens);
         var actual =
             _sut.GetProperty(typeof(DummyEntity), 
                 tree.GetAll<OrderByRoot>().First(), query).Expression;

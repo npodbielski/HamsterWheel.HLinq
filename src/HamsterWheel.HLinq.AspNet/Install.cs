@@ -10,24 +10,22 @@ public static class AspNetInstaller
     {
         var configuration = new HLinqServicesConfiguration();
         configure?.Invoke(configuration);
-        HLinqCore.ConfigureServices(serviceCollection, configuration.ApiServices);
-        foreach (var extension in configuration.Extensions)
-        {
-            extension(serviceCollection);
-        }
 
-        serviceCollection.AddSingleton<IHLinqCore, HLinqCore>();
-        serviceCollection.AddSingleton<WebHLinqQueryBinder>();
-        serviceCollection.AddSingleton<IHLinqQueryBinder>(c => c.GetRequiredService<WebHLinqQueryBinder>());
         serviceCollection.AddExceptionHandler<HLinqQueryExceptionHandler>();
-        serviceCollection.AddSingleton<IHLinqOptions>(new HLinqOptions
-        {
-            HttpDefaultMaxTakeRecords = configuration.HLinqOptions.HttpDefaultMaxTakeRecords
-        });
         serviceCollection.AddControllers(options =>
         {
             options.ModelBinderProviders.Insert(0, new HLinqQueryBinderProvider());
         });
+
+        HLinqCore.ConfigureServices(serviceCollection, new HLinqOptions
+        {
+            HttpDefaultMaxTakeRecords = configuration.HLinqOptions.HttpDefaultMaxTakeRecords
+        });
+
+        foreach (var extension in configuration.Extensions)
+        {
+            extension(serviceCollection);
+        }
 
         return serviceCollection;
     }

@@ -15,8 +15,8 @@ namespace HamsterWheel.HLinq.Request;
 public partial class HLinqQuery<T> : IHLinqQuery where T : class
 {
     public ITreeElement[] Children { get; private set; } = [];
-    public string SourceQueryString { get; init; } = null!;
-    public bool IsLeaf => false;
+    public Type ItemType { get; } = typeof(T);
+    public string SourceQueryString { get; internal init; } = null!;
     public bool NoChildren => Children.Length == 0;
 
     /// <summary>
@@ -71,12 +71,12 @@ public partial class HLinqQuery<T> : IHLinqQuery where T : class
     /// Used from Minimal APIs to bind Parameters of <see cref="HLinqQuery{T}"/>
     /// </summary>
     /// <returns>Instance of <see cref="HLinqQuery{T}"/> that can be applied to <see cref="IQueryable{T}"/></returns>
+    // ReSharper disable once UnusedMember.Global - used by Minimal APIs
+    // ReSharper disable once UnusedParameter.Global - it is necessary by the binder
     public static ValueTask<HLinqQuery<T>> BindAsync(HttpContext context, ParameterInfo parameter)
     {
         var queryString = context.Request.QueryString.Value ?? "";
-
-        var query = Parse(context.RequestServices.GetRequiredService<IHLinqCore>(), queryString);
-
+        var query = Parse(context.RequestServices.GetRequiredService<HLinqBinderDependenciesBag>(), queryString);
         return ValueTask.FromResult(query);
     }
 
@@ -86,27 +86,27 @@ public partial class HLinqQuery<T> : IHLinqQuery where T : class
     /// <param name="core">Instance of <see cref="IHLinqCore"/> from DI</param>
     /// <param name="queryString">HTTP query string</param>
     /// <returns>Instance of <see cref="HLinqQuery{T}"/></returns>
-    public static HLinqQuery<T> Parse(IHLinqCore core, string queryString)
+    public static HLinqQuery<T> Parse(HLinqBinderDependenciesBag core, string queryString)
     {
+        queryString = HttpUtility.UrlDecode(queryString);
         if (queryString.StartsWith('?'))
         {
             queryString = queryString[1..];
         }
 
-        queryString = HttpUtility.UrlDecode(queryString);
-
+        var hlinqQuery = new HLinqQuery<T>
+        {
+            SourceQueryString = queryString,
+        };
         var parser = core.HLinqParser;
         var tokenizer = core.Tokenizer;
-        var methodsCache = core.MethodsCache;
 
         var tokens = tokenizer.Tokenize(queryString);
 
-        var parserMethod =
-            methodsCache.GetInstanceGeneric(parser.GetType(), nameof(parser.Parse), typeParams: typeof(T));
-        var query = (HLinqQuery<T>)parserMethod.Invoke(parser, [tokens, queryString])!;
-        query.QueryApplier = core.QueryApplier;
-        query.Options = core.Options;
-        return query;
+        parser.Parse(hlinqQuery, tokens);
+        hlinqQuery.QueryApplier = core.QueryApplier;
+        hlinqQuery.Options = core.Options;
+        return hlinqQuery;
     }
 
     public class HLinqQueryApplier(IApplierFactory applierFactory, IMethodsCache methodsCache) : IHLinqQueryApplier

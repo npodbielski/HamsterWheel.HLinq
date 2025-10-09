@@ -5,7 +5,7 @@ namespace HamsterWheel.HLinq.UnitTests;
 
 public partial class HLinqTokenizerUnitTests
 {
-    private readonly HLinqTokenizer _sut = new(new HLinqCore().TokenPossibilities);
+    private readonly HLinqTokenizer _sut = new(new TestServicesCollection().TokenPossibilities);
 
     [Fact]
     public void Tokenize_WhenHaveFilterAndPaging_CanParse()

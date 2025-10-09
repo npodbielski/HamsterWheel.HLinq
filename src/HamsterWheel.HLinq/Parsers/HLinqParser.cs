@@ -1,5 +1,4 @@
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.Tokens;
 
 namespace HamsterWheel.HLinq.Parsers;
@@ -10,22 +9,18 @@ public sealed class HLinqParser(IEnumerable<IElementParser> allParsers) : IHLinq
 
     private IElementParser[] RootParsers { get; } = allParsers.Where(p => p.IsRoot).ToArray();
 
-    public IHLinqQuery Parse<T>(IToken[] tokens, string stringQuery) where T : class
+    public IHLinqQuery Parse(IHLinqQuery query, IToken[] tokens)
     {
-        var query = new HLinqQuery<T>
-        {
-            SourceQueryString = stringQuery
-        };
         var context = new ParsingContext(query)
         {
             Tokens = tokens
         };
-        Parse<T>(context);
-        ((ITreeBranch)query).Finish(context, context.Tokens);
+        Parse(context);
+        query.Finish(context, context.Tokens);
         return query;
     }
 
-    private void Parse<T>(IParsingContext context)
+    private void Parse(IParsingContext context)
     {
         var parsers = context.CurrentElement is IHLinqQuery
             ? RootParsers
@@ -46,7 +41,7 @@ public sealed class HLinqParser(IEnumerable<IElementParser> allParsers) : IHLinq
                 {
                     if (context.CurrentElement is TreeBranch)
                     {
-                        Parse<T>(context);
+                        Parse(context);
                     }
 
                     parser.Finish(context);

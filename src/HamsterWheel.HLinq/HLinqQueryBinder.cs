@@ -4,14 +4,13 @@ using HamsterWheel.HLinq.Request;
 
 namespace HamsterWheel.HLinq;
 
-public class HLinqQueryBinder(IHLinqCore core)
+public class HLinqQueryBinder(HLinqBinderDependenciesBag dependenciesBag)
     : IHLinqQueryBinder
 {
     public IHLinqQuery BindQuery(string queryString, Type model)
     {
-        var parserMethod = core.MethodsCache.GetStaticOrThrow(typeof(HLinqQuery<>).MakeGenericType(model),
-            nameof(HLinqQuery<object>.Parse), null);
-        return (IHLinqQuery?)parserMethod.Invoke(null, [core, queryString]) ??
+        var parserMethod = dependenciesBag.MethodsCache.GetStaticOrThrow(model, nameof(HLinqQuery<object>.Parse), null);
+        return (IHLinqQuery?)parserMethod.Invoke(null, [dependenciesBag, queryString]) ??
                throw new HLinqQueryParserReturnedNullException();
     }
 

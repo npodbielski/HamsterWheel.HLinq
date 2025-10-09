@@ -29,4 +29,5 @@ public class DummyHLinqServiceProviderFactory
 
     public IHLinqParser Parser { get; } = Substitute.For<IHLinqParser>();
     public IHLinqOptions Options { get; } = new HLinqOptionsConfiguration();
+    public HLinqBinderDependenciesBag BinderDependenciesBag => new(QueryApplier, Options, Parser, Tokenizer, MethodsCache);
 }
