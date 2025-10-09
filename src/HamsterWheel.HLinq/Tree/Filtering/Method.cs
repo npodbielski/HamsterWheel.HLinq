@@ -10,7 +10,10 @@ namespace HamsterWheel.HLinq.Tree.Filtering;
 
 public sealed class Method(IToken[] tokens) : TreeBranch(tokens)
 {
-    public MethodSource SourceType => Tokens.First() switch
+    private MethodSource? _source;
+    private MethodCall? _method;
+
+    private MethodSource SourceType => _source ?? Tokens.First() switch
     {
         Dot => _source ??= MethodSource.Property,
         NameOrValue => _source ??= MethodSource.Constant,
@@ -18,10 +21,8 @@ public sealed class Method(IToken[] tokens) : TreeBranch(tokens)
     };
 
     private MethodCall MethodCall => _method ??= Tokens.OfType<MethodCall>().First();
-    private MethodSource? _source;
-    private MethodCall? _method;
 
-    public string GetName(string hLinqQuery) => MethodCall.GetValue(hLinqQuery);
+    private string GetName(string hLinqQuery) => MethodCall.GetValue(hLinqQuery);
 
     //TODO: move parsers and converters and token possibilities to IoC container instead of Activator, this way we will be able to inject other services into them
     public sealed class Converter : ElementToExpressionConverter<Method>
@@ -116,7 +117,7 @@ public sealed class Method(IToken[] tokens) : TreeBranch(tokens)
 
     public sealed class Parser : ElementParserBase<Method>
     {
-        protected override Type[] ValidParents => [typeof(Condition)];
+        protected override Type[] ValidParents { get; } = [typeof(Condition)];
 
         public override IToken[] ExampleTokens { get; } =
             [new MethodCall(default), new LeftCircleBracket(default), new RightCircleBracket(default)];

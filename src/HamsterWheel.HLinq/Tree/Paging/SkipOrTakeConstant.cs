@@ -10,7 +10,7 @@ public sealed class SkipOrTakeConstant(NameOrValue value) : TreeLeaf([value])
     public sealed class Parser : ElementParserBase<SkipOrTakeConstant>
     {
         public override IToken[] ExampleTokens { get; } = [new TokenExample("10")];
-        protected override Type[] ValidParents => [typeof(SkipRoot), typeof(TakeRoot)];
+        protected override Type[] ValidParents { get; } = [typeof(SkipRoot), typeof(TakeRoot)];
 
         protected override SkipOrTakeConstant? BuildBranch(IParsingContext context) =>
             context.Tokens switch

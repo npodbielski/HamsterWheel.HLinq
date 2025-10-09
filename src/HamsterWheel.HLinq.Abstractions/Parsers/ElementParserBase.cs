@@ -4,7 +4,7 @@ namespace HamsterWheel.HLinq.Parsers;
 
 public abstract class ElementParserBase<T> : IElementParser where T : ITreeElement
 {
-    protected virtual Type[] ValidParents => [];
+    protected virtual Type[] ValidParents { get; } = [];
 
     public bool ChildOf<TParent>(TParent parent) where TParent : ITreeElement =>
         ValidParents.Contains(parent.GetType());

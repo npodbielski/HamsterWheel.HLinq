@@ -22,7 +22,7 @@ public sealed class ConditionGroup : TreeBranch, ILogicalOperationGroupBranch
 
     public sealed class Parser : ElementParserBase<ConditionGroup>
     {
-        protected override Type[] ValidParents => [typeof(WhereRoot), typeof(ConditionGroup)];
+        protected override Type[] ValidParents { get; } = [typeof(WhereRoot), typeof(ConditionGroup)];
 
         public override IToken[] ExampleTokens { get; } =
         [

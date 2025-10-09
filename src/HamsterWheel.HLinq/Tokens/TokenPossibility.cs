@@ -2,7 +2,7 @@ namespace HamsterWheel.HLinq.Tokens;
 
 public abstract class TokenPossibility(string? keyword = null, char[]? delimiters = null) : IHLinqTokenPossibility
 {
-    protected char[]? Delimiters => delimiters;
+    protected char[]? Delimiters { get; } = delimiters;
 
     public virtual int CanBeAt(int index, ReadOnlySpan<char> subset, char? next, List<IToken> previousToken)
     {
@@ -44,7 +44,7 @@ public abstract class TokenPossibility(string? keyword = null, char[]? delimiter
         }
         else
         {
-            if (next is not null && delimiters?.Contains(next.Value) == true)
+            if (next is not null && Delimiters?.Contains(next.Value) == true)
             {
                 possibility += 50;
             }

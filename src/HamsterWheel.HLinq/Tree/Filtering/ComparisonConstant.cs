@@ -10,7 +10,7 @@ namespace HamsterWheel.HLinq.Tree.Filtering;
 
 public sealed class ComparisonConstant(NameOrValue value) : TreeLeaf([value])
 {
-    public NameOrValue Value => value;
+    public NameOrValue Value { get; } = value;
 
     public sealed class Parser : ElementParserBase<ComparisonConstant>
     {
