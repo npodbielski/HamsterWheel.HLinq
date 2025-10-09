@@ -11,10 +11,6 @@ namespace HamsterWheel.HLinq.Tree.Filtering;
 
 public sealed class WhereRoot(IToken[] tokens) : TreeBranch(tokens), IWhereRoot
 {
-    public ConditionGroup[] Groups => GetAll<ConditionGroup>().ToArray();
-
-    public Condition[] Conditions => GetAll<Condition>().ToArray();
-
     /// <summary>
     ///     This should never be accessed since <see cref="WhereRoot" /> is never nested in another parent
     /// </summary>

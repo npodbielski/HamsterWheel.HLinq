@@ -26,9 +26,6 @@ public partial class HLinqQuery<T> : IHLinqQuery where T : class
 
     internal IHLinqOptions? Options { get; set; }
 
-    IEnumerable<T1> ITreeElement.GetAll<T1>() => Children.OfType<T1>();
-    bool ITreeElement.Finished => _finished;
-
     /// <summary>
     ///     If query is valid this should always be empty. If not then we should have an error in <see cref="Finish" />
     /// </summary>
@@ -41,11 +38,8 @@ public partial class HLinqQuery<T> : IHLinqQuery where T : class
             throw new NonParsableTokenSequenceException(context.SourceQueryString, context.Tokens, []);
         }
 
-        _finished = true;
         Children = context.Current.Children.ToArray();
     }
-
-    private bool _finished;
 
     public object? ApplyTo(IQueryable<T> queryable, CancellationToken token = default)
     {
@@ -83,10 +77,10 @@ public partial class HLinqQuery<T> : IHLinqQuery where T : class
     /// <summary>
     /// Used via Asp.Net controllers and Minimal APIs endpoint binders to parse query string into instance of <see cref="HLinqQuery{T}"/> 
     /// </summary>
-    /// <param name="core">Instance of <see cref="IHLinqCore"/> from DI</param>
+    /// <param name="dependenciesBag">Instance of <see cref="HLinqBinderDependenciesBag"/> from DI</param>
     /// <param name="queryString">HTTP query string</param>
     /// <returns>Instance of <see cref="HLinqQuery{T}"/></returns>
-    public static HLinqQuery<T> Parse(HLinqBinderDependenciesBag core, string queryString)
+    public static HLinqQuery<T> Parse(HLinqBinderDependenciesBag dependenciesBag, string queryString)
     {
         queryString = HttpUtility.UrlDecode(queryString);
         if (queryString.StartsWith('?'))
@@ -98,14 +92,14 @@ public partial class HLinqQuery<T> : IHLinqQuery where T : class
         {
             SourceQueryString = queryString,
         };
-        var parser = core.HLinqParser;
-        var tokenizer = core.Tokenizer;
+        var parser = dependenciesBag.HLinqParser;
+        var tokenizer = dependenciesBag.Tokenizer;
 
         var tokens = tokenizer.Tokenize(queryString);
 
         parser.Parse(hlinqQuery, tokens);
-        hlinqQuery.QueryApplier = core.QueryApplier;
-        hlinqQuery.Options = core.Options;
+        hlinqQuery.QueryApplier = dependenciesBag.QueryApplier;
+        hlinqQuery.Options = dependenciesBag.Options;
         return hlinqQuery;
     }
 

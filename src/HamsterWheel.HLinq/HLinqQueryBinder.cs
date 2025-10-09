@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Request;
@@ -14,6 +15,8 @@ public class HLinqQueryBinder(HLinqBinderDependenciesBag dependenciesBag)
                throw new HLinqQueryParserReturnedNullException();
     }
 
+    //this is tested to work correctly so writing a test for this exception would require to break the HLinqQuery type or replace it to something else
+    [ExcludeFromCodeCoverage]
     private class HLinqQueryParserReturnedNullException()
         : HLinqQueryException($"'{nameof(IHLinqParser)}' should never return null");
 }

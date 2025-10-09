@@ -112,6 +112,22 @@ partial class DbDataTests
         response.Should().BeEquivalentTo(Persons.Where(x => x.IpAddress == null));
     }
 
+    [Fact]
+    public async Task WhenConditionGroups_ThenCanFilter()
+    {
+        //act
+        //TODO: enhance client where to support groups
+        var response =
+            await fixture.Client.GetAsync(
+                "/demo/db?where[(x.FirstName==Billy&&x.LastName==Montgomery)||(x.id==2||x.id==3)]");
+
+        //assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var data = await response.Content.ReadFromJsonAsync<Person[]>();
+        data.Should().BeEquivalentTo(Persons.Where(x =>
+            (x.FirstName == "Billy" && x.LastName == "Montgomery") || (x.Id == 2 || x.Id == 3)));
+    }
+
     [Theory]
     [MemberData(nameof(IntData))]
     public async Task WhenIntPropertyEquals_ThenCanFilter(int value)

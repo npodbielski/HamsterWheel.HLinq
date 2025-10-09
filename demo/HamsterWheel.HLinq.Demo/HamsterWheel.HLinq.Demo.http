@@ -33,6 +33,9 @@ Accept: application/json
 GET {{HostAddress}}/demo/db?where[x.firstName==John Doe
 Accept: application/json
 ###
+GET {{HostAddress}}/demo/db?where
+Accept: application/json
+###
 GET {{HostAddress}}/demo/db?where[(x.firstName==John Doe]
 Accept: application/json
 
@@ -40,6 +43,22 @@ Accept: application/json
 GET {{HostAddress}}/demo/db?skip[]
 Accept: application/json
 
-###non parsable
-GET {{HostAddress}}/demo/db?foo[]
+###
+GET {{HostAddress}}/demo/db?select[x.firstName][]
+Accept: application/json
+
+###
+GET {{HostAddress}}/demo/db?select[x.firstName[
+Accept: application/json
+###
+GET {{HostAddress}}/demo/db?select()
+Accept: application/json
+###
+GET {{HostAddress}}/demo/db?.skip[0]
+Accept: application/json
+###
+GET {{HostAddress}}/demo/db?where[Name=x.Name]
+Accept: application/json
+###
+GET {{HostAddress}}/demo/db?select[Name=x.firstName + x.lastName]
 Accept: application/json

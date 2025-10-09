@@ -44,7 +44,7 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
             context.Tokens switch
             {
                 [NameOrValue, Assignment, NameOrValue, ..] => ThrowOnReverseComparison(context),
-                [IConditionalLogicalOperationToken conditionalLogicalOp, ..] => new Condition(conditionalLogicalOp),
+                [IConditionalLogicalOperationToken conditionalLogicalOp, not LeftCircleBracket, ..] => new Condition(conditionalLogicalOp),
                 [Entity, Dot, PropertyAccess, ..] => new Condition(),
                 [MethodCall, ..] => new Condition(),
                 _ => null

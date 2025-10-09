@@ -26,7 +26,7 @@ public class ResponseHLinqClientQueryBuilder<T> : ResponseHLinqClientQueryBuilde
     public string BuildQuery() => UrlEncoder.Default.Encode(Query.ToString());
 
     public T Deserialize(string json) => JsonSerializer.Deserialize<T>(json, _jsonSerializerOptions) ??
-                                         throw new CouldNotDeserialize<T>(json);
+                                         throw new CouldNotDeserializeException<T>(json);
 
     protected void AddDotIfNecessary()
     {

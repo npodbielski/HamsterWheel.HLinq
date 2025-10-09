@@ -26,7 +26,7 @@ public class InvalidTokenCollectionException(
 
         if (expected.Length != 0)
         {
-            stringBuilder.Append("Was expecting: '");
+            stringBuilder.Append("Was expecting for example: '");
             stringBuilder.Append(string.Join("", expected.Select(t => ExampleOfTokenValue(t, t.GetType()))));
             stringBuilder.Append("'.");
         }

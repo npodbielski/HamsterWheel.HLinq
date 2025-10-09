@@ -31,8 +31,7 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
         }
 
         var takeNumberAsString = (GetChildOfType<SkipOrTakeConstant>() ??
-                                  throw new InvalidOperationException(
-                                      "take query method needs to have number parameter")).Value.GetValue(query);
+                                  throw new SkipOrTakeConstantTokenMissingException()).Value.GetValue(query);
 
         var takeNumber = (int)converter.Convert(takeNumberAsString)!;
         if (MaxTake > 0 && takeNumber > MaxTake)
@@ -42,6 +41,9 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 
         return takeNumber;
     }
+
+    private sealed class SkipOrTakeConstantTokenMissingException()
+        : HLinqQueryException("Take query method needs to have number parameter");
 
     public sealed class Parser : ElementParserBase<TakeRoot>
     {

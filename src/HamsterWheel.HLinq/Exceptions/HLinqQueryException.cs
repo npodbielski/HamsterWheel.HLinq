@@ -1,6 +1,6 @@
 namespace HamsterWheel.HLinq.Exceptions;
 
-public sealed class CouldNotDeserialize<T>(string json)
+public sealed class CouldNotDeserializeException<T>(string json)
     : HLinqQueryException($"Could not deserialize string '{json.TakeAtMost(100)}' as '{typeof(T).FullName}'");
 
 

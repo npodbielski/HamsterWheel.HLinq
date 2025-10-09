@@ -27,8 +27,7 @@ public sealed class HLinqParser(IEnumerable<IElementParser> allParsers) : IHLinq
             : Parsers.Where(p => p.ChildOf(context.CurrentElement)).ToArray();
         if (parsers.Length == 0 && !context.CurrentElement.NoChildren)
         {
-            throw new InvalidOperationException(
-                $"Element of type {context.CurrentElement.GetType().Name} does not have any children parsers!");
+            throw new MissingParserException(context);
         }
 
         var numberOfInvalidParsers = 0;
@@ -56,9 +55,13 @@ public sealed class HLinqParser(IEnumerable<IElementParser> allParsers) : IHLinq
             if (numberOfInvalidParsers == parsers.Length) break;
         }
 
-        if (context.CurrentElement is IHLinqQuery && numberOfInvalidParsers == parsers.Length)
+        if (context.CurrentElement is IHLinqQuery && numberOfInvalidParsers >= parsers.Length)
         {
             throw new NonParsableTokenSequenceException(context.SourceQueryString, context.Tokens, parsers);
         }
     }
+
+    private sealed class MissingParserException(IParsingContext context)
+        : HLinqQueryException(
+            $"Element of type {context.CurrentElement.GetType().Name} does not have any children parsers!");
 }

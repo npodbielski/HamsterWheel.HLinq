@@ -9,7 +9,7 @@ public sealed class InvalidTypeOfTreeRoot<TExpected>(object actual) : HLinqQuery
     $"Tree root: '{actual}' is of type: '{actual.GetType()}' but type of {typeof(TExpected)} was expected.");
 
 public sealed class NonParsableTokenSequenceException(string queryString, IToken[] actual, IElementParser[] expected)
-    : InvalidTokenCollectionException(queryString, actual, expected.First().ExampleTokens, MapParsers(expected))
+    : InvalidTokenCollectionException(queryString, actual, expected.First().ExampleTokens, MapParsers(expected.Skip(1).ToArray()))
 {
     private static IToken[][] MapParsers(IElementParser[] elementParsers) =>
         elementParsers.Select(p => p.ExampleTokens).ToArray();

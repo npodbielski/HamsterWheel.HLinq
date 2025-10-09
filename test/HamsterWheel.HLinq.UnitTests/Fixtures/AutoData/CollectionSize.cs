@@ -19,8 +19,7 @@ public class CollectionSizeAttribute(int size) : CustomizeAttribute
             var isTypeCompatible =
                     parameter.ParameterType.IsGenericType
                     && parameter.ParameterType.GetGenericTypeDefinition().MakeGenericType(objectType)
-                        .IsAssignableFrom(typeof(List<>).MakeGenericType(objectType))
-                ;
+                        .IsAssignableFrom(typeof(List<>).MakeGenericType(objectType));
 
             if (!isTypeCompatible)
             {

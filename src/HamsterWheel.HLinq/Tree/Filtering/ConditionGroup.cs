@@ -29,16 +29,14 @@ public sealed class ConditionGroup : TreeBranch, ILogicalOperationGroupBranch
             new LeftCircleBracket(default), .. Condition.Parser.ConditionExampleTokens, new RightCircleBracket(default)
         ];
 
-        protected override ConditionGroup? BuildBranch(IParsingContext context)
-        {
-            return context.Tokens switch
+        protected override ConditionGroup? BuildBranch(IParsingContext context) =>
+            context.Tokens switch
             {
                 [IConditionalLogicalOperationToken logical, LeftCircleBracket circleBracket, ..] =>
                     new ConditionGroup(logical, circleBracket),
                 [LeftCircleBracket circleBracket, ..] => new ConditionGroup(circleBracket),
                 _ => null
             };
-        }
 
         protected override void FinishImpl(IParsingContext context)
         {

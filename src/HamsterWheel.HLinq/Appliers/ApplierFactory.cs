@@ -1,3 +1,4 @@
+using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
 
 namespace HamsterWheel.HLinq.Appliers;
@@ -14,6 +15,9 @@ public sealed class ApplierFactory(IEnumerable<IApplier> appliers) : IApplierFac
             }
         }
 
-        throw new InvalidOperationException($"No applier for {root.GetType()} was found");
+        throw new MissingApplierException(root);
     }
+
+    private sealed class MissingApplierException(ITreeBranch root)
+        : HLinqQueryException($"No applier for {root.GetType()} was found");
 }

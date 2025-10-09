@@ -15,7 +15,7 @@ public partial class ExpressionBuilderUnitTests
     {
         const string query = "where[x.Name.Contains(test)]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -30,7 +30,7 @@ public partial class ExpressionBuilderUnitTests
     {
         const string query = "where[x.Name.StartsWith(t)]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -45,7 +45,7 @@ public partial class ExpressionBuilderUnitTests
     {
         const string query = "where[x.Name.EndsWith(n)]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -60,7 +60,7 @@ public partial class ExpressionBuilderUnitTests
     {
         const string query = "where[x.Name.Contains(test, StringComparison.InvariantCultureIgnoreCase)]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -76,7 +76,7 @@ public partial class ExpressionBuilderUnitTests
     {
         const string query = "where[ilike(x.Name, test)]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -89,7 +89,7 @@ public partial class ExpressionBuilderUnitTests
     {
         const string query = "where[x.Name==test]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -104,7 +104,7 @@ public partial class ExpressionBuilderUnitTests
     {
         const string query = "where[x.Name!=test]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -120,7 +120,7 @@ public partial class ExpressionBuilderUnitTests
     {
         var query = $"where[x.NullableString=={name ??= "null"}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -137,7 +137,7 @@ public partial class ExpressionBuilderUnitTests
     {
         const string query = "where[x.NullableString==null]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -155,7 +155,7 @@ public partial class ExpressionBuilderUnitTests
         var guid = Guid.Parse("03F04946-2243-4C1F-9F61-75EA0B7E7767");
         var query = $"where[x.Id=={guid}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -171,7 +171,7 @@ public partial class ExpressionBuilderUnitTests
     {
         const string query = "where[x.Flag]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -188,7 +188,7 @@ public partial class ExpressionBuilderUnitTests
     {
         var query = $"where[x.Flag=={value}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual = (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(), query);
         actual.Should().NotBeNull();
         actual.ToString().Should().Be($"Param_0 => (Param_0.Flag == {value})");
@@ -205,7 +205,7 @@ public partial class ExpressionBuilderUnitTests
         var @null = value is null ? "null" : value.ToString();
         var query = $"where[x.NullableFlag=={@null}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -226,7 +226,7 @@ public partial class ExpressionBuilderUnitTests
     {
         var query = $"where[x.Byte=={value}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -249,7 +249,7 @@ public partial class ExpressionBuilderUnitTests
         var @null = value is null ? "null" : value.ToString();
         var query = $"where[x.NullableByte=={@null}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -273,7 +273,7 @@ public partial class ExpressionBuilderUnitTests
     {
         var query = $"where[x.Short=={value}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -300,7 +300,7 @@ public partial class ExpressionBuilderUnitTests
         var @null = value is null ? "null" : value.ToString();
         var query = $"where[x.NullableShort=={@null}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -323,7 +323,7 @@ public partial class ExpressionBuilderUnitTests
     {
         var query = $"where[x.Int=={value}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -348,7 +348,7 @@ public partial class ExpressionBuilderUnitTests
         var @null = value is null ? "null" : value.ToString();
         var query = $"where[x.NullableInt=={@null}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -372,7 +372,7 @@ public partial class ExpressionBuilderUnitTests
     {
         var query = $"where[x.Long=={value}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -398,7 +398,7 @@ public partial class ExpressionBuilderUnitTests
         var @null = value is null ? "null" : value.ToString();
         var query = $"where[x.NullableLong=={@null}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -423,7 +423,7 @@ public partial class ExpressionBuilderUnitTests
     {
         var query = $"where[x.Enum=={value}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -450,7 +450,7 @@ public partial class ExpressionBuilderUnitTests
         var @null = value is null ? "null" : value.ToString();
         var query = $"where[x.NullableEnum=={@null}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -476,7 +476,7 @@ public partial class ExpressionBuilderUnitTests
         var value = (decimal)lValue;
         var query = $"where[x.Decimal=={value}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -503,7 +503,7 @@ public partial class ExpressionBuilderUnitTests
         var @null = value is null ? "null" : value.ToString();
         var query = $"where[x.NullableDecimal=={@null}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -527,7 +527,7 @@ public partial class ExpressionBuilderUnitTests
     {
         var query = $"where[x.Double=={value.ToString()}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -552,7 +552,7 @@ public partial class ExpressionBuilderUnitTests
     {
         var query = $"where[x.NullableDouble=={(value is null ? "null" : value.Value.ToString())}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -577,7 +577,7 @@ public partial class ExpressionBuilderUnitTests
     {
         var query = $"where[x.Float=={value.ToString()}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -603,7 +603,7 @@ public partial class ExpressionBuilderUnitTests
         float? value = stringValue == null ? null : float.Parse(stringValue);
         var query = $"where[x.NullableFloat=={(value is null ? "null" : value.Value.ToString())}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -626,7 +626,7 @@ public partial class ExpressionBuilderUnitTests
         var value = TimeOnly.Parse(stringValue);
         var query = $"where[x.Time=={value.ToString()}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -650,7 +650,7 @@ public partial class ExpressionBuilderUnitTests
         var @null = value is not null ? value.Value.ToString() : "null";
         var query = $"where[x.NullableTime=={@null}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -671,7 +671,7 @@ public partial class ExpressionBuilderUnitTests
     {
         var query = $"where[x.DateTime=={value.ToString(CultureInfo.InvariantCulture)}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -695,7 +695,7 @@ public partial class ExpressionBuilderUnitTests
         var @null = value is not null ? value.Value.ToString(CultureInfo.InvariantCulture) : "null";
         var query = $"where[x.NullableDateTime=={@null}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -720,7 +720,7 @@ public partial class ExpressionBuilderUnitTests
     {
         var query = $"where[x.DateTimeOffset=={value.ToString()}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);
@@ -749,7 +749,7 @@ public partial class ExpressionBuilderUnitTests
         var @null = value is not null ? value.Value.ToString() : "null";
         var query = $"where[x.NullableDateTimeOffset=={@null}]";
         var tokens = _tokenizer.Tokenize(query);
-        ITreeElement tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
         var actual =
             (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
                 query);

@@ -7,20 +7,24 @@ using HamsterWheel.HLinq.Tokens.Selecting;
 
 namespace HamsterWheel.HLinq.Tokenizer;
 
+using CurrentTokenPossibility = (IHLinqTokenPossibility token, int possibility);
+
 public sealed class HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPossibilities) : IHLinqTokenizer
 {
     public IToken[] Tokenize(string hLinqQuery)
     {
         List<IToken> tokens = [];
 
-        (IHLinqTokenPossibility token, int possibility)[] allTokens = tokenPossibilities.Select(t => (t, 0)).ToArray();
-        List<(IHLinqTokenPossibility token, int possibility)> nextPossibleTokens = [];
+        CurrentTokenPossibility[] allTokens = tokenPossibilities.Select(t => (t, 0)).ToArray();
+        List<CurrentTokenPossibility> nextPossibleTokens = [];
         var span = hLinqQuery.AsSpan();
         var previousTokenIndex = 0;
+
+        ReadOnlySpan<char> currentSubset = null;
         for (var index = 0; index < span.Length; index++)
         {
             var range = previousTokenIndex..(index + 1);
-            var currentSubset = span[range];
+            currentSubset = span[range];
 
             if (currentSubset.IsWhiteSpace())
             {
@@ -57,6 +61,7 @@ public sealed class HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPoss
                     previousTokenIndex = index + 1;
                     nextPossibleTokens.Clear();
                     tokens.Add(first.token.Build(range));
+                    currentSubset = [];
                     continue;
                 }
             }
@@ -76,13 +81,10 @@ public sealed class HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPoss
             }
         }
 
-        if (hLinqQuery.Length > 0 && tokens.Count == 0)
+        if (hLinqQuery.Length > 0 && currentSubset.Length > 0 && !currentSubset.IsWhiteSpace())
         {
             throw new UnknownTokenException(hLinqQuery,
-            [
-                new Where(default), new Select(default), new Skip(default), new Take(default), new OrderBy(default),
-                new OrderByDescending(default)
-            ]);
+                nextPossibleTokens.Select(npt => npt.token.Build(default)).ToArray());
         }
 
         return tokens.ToArray();

@@ -7,7 +7,7 @@ public sealed class Or(Range range) : TokenBase(range), IConditionalLogicalOpera
     public sealed class Possibility() : TokenPossibility<Or>(TokenValue)
     {
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            previousToken is NameOrValue or PropertyAccess;
+            previousToken is NameOrValue or PropertyAccess or RightCircleBracket;
 
         protected override Or BuildImpl(Range range) => new(range);
     }

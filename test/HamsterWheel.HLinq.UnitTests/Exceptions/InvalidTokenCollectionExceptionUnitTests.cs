@@ -33,7 +33,7 @@ public class InvalidTokenCollectionExceptionUnitTests
         //arrange
         const string hlinqQueryString = "select[]";
         const string expected =
-            $"HLinq query '{hlinqQueryString}' is invalid at character 0: 'select[]'. Was expecting: 'select[x.Name]'.";
+            $"HLinq query '{hlinqQueryString}' is invalid at character 0: 'select[]'. Was expecting for example: 'select[x.Name]'.";
 
         //act
         var e = new InvalidTokenCollectionException(hlinqQueryString, [
@@ -54,7 +54,7 @@ public class InvalidTokenCollectionExceptionUnitTests
         //arrange
         const string hlinqQueryString = "where[2=x.Int]";
         const string expected = $""" 
-                                 HLinq query '{hlinqQueryString}' is invalid at character 6: '2=x.Int'. Was expecting: 'x.Name==Jan'.
+                                 HLinq query '{hlinqQueryString}' is invalid at character 6: '2=x.Int'. Was expecting for example: 'x.Name==Jan'.
                                  You can also try:
                                   - &&
                                   - ||
@@ -83,7 +83,7 @@ public class InvalidTokenCollectionExceptionUnitTests
         //arrange
         const string hlinqQueryString = "where[(x.Flag]";
         const string expected =
-            $"HLinq query '{hlinqQueryString}' is invalid at character 13: ']'. Was expecting: ')'.";
+            $"HLinq query '{hlinqQueryString}' is invalid at character 13: ']'. Was expecting for example: ')'.";
 
         //act
         var e = new InvalidTokenCollectionException(hlinqQueryString, [new RightSquareBracket(13..14)],
@@ -99,7 +99,7 @@ public class InvalidTokenCollectionExceptionUnitTests
         //arrange
         const string hlinqQueryString = "where[x.Int=2";
         const string expected =
-            $"HLinq query '{hlinqQueryString}' is invalid and not finished properly. Was expecting: ']'.";
+            $"HLinq query '{hlinqQueryString}' is invalid and not finished properly. Was expecting for example: ']'.";
 
         //act
         var e = new InvalidTokenCollectionException(hlinqQueryString, [], [new RightSquareBracket(default)]);
@@ -114,7 +114,7 @@ public class InvalidTokenCollectionExceptionUnitTests
         //arrange
         const string hlinqQueryString = "take[]";
         const string expected =
-            $"HLinq query '{hlinqQueryString}' is invalid and not finished properly. Was expecting: 'take[10]'.";
+            $"HLinq query '{hlinqQueryString}' is invalid and not finished properly. Was expecting for example: 'take[10]'.";
 
         //act
         var e = new InvalidTokenCollectionException(hlinqQueryString, [], [
@@ -135,7 +135,7 @@ public class InvalidTokenCollectionExceptionUnitTests
         const string hlinqQueryString = "foo[]";
         const string expected =
             """
-            HLinq query 'foo[]' is invalid and not finished properly. Was expecting: 'where'.
+            HLinq query 'foo[]' is invalid and not finished properly. Was expecting for example: 'where'.
             You can also try:
              - select
              - skip
