@@ -1,7 +1,9 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.Exceptions;
+using HamsterWheel.HLinq.Tokenizer;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
+using HamsterWheel.HLinq.Tokens.Ordering;
 using HamsterWheel.HLinq.Tokens.Paging;
 using HamsterWheel.HLinq.Tokens.Selecting;
 
@@ -120,6 +122,32 @@ public class InvalidTokenCollectionExceptionUnitTests
             new LeftSquareBracket(default),
             new TokenExample("10"),
             new RightSquareBracket(default),
+        ]);
+
+        //assert
+        e.Message.Should().Be(expected);
+    }
+
+    [Fact]
+    public void Message_WhenCalledFromUnknownTokenException_ThenCorrectlyFormatsMessage()
+    {
+        //arrange
+        const string hlinqQueryString = "foo[]";
+        const string expected =
+            """
+            HLinq query 'foo[]' is invalid and not finished properly. Was expecting: 'where'.
+            You can also try:
+             - select
+             - skip
+             - take
+             - orderby
+             - orderbyDescending
+            """;
+
+        //act
+        var e = new HLinqTokenizer.UnknownTokenException(hlinqQueryString, [
+            new Where(default), new Select(default), new Skip(default), new Take(default), new OrderBy(default),
+            new OrderByDescending(default)
         ]);
 
         //assert

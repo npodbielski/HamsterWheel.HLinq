@@ -1,7 +1,7 @@
 @HostAddress = http://localhost:5087
 
-###
-
+##Memory
+###memory order and take 1 
 GET {{HostAddress}}/demo/memory?orderBy[x.name].take[1]
 Accept: application/json
 
@@ -25,6 +25,10 @@ Accept: application/json
 GET {{HostAddress}}/demo/controller/memory?take[1]
 Accept: application/json
 
+###select const 
+GET {{HostAddress}}/demo/memory?select[Name=1]
+Accept: application/json
+
 ###
 #Errors
 ###
@@ -39,5 +43,5 @@ GET {{HostAddress}}/demo/db?skip[]
 Accept: application/json
 
 ###non parsable
-GET {{HostAddress}}/demo/db?skip[].select.
+GET {{HostAddress}}/demo/db?foo[]
 Accept: application/json

@@ -65,9 +65,9 @@ public sealed class HLinqTokenizer(IHLinqParsersCollection services) : IHLinqTok
                 tokens.Add(new Unknown(range));
             }
 
-            if (tokens.Count != 0 && tokens[^1] is Unknown)
+            if (tokens.Count != 0 && tokens[^1] is Unknown || currentSubset.Length > 0)
             {
-                throw new UnknownTokenException(range,
+                throw new UnknownTokenException(hLinqQuery,
                 [
                     new Where(default), new Select(default), new Skip(default), new Take(default), new OrderBy(default),
                     new OrderByDescending(default)
@@ -78,7 +78,7 @@ public sealed class HLinqTokenizer(IHLinqParsersCollection services) : IHLinqTok
         return tokens.ToArray();
     }
 
-    public sealed class UnknownTokenException(Range range, IToken[] expectedTokens)
-        : HLinqQueryException(
-            $"Unknown token exception at ({range.Start}, {range.End}). Was expecting one of: {string.Join(", ", expectedTokens.Select(t => t.ToString()))}");
+    public sealed class UnknownTokenException(string queryString, IToken[] expectedTokens)
+        : InvalidTokenCollectionException(queryString, [], expectedTokens.Take(1).ToArray(),
+            expectedTokens.Skip(1).Select(t => new[] { t }).ToArray());
 }

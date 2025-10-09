@@ -16,13 +16,12 @@ public class InvalidTokenCollectionException(
             ? $"at character {actual.First().Range.Start}: '{string.Join("", actual.Select(a => a.GetValue(queryString)))}'"
             : "and not finished properly";
 
-    private static string ShowAlternatives(IToken[] expected,
-        params IToken[][] orExpected)
+    private static string ShowAlternatives(IToken[] expected, params IToken[][] orExpected)
     {
         var stringBuilder = new StringBuilder();
         if (expected.Length != 0 || orExpected.Length != 0)
         {
-            stringBuilder.Append(" ");
+            stringBuilder.Append(' ');
         }
 
         if (expected.Length != 0)
@@ -42,7 +41,7 @@ public class InvalidTokenCollectionException(
                 var expectedTokens = orExpected[index];
                 stringBuilder.Append(" - ");
                 var line = string.Join("", expectedTokens.Select(t => ExampleOfTokenValue(t, t.GetType())));
-                if (index <= expectedTokens.Length)
+                if (index < orExpected.Length - 1)
                 {
                     stringBuilder.AppendLine(line);
                 }
