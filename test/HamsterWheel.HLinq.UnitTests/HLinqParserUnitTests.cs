@@ -11,11 +11,7 @@ namespace HamsterWheel.HLinq.UnitTests;
 
 public class HLinqParserUnitTests
 {
-    private readonly IHLinqParsersCollection _parsersCollection = new HLinqServicesCollection(new HLinqCore());
-    private readonly HLinqParser _sut;
-
-    public HLinqParserUnitTests() => _sut = new HLinqParser(_parsersCollection);
-
+    private readonly HLinqParser _sut = new(new HLinqCore().Parsers);
 
     [Fact]
     public void Parse_WhenSingleRename_ThenCanParse()

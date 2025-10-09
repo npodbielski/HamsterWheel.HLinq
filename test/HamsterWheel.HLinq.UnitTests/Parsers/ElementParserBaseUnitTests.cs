@@ -53,7 +53,7 @@ public class ElementParserBaseUnitTests
     public void Finish_WhenCalled_ThenCallsCorrectMethod()
     {
         //arrange
-        var currentElement = Substitute.For<ITreeBranch>();
+        var currentElement = Substitute.For<IHLinqQuery>();
         var context = new ParsingContext(currentElement);
         var sut = new TestElementParser();
 

@@ -10,7 +10,7 @@ public interface IParsingContext
     public IToken[] Tokens { get; }
     public Stack<IGrowingElementContext> Parents { get; set; }
     List<ITreeElement> Children { get; }
-    string SourceQueryString { get; init; }
+    string SourceQueryString { get; }
     public void Push(ITreeElement newElement);
     void GoBackInTheTree();
     public void RemoveTokensFromStart(int number);

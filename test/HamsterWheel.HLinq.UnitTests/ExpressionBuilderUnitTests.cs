@@ -12,9 +12,8 @@ public partial class ExpressionBuilderUnitTests
     private readonly ExpressionBuilder _sut;
     private static readonly HLinqCore HLinqCore = new();
     private readonly HLinqTokenizer _tokenizer = new(HLinqCore.TokenPossibilities);
-    private readonly HLinqParser _parser = new(ServicesCollection);
+    private readonly HLinqParser _parser = new(HLinqCore.Parsers);
     private readonly ParametersConverter _parametersConverter = new();
-    private static readonly HLinqServicesCollection ServicesCollection = new(HLinqCore);
 
     public ExpressionBuilderUnitTests()
     {

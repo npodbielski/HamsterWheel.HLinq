@@ -4,11 +4,11 @@ using HamsterWheel.HLinq.Tokens;
 
 namespace HamsterWheel.HLinq.Parsers;
 
-public sealed class HLinqParser(IHLinqParsersCollection parsersCollection) : IHLinqParser
+public sealed class HLinqParser(IEnumerable<IElementParser> allParsers) : IHLinqParser
 {
-    private IElementParser[] Parsers => parsersCollection.Parsers;
+    private IElementParser[] Parsers => allParsers.ToArray();
 
-    private IElementParser[] RootParsers { get; } = parsersCollection.Parsers.Where(p => p.IsRoot).ToArray();
+    private IElementParser[] RootParsers { get; } = allParsers.Where(p => p.IsRoot).ToArray();
 
     public IHLinqQuery Parse<T>(IToken[] tokens, string stringQuery) where T : class
     {
@@ -18,7 +18,6 @@ public sealed class HLinqParser(IHLinqParsersCollection parsersCollection) : IHL
         };
         var context = new ParsingContext(query)
         {
-            SourceQueryString = stringQuery,
             Tokens = tokens
         };
         Parse<T>(context);

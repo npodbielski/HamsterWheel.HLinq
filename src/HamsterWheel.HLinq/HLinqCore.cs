@@ -8,6 +8,7 @@ using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.Tokenizer;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Selecting;
+using HamsterWheel.HLinq.Tree.Selecting;
 using HamsterWheel.HLinq.ValueConverters;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -21,7 +22,7 @@ internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
     private IHLinqTokenPossibility[]? _coreTokenPossibilities;
 
     private IServiceProvider Provider => provider ?? CreateDefault();
-    private IElementParser[] CoreParsers => _coreParsers ??= GetFromAssemblyWith<TreeBranch, IElementParser>();
+    private IElementParser[] CoreParsers => _coreParsers ??= Provider.GetServices<IElementParser>().ToArray();
 
     private IElementToExpressionConverter[] CoreExpressionConverters =>
         _coreConverters ??= GetFromAssemblyWith<TreeBranch, IElementToExpressionConverter>();
@@ -77,6 +78,14 @@ internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
             servicesCollection.AddSingleton(tp, tp);
         }
 
+        //parsers
+        var elementParsers = GetTypesFromAssemblyWithStatic<SelectRoot, IElementParser>();
+        foreach (var ep in elementParsers)
+        {
+            servicesCollection.AddSingleton<IElementParser>(c => (IElementParser)c.GetRequiredService(ep));
+            servicesCollection.AddSingleton(ep, ep);
+        }
+
         var valueConverters = GetTypesFromAssemblyWithStatic<HLinqCore, IValueConverter>();
         foreach (var vc in valueConverters.Where(t => t != typeof(ConfigurableToPlainValueConverter)))
         {
@@ -125,7 +134,6 @@ internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
         servicesCollection.AddSingleton<IMethodsCache, MethodsCache>();
         servicesCollection.AddSingleton<IHLinqParser, HLinqParser>();
         servicesCollection.AddSingleton<IHLinqTokenizer, HLinqTokenizer>();
-        servicesCollection.AddSingleton<IHLinqParsersCollection, HLinqServicesCollection>();
         servicesCollection.AddSingleton<IDefaultConverter, DefaultConverter>();
         servicesCollection.AddSingleton<IHLinqOptions, HLinqOptions>();
 

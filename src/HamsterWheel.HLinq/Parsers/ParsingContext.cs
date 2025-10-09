@@ -2,7 +2,7 @@ using HamsterWheel.HLinq.Tokens;
 
 namespace HamsterWheel.HLinq.Parsers;
 
-public sealed class ParsingContext(ITreeElement root) : IParsingContext
+public sealed class ParsingContext(IHLinqQuery root) : IParsingContext
 {
     public IGrowingElementContext Current { get; private set; } = new GrowingElementContext(root, []);
     public ITreeElement CurrentElement => Current.Element;
@@ -10,7 +10,7 @@ public sealed class ParsingContext(ITreeElement root) : IParsingContext
     public List<ITreeElement> Children => Current.Children;
     public IToken[] Tokens { get; set; } = [];
     public Stack<IGrowingElementContext> Parents { get; set; } = [];
-    public string SourceQueryString { get; init; }
+    public string SourceQueryString { get; } = root.SourceQueryString;
 
     public void Push(ITreeElement newElement)
     {
