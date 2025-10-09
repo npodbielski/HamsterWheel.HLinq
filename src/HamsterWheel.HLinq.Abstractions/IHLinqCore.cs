@@ -3,8 +3,6 @@ using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
-using HamsterWheel.HLinq.ValueConverters;
-
 namespace HamsterWheel.HLinq;
 
 public interface IHLinqCore
@@ -13,12 +11,10 @@ public interface IHLinqCore
     IHLinqTokenPossibility[] TokenPossibilities { get; }
     IElementToExpressionConverter[] ExpressionConverters { get; }
     IElementToMemberAssignmentConverter[] AssignmentConverters { get; }
-    IValueConverterFactory ValueConverterFactory { get; }
     IHLinqQueryApplier QueryApplier { get; }
     IHLinqOptions Options { get; }
     IHLinqParser HLinqParser { get; }
     IHLinqTokenizer Tokenizer { get; }
     IMethodsCache MethodsCache { get; }
-
     T[] GetFromAssemblyWith<TSource, T>();
 }

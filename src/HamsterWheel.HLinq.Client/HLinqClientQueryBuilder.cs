@@ -1,11 +1,16 @@
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.Json;
 using HamsterWheel.HLinq.Data.Converters;
 
 namespace HamsterWheel.HLinq.Client;
 
 public class HLinqClientQueryBuilder<T> : ResponseHLinqClientQueryBuilder<T[]>
 {
+    protected HLinqClientQueryBuilder(JsonSerializerOptions? jsonSerializerOptions = null) : base(jsonSerializerOptions)
+    {
+    }
+
     public UnorderedHLinqClientQueryBuilder<TResult> Select<TResult>(Expression<Func<T, TResult>> selector)
     {
         switch (selector.Body)
@@ -37,7 +42,7 @@ public class HLinqClientQueryBuilder<T> : ResponseHLinqClientQueryBuilder<T[]>
             "Microsoft.EntityFrameworkCore.DbFunctions")
         {
             AddDotIfNecessary();
-            Query.Append($"where[{predicate.Body.ToString().Replace("EF.Functions.", "").Replace("\"","")}]");
+            Query.Append($"where[{predicate.Body.ToString().Replace("EF.Functions.", "").Replace("\"", "")}]");
         }
         else if (predicate.Body is BinaryExpression be)
         {
@@ -61,7 +66,8 @@ public class HLinqClientQueryBuilder<T> : ResponseHLinqClientQueryBuilder<T[]>
                 Query.Append("where[")
                     .Append(
                         be.ToString().Replace(be.Left.ToString(), left.ToString()).TrimStart('(')
-                            .Replace(be.Right.ToString(), DefaultConverter.Instance.ConvertTo<string>(value)).TrimEnd(')')
+                            .Replace(be.Right.ToString(), DefaultConverter.Instance.ConvertTo<string>(value))
+                            .TrimEnd(')')
                     )
                     .Append(']');
             }
@@ -71,7 +77,7 @@ public class HLinqClientQueryBuilder<T> : ResponseHLinqClientQueryBuilder<T[]>
             AddDotIfNecessary();
             Query.Append($"where[{predicate.Body.ToString()}]");
         }
-        
+
         return Next<T>(this);
     }
 
