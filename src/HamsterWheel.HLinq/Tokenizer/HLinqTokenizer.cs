@@ -1,5 +1,4 @@
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Ordering;
@@ -8,15 +7,14 @@ using HamsterWheel.HLinq.Tokens.Selecting;
 
 namespace HamsterWheel.HLinq.Tokenizer;
 
-public sealed class HLinqTokenizer(IHLinqParsersCollection services) : IHLinqTokenizer
+public sealed class HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPossibilities) : IHLinqTokenizer
 {
     public IToken[] Tokenize(string hLinqQuery)
     {
         List<IToken> tokens = [];
 
-        (IHLinqTokenPossibility token, int possibility)[] allTokens =
-            services.Tokens.Select(t => (t, 0)).ToArray();
-        List<(IHLinqTokenPossibility token, int possibility)> nextPossibleTokens = new();
+        (IHLinqTokenPossibility token, int possibility)[] allTokens = tokenPossibilities.Select(t => (t, 0)).ToArray();
+        List<(IHLinqTokenPossibility token, int possibility)> nextPossibleTokens = [];
         var span = hLinqQuery.AsSpan();
         var previousTokenIndex = 0;
         for (var index = 0; index < span.Length; index++)
@@ -43,7 +41,10 @@ public sealed class HLinqTokenizer(IHLinqParsersCollection services) : IHLinqTok
                 } while (next is not null && char.IsWhiteSpace(next.Value));
 
                 var possibility = pt.token.CanBeAt(index, currentSubset, next, tokens);
-                if (possibility > 0) nextPossibleTokens.Add(pt with { possibility = possibility });
+                if (possibility > 0)
+                {
+                    nextPossibleTokens.Add(pt with { possibility = possibility });
+                }
             }
 
             nextPossibleTokens = nextPossibleTokens.OrderBy(t => t.possibility).ToList();
@@ -73,6 +74,15 @@ public sealed class HLinqTokenizer(IHLinqParsersCollection services) : IHLinqTok
                     new OrderByDescending(default)
                 ]);
             }
+        }
+
+        if (hLinqQuery.Length > 0 && tokens.Count == 0)
+        {
+            throw new UnknownTokenException(hLinqQuery,
+            [
+                new Where(default), new Select(default), new Skip(default), new Take(default), new OrderBy(default),
+                new OrderByDescending(default)
+            ]);
         }
 
         return tokens.ToArray();

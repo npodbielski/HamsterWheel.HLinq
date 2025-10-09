@@ -6,7 +6,7 @@ namespace HamsterWheel.HLinq.UnitTests;
 
 public partial class HLinqQueryApplierUnitTests
 {
-    private readonly HLinqTokenizer _tokenizer = new(ServicesCollection);
+    private readonly HLinqTokenizer _tokenizer = new(HLinqCore.TokenPossibilities);
     private readonly HLinqParser _parser = new(ServicesCollection);
     private static readonly HLinqCore HLinqCore = new();
     private static readonly HLinqServicesCollection ServicesCollection = new(HLinqCore);

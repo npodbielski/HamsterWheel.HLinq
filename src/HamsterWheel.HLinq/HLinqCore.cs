@@ -7,6 +7,7 @@ using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.Tokenizer;
 using HamsterWheel.HLinq.Tokens;
+using HamsterWheel.HLinq.Tokens.Selecting;
 using HamsterWheel.HLinq.ValueConverters;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -29,7 +30,7 @@ internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
         _coreMemberAssignmentConverters ??= GetFromAssemblyWith<TreeBranch, IElementToMemberAssignmentConverter>();
 
     private IHLinqTokenPossibility[] CoreTokenPossibilities =>
-        _coreTokenPossibilities ??= GetFromAssemblyWith<TokenBase, IHLinqTokenPossibility>();
+        _coreTokenPossibilities ??= Provider.GetServices<IHLinqTokenPossibility>().ToArray();
 
     public IConverterFactory ConverterFactory => Provider.GetRequiredService<IConverterFactory>();
     public IHLinqQueryApplier QueryApplier => Provider.GetRequiredService<IHLinqQueryApplier>();
@@ -66,6 +67,15 @@ internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
         IServiceProvider? apiServicesCollection = null)
     {
         servicesCollection.AddSingleton<IHLinqCore, HLinqCore>();
+
+        //tokens
+        var tokenPossibilities = GetTypesFromAssemblyWithStatic<Select, IHLinqTokenPossibility>();
+        foreach (var tp in tokenPossibilities)
+        {
+            servicesCollection.AddSingleton<IHLinqTokenPossibility>(c =>
+                (IHLinqTokenPossibility)c.GetRequiredService(tp));
+            servicesCollection.AddSingleton(tp, tp);
+        }
 
         var valueConverters = GetTypesFromAssemblyWithStatic<HLinqCore, IValueConverter>();
         foreach (var vc in valueConverters.Where(t => t != typeof(ConfigurableToPlainValueConverter)))

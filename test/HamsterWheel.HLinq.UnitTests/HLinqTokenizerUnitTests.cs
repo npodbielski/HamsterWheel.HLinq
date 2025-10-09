@@ -1,4 +1,3 @@
-using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tokenizer;
 using static HamsterWheel.HLinq.UnitTests.Assertions.ExpectedToken;
 
@@ -6,13 +5,7 @@ namespace HamsterWheel.HLinq.UnitTests;
 
 public partial class HLinqTokenizerUnitTests
 {
-    private readonly IHLinqParsersCollection _parsersCollection = new HLinqServicesCollection(new HLinqCore());
-    private readonly HLinqTokenizer _sut;
-
-    public HLinqTokenizerUnitTests()
-    {
-        _sut = new HLinqTokenizer(_parsersCollection);
-    }
+    private readonly HLinqTokenizer _sut = new(new HLinqCore().TokenPossibilities);
 
     [Fact]
     public void Tokenize_WhenHaveFilterAndPaging_CanParse()

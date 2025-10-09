@@ -173,7 +173,7 @@ public class HLinqParserUnitTests
     public void Parse_WhenTwoConditions_ThenCanParse()
     {
         const string query = "where[x.Name.Contains(test)&&x.Id==77774169-BB9D-4DF9-A4A7-52019C4A445D]";
-        var tokens = new HLinqTokenizer(new HLinqServicesCollection(new HLinqCore())).Tokenize(query);
+        var tokens = new HLinqTokenizer(new HLinqCore().TokenPossibilities).Tokenize(query);
 
         ITreeBranch tree = _sut.Parse<DummyEntity>(tokens, query);
 
