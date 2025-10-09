@@ -61,9 +61,9 @@ public sealed class PropertyAssignment(IToken[] tokens) : TreeBranch(tokens)
         {
             if (element.Property is null)
             {
-                return new(element.NewPropName?.GetName(context.HLinqQuery) ??
-                           throw new PropertyAssignmentNameNotFoundException(element, context.HLinqQuery),
-                    TryToFindBestType(context, element));
+                var name = element.NewPropName?.GetName(context.HLinqQuery) ??
+                           throw new PropertyAssignmentNameNotFoundException(element, context.HLinqQuery);
+                return new(name, TryToFindBestType(context, element));
             }
 
             var path = element.Property.GetPath(context.HLinqQuery);
@@ -99,10 +99,10 @@ public sealed class PropertyAssignment(IToken[] tokens) : TreeBranch(tokens)
             PropertyInfo propertyInfo)
         {
             var value = element.GetValue(context.HLinqQuery);
-            if (propertyInfo.PropertyType == typeof(string) && value is ['"', .., '"'] ||
-                propertyInfo.PropertyType == typeof(char) && value is ['\'', .., '\''])
+            if (propertyInfo.PropertyType == typeof(string) && value.IsDoubleQuoted() ||
+                propertyInfo.PropertyType == typeof(char) && value.IsSingleQuoted())
             {
-                return value[1..^1];
+                return value.UnQuote();
             }
 
             return value;
@@ -111,14 +111,11 @@ public sealed class PropertyAssignment(IToken[] tokens) : TreeBranch(tokens)
         private static Type TryToFindBestType(IBuilderContext context, PropertyAssignment element)
         {
             var value = element.GetValue(context.HLinqQuery);
-            if (value is ['"', .., '"'])
+            if (value.IsDoubleQuoted())
             {
                 return typeof(string);
             }
 
-            //TODO: probably it should be possible to annotate via the client what kind of type it is expecting. or for server to return this property with the type somehow
-            //..in Linq it is pretty clear what is expected but when we translate it to hLinq this information is lost
-            //..to make it work seamlessly via http and without the surprises this information should be carried to the server too
             switch (value.Length)
             {
                 case 1 when char.IsDigit(value[0]):
@@ -128,9 +125,8 @@ public sealed class PropertyAssignment(IToken[] tokens) : TreeBranch(tokens)
                               value.Count(char.IsPunctuation) == 1:
                     return typeof(double);
                 case 1 when char.IsLetter(value[0]):
-                case 3 when value is ['\'', .., '\'']:
+                case 3 when value.IsSingleQuoted():
                     return typeof(char);
-                //TODO: dates
             }
 
             return typeof(string);

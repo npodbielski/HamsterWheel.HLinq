@@ -91,7 +91,6 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 
             var takeNumber = take.GetTakeNumber(hLinqQuery, converter);
 
-            //TODO: add support of queryable.Take(0..19) which would be mych nicer to query specific range of items
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Take),
                 infos => infos[1].ParameterType == type,
                 context.CurrentResultType);

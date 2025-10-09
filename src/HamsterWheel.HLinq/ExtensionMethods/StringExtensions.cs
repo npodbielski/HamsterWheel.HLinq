@@ -14,6 +14,8 @@ internal static class StringExtensions
     }
 
     public static string Quote(this string str) => $"\"{str}\"";
-
+    public static bool IsDoubleQuoted(this string str) => str is ['"', .., '"'];
+    public static bool IsSingleQuoted(this string str) => str is ['\'', .., '\''];
+    public static string UnQuote(this string str) => str[1..^1];
     internal static string TakeAtMost(this string str, int length) => str.Length > length ? str[..length] : str;
 }

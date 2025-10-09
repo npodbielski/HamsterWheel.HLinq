@@ -55,7 +55,7 @@ public sealed class ComparisonConstant(NameOrValue value) : TreeLeaf([value])
             return Expression.Constant(value, propType);
         }
 
-        public sealed class ElementToExpressionConverterPropertyTypeNullException()
+        private sealed class ElementToExpressionConverterPropertyTypeNullException()
             : HLinqQueryException("At this point property type needs to have value!");
     }
 }

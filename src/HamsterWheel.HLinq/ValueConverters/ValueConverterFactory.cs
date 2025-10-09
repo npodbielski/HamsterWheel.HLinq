@@ -1,3 +1,5 @@
+using HamsterWheel.HLinq.Builders;
+
 namespace HamsterWheel.HLinq.ValueConverters;
 
 public sealed class ValueConverterFactory : IValueConverterFactory
@@ -44,8 +46,6 @@ public sealed class ValueConverterFactory : IValueConverterFactory
             }
         }
 
-        //TODO: improve this error message to include reason for Hlinq query trying to do this and why it does not work and how this could be fixed by the user
-        // i.e. doing where[x.createdBy=userName] will throw here because there is no conversion between NamedReference and string
-        throw new InvalidOperationException($"No converter for type {type} was found!");
+        throw new MissingConverterException(type);
     }
 }

@@ -12,10 +12,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HamsterWheel.HLinq;
 
-//TODO: this should be internal to disallow core services manipulation via extensions
-//...it is possible to allow extend/overwrite less important services but they need to be wrapped in some safe sandbox/performance analyzer
-//...i.e. it should not be possible to do extensive I/O operations in small services or otherwise whole system could break
-//...also if extended service/parser/converter will throw exceptions very often, should be disabled entirely
 internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
 {
     private IElementParser[]? _coreParsers;
@@ -23,7 +19,6 @@ internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
     private IElementToMemberAssignmentConverter[]? _coreMemberAssignmentConverters;
     private IHLinqTokenPossibility[]? _coreTokenPossibilities;
 
-    //can we use global provider here? or maybe we should use existing one for extensions only and if those services fail, fallback to core ones
     private IServiceProvider Provider => provider ?? CreateDefault();
     private IElementParser[] CoreParsers => _coreParsers ??= GetFromAssemblyWith<TreeBranch, IElementParser>();
 
@@ -47,7 +42,6 @@ internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
     public IElementToExpressionConverter[] ExpressionConverters => CoreExpressionConverters;
     public IElementToMemberAssignmentConverter[] AssignmentConverters => CoreMemberAssignmentConverters;
     public IHLinqTokenPossibility[] TokenPossibilities => CoreTokenPossibilities;
-    public IValueConverterFactory ValueConverterFactory => Provider.GetRequiredService<IValueConverterFactory>();
 
     public T[] GetFromAssemblyWith<TSource, T>() => GetFromAssemblyWithStatic<TSource, T>();
 

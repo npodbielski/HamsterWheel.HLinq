@@ -7,7 +7,6 @@ public sealed class NameOrValue(Range range) : TokenBase(range)
 {
     public sealed class Possibility() : TokenPossibility<NameOrValue>(delimiters:
     [
-        //TODO: we could share the grammar in different way? delimiters are practically the same as PreviousTokenMatchImpl but from previous token point of view
         Equality.TokenValue.AsSpan()[0],
         Inequality.TokenValue.AsSpan()[0],
         LessThan.TokenValue.AsSpan()[0],
@@ -18,9 +17,6 @@ public sealed class NameOrValue(Range range) : TokenBase(range)
         RightCircleBracket.TokenValue.AsSpan()[0],
         And.TokenValue.AsSpan()[0],
         Or.TokenValue.AsSpan()[0],
-        //TODO: we need to be able to disable some delimiters based on possibility of next token -> if value of equality comparison (x.Value==1,1) comma can only be part of number value since we are allowing onlu commas inside method calls
-        //..but should we allow ',' as part of constant, number values since it is part of (1,2) method grammar?
-        //..or maybe we should just tokenize everything and lets parsers, parse and analyze contents? 
         Comma.TokenValue.AsSpan()[0]
     ])
     {

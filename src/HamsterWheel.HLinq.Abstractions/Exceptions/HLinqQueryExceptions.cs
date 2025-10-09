@@ -18,4 +18,4 @@ public sealed class NonParsableTokenSequenceException(string queryString, IToken
 public sealed class InvalidPropertyPathException(Type type, string path, string[] availableProps)
     : HLinqQueryException(
         $"Invalid property path '{path}' for entity '{type.Name}'." +
-        $" Available properties at this point are: {(availableProps.Length != 0 ? string.Join(",", availableProps) : "none")} ");
+        $" Available properties at this point are: '{(availableProps.Length != 0 ? string.Join("', '", availableProps) : "none")}'");

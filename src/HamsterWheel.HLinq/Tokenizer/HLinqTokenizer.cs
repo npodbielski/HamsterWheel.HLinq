@@ -65,7 +65,7 @@ public sealed class HLinqTokenizer(IHLinqParsersCollection services) : IHLinqTok
                 tokens.Add(new Unknown(range));
             }
 
-            if (tokens.Count != 0 && tokens[^1] is Unknown || currentSubset.Length > 0)
+            if (tokens.Count != 0 && tokens[^1] is Unknown)
             {
                 throw new UnknownTokenException(hLinqQuery,
                 [

@@ -4,15 +4,12 @@ using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Selecting;
-using HamsterWheel.HLinq.Tree.Filter;
 using HamsterWheel.HLinq.Tree.Filtering;
 using HamsterWheel.HLinq.Tree.Ordering;
-using HamsterWheel.HLinq.Tree.Select;
 using HamsterWheel.HLinq.Tree.Selecting;
 
 namespace HamsterWheel.HLinq.Tree;
 
-//TODO: copy to PropertyName to all select[Node=x.Name] kind of select
 public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamElement
 {
     public string GetValue(string hLinqQuery) => string.Join('.', GetPath(hLinqQuery));

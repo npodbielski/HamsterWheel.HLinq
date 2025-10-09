@@ -41,5 +41,3 @@ public partial class HLinqTokenizerUnitTests
         ]);
     }
 }
-
-//todo: consider allowing where[] as a safe start to work with filters like 1==1 in SQL

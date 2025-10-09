@@ -19,7 +19,6 @@ public sealed class MethodsCache : IMethodsCache
 
     public MethodInfo? GetInstance(Type type, string method, Func<ParameterInfo[], bool>? parameterBasedSelector)
     {
-        //TODO: C# allows for two members to only be different by case of characters in name i.e. it is perfectly fine to have 'Get' and 'get' methods in type. Probably in this case we should find best suited method via number of params and type of params (probably tricky with strings)
         var methodInfos = AllInstance(type).Where(p => p.Name == method);
 
         return parameterBasedSelector is not null

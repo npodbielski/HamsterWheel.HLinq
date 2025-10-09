@@ -63,7 +63,6 @@ public sealed class OrderByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
             var selector = builder.GetProperty(context.CurrentResultType, orderBy, hLinqQuery);
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.OrderBy),
                 infos => infos.Length == 2, context.CurrentResultType, selector.PropType);
-            //TODO: reuse delegate helper package
             return new QueryableContext((IQueryable)method.Invoke(null, [context.Queryable, selector.Expression])!,
                 context.CurrentResultType, context.Count);
         }

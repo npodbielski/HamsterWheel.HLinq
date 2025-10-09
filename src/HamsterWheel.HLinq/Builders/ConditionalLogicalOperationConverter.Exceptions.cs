@@ -1,7 +1,6 @@
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
-using HamsterWheel.HLinq.Tree.Filter;
 using HamsterWheel.HLinq.Tree.Filtering;
 
 namespace HamsterWheel.HLinq.Builders;

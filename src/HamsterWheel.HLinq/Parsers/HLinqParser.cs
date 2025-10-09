@@ -43,7 +43,6 @@ public sealed class HLinqParser(IHLinqParsersCollection parsersCollection) : IHL
             numberOfInvalidParsers = 0;
             foreach (var parser in parsers)
             {
-                //TODO: pass T to parser to validate if Type has properties, methods etc.
                 if (parser.TryBuildElement(context))
                 {
                     if (context.CurrentElement is TreeBranch)

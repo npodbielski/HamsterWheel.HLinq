@@ -77,7 +77,6 @@ partial class HLinqTokenizerUnitTests
     [Fact]
     public void Tokenize_WhenHaveMethodWith2Params_CanParse()
     {
-        //TODO: allow "" for string values or GUIDs
         const string query = "where[x.Name.Contains(test,StringComparison.InvariantCultureIgnoreCase)]";
         var tokens = _sut.Tokenize(query);
         tokens.Should().HaveSequenceOf(query, [

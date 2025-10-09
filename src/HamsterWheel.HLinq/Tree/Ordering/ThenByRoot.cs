@@ -65,7 +65,6 @@ public sealed class ThenByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
                 infos => infos.Length == 2,
                 context.CurrentResultType,
                 selector.PropType);
-            //TODO: reuse delegate helper package
             return new QueryableContext(
                 (IOrderedQueryable)method.Invoke(null, [context.Queryable, selector.Expression])!,
                 context.CurrentResultType, context.Count);

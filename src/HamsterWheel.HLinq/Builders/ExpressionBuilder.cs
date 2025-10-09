@@ -162,12 +162,6 @@ public sealed class ExpressionBuilder(
             }
 
             currentType = targetProp.PropertyType;
-            //TODO: it would be nice to attempt to create expression if all types are just objects but I am not sure if this is even possible via expressions
-            //...to make this work expression builder needs to have an access to actual object here which is not possible currently since this whole code does not know about the actual data just types
-            // if (currentType == typeof(object) && targetProp.GetMethod is not null)
-            // {
-            //     currentType = targetProp.GetMethod.Invoke();
-            // }
             expression = GetProperty(expression, targetProp);
         }
 
