@@ -28,7 +28,7 @@ public sealed class InitializerConstantValue(IToken[] tokens) : TreeLeaf(tokens)
     {
         protected override Expression Build(IBuilderContext context, InitializerConstantValue element)
         {
-            var propertyType = context.InitializerPropertyType ??
+            var propertyType = (context as InitializerPropertyAssignmentBuilderContext)?.InitializerPropertyType ??
                                throw new InitializerPropertyTypeNotInitializedException();
             var converter = factory.GetConverterFor(propertyType);
             return Expression.Constant(converter.Convert(element.ValueToken.GetValue(context.HLinqQuery)));

@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using HamsterWheel.HLinq.Builders;
+using HamsterWheel.HLinq.Exceptions;
 
 namespace HamsterWheel.HLinq.Tree.Filtering;
 
@@ -9,8 +10,9 @@ public class PropertyMethodToExpressionConverter : IPropertyMethodToExpressionCo
     public Expression BuildInstance(IBuilderContext context, IMethod method,
         IParametersConverter parametersConverter)
     {
-        var expression = context.MethodSource;
-        var propType = context.MethodSource!.Type;
+        var methodCallContext = context as IMethodCallConditionBuilderContext ?? throw new PropertyMethodCallNeedsToHaveSourceExpressionException();
+        var expression = methodCallContext.MethodSource;
+        var propType = methodCallContext.MethodSource!.Type;
         var name = method.GetName(context.HLinqQuery);
         var parameters = method.Children.OfType<IMethodParamElement>()
             .Select(p => (p.GetValue(context.HLinqQuery),
@@ -36,7 +38,10 @@ public class PropertyMethodToExpressionConverter : IPropertyMethodToExpressionCo
         }
 
         return methodCallExpression ??
-               throw new Method.Converter.InvalidMethodException(propType, context.MethodSource.Member.Name, name,
+               throw new Method.Converter.InvalidMethodException(propType, methodCallContext.MethodSource.Member.Name, name,
                    methods.Select(m => m.Name).ToArray());
     }
+
+    private sealed class PropertyMethodCallNeedsToHaveSourceExpressionException()
+        : HLinqQueryException("At this point method source needs to have value!");
 }

@@ -33,7 +33,7 @@ public sealed class ComparisonConstant(NameOrValue value) : TreeLeaf([value])
     {
         protected override Expression Build(IBuilderContext context, ComparisonConstant element)
         {
-            var propType = context.ComparisonPropertyType ??
+            var propType = (context as IArithmeticComparisonConditionBuilderContext)?.ComparisonPropertyType ??
                            throw new ElementToExpressionConverterPropertyTypeNullException();
 
             var stringValue = element.Value.GetValue(context.HLinqQuery);

@@ -44,7 +44,8 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
             context.Tokens switch
             {
                 [NameOrValue, Assignment, NameOrValue, ..] => ThrowOnReverseComparison(context),
-                [ILogicalOperatorToken conditionalLogicalOp, not LeftCircleBracket, ..] => new Condition(conditionalLogicalOp),
+                [ILogicalOperatorToken conditionalLogicalOp, not LeftCircleBracket, ..] => new Condition(
+                    conditionalLogicalOp),
                 [Entity, Dot, PropertyAccess, ..] => new Condition(),
                 [MethodCall, ..] => new Condition(),
                 _ => null
@@ -66,21 +67,20 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
         ];
     }
 
-    public sealed class Converter : ElementToExpressionConverter<Condition>
+    public sealed class Converter(IConverterFactory converterFactory) : ElementToExpressionConverter<Condition>
     {
         protected override Expression Build(IBuilderContext context, Condition condition)
         {
             if (condition.IsMethod)
             {
                 var property = condition.GetChildOfType<Property>();
+                var methodCallContext = new MethodCallConditionBuilderContext(context);
                 if (property is not null)
                 {
-                    var prop = context.ToExpression(property);
-                    context.MethodSource = (MemberExpression)prop;
+                    methodCallContext.ToExpression(property);
                 }
 
-                var expression = context.ToExpression(GetMethod(condition));
-                context.MethodSource = null;
+                var expression = methodCallContext.ToExpression(GetMethod(condition));
                 return expression;
             }
 
@@ -89,13 +89,12 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
                 Expression? left = null;
                 Expression? right = null;
 
-                if (condition.Left is Property)
+                if (condition.Left is Property property)
                 {
-                    left = context.ToExpression(condition.Left);
-                    context.ComparisonPropertyType = ((PropertyInfo)((MemberExpression)left).Member).PropertyType;
-                    right = context.ToExpression(condition.Right);
-                    //TODO: maybe it would be better to have transient child context instead and destroy it right after
-                    context.ComparisonPropertyType = null;
+                    var conditionBuilderContext = new ArithmeticComparisonConditionBuilderContext(context);
+                    left = converterFactory.GetToExpressionConverterFor<Property>()
+                        .Build(conditionBuilderContext, property);
+                    right = conditionBuilderContext.ToExpression(condition.Right);
                 }
 
                 if (left is null || right is null)

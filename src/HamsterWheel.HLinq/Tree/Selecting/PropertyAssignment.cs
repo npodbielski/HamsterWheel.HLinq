@@ -83,9 +83,11 @@ public sealed class PropertyAssignment(IToken[] tokens) : TreeBranch(tokens)
                                    [..destinationType.GetProperties().Select(p => p.Name)]);
             if (element.Property is not null)
             {
-                context.InitializerPropertyType = propertyInfo.PropertyType;
-                var expression = (MemberExpression)context.Builder.ToExpression(context, element.Property);
-                context.InitializerPropertyType = null;
+                var initializerContext = new InitializerPropertyAssignmentBuilderContext(context)
+                {
+                    InitializerPropertyType = propertyInfo.PropertyType
+                };
+                var expression = (MemberExpression)initializerContext.Builder.ToExpression(context, element.Property);
                 return Expression.Bind(propertyInfo, expression);
             }
 

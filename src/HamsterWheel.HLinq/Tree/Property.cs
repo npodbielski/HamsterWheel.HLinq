@@ -61,7 +61,18 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
         protected override Expression Build(IBuilderContext context, Property element)
         {
             var path = element.GetPath(context.HLinqQuery);
-            return context.Builder.GetProperty(context.Type, context.Param, path).Member;
+            var memberExpression = context.Builder.GetProperty(context.Type, context.Param, path).Member;
+            switch (context)
+            {
+                case IArithmeticComparisonConditionBuilderContext conditionBuilderContext:
+                    conditionBuilderContext.ComparisonPropertyType = memberExpression.Type;
+                    break;
+                case IMethodCallConditionBuilderContext methodCallConditionBuilderContext:
+                    methodCallConditionBuilderContext.MethodSource = memberExpression;
+                    break;
+            }
+
+            return memberExpression;
         }
     }
 }
