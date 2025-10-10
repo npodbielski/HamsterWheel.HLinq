@@ -1,6 +1,10 @@
+using HamsterWheel.HLinq.Tokens.Filtering;
+
 namespace HamsterWheel.HLinq.Tokens.Selecting;
 
-public sealed class Assignment(Range range) : TokenBase(range), IComparisonToken
+public sealed class Assignment(Range range) : TokenBase(range),
+    //TODO: remove
+    IComparisonToken
 {
     public const string TokenValue = "=";
 

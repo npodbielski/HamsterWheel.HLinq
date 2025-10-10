@@ -5,7 +5,6 @@ using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
-using HamsterWheel.HLinq.Tree.Filter;
 
 namespace HamsterWheel.HLinq.Tree.Filtering;
 
@@ -14,7 +13,7 @@ public sealed class WhereRoot(IToken[] tokens) : TreeBranch(tokens), IWhereRoot
     /// <summary>
     ///     This should never be accessed since <see cref="WhereRoot" /> is never nested in another parent
     /// </summary>
-    public IConditionalLogicalOperationToken? ConditionalLogicalOp => null;
+    public ILogicalOperatorToken? LogicalOpToken => null;
 
     public sealed class Parser : ElementParserBase<WhereRoot>
     {

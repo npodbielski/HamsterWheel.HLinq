@@ -7,7 +7,7 @@ namespace HamsterWheel.HLinq.Builders;
 
 public sealed class ConditionalLogicalOperationTokenCannotBeFirstException()
     : HLinqQueryException(
-        $"{nameof(IConditionalLogicalOperationToken)} (i.e. {nameof(And)} or {nameof(Or)}) need to be provided in any {nameof(Condition)} or {nameof(ConditionGroup)} beside the first one");
+        $"{nameof(ILogicalOperatorToken)} (i.e. {nameof(And)} or {nameof(Or)}) need to be provided in any {nameof(Condition)} or {nameof(ConditionGroup)} beside the first one");
 
-public sealed class InvalidConditionalLogicalOperationException(IConditionalLogicalOperationToken operationToken) :
-    HLinqQueryException($"{operationToken} is not supported!");
+public sealed class InvalidConditionalLogicalOperationException(ILogicalOperatorToken logicalOpToken) :
+    HLinqQueryException($"{logicalOpToken} is not supported!");

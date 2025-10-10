@@ -2,7 +2,7 @@ using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Request;
-using HamsterWheel.HLinq.Tokenizer;
+using HamsterWheel.HLinq.Tokens;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HamsterWheel.HLinq.UnitTests;

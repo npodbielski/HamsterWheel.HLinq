@@ -18,8 +18,8 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
     {
     }
 
-    private Condition(IConditionalLogicalOperationToken conditionalLogicalOp) :
-        base([(TokenBase)conditionalLogicalOp]) => ConditionalLogicalOp = conditionalLogicalOp;
+    private Condition(ILogicalOperatorToken logicalOpToken) :
+        base([(TokenBase)logicalOpToken]) => LogicalOpToken = logicalOpToken;
 
     public ITreeElement Left => Children[0];
     public ITreeElement Right => Children[2];
@@ -31,7 +31,7 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
 
     public bool IsMethod => _isMethod ??= GetMethod() is not null;
 
-    public IConditionalLogicalOperationToken? ConditionalLogicalOp { get; }
+    public ILogicalOperatorToken? LogicalOpToken { get; }
 
     public Method? GetMethod() => GetChildOfType<Method>();
 
@@ -44,7 +44,7 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
             context.Tokens switch
             {
                 [NameOrValue, Assignment, NameOrValue, ..] => ThrowOnReverseComparison(context),
-                [IConditionalLogicalOperationToken conditionalLogicalOp, not LeftCircleBracket, ..] => new Condition(conditionalLogicalOp),
+                [ILogicalOperatorToken conditionalLogicalOp, not LeftCircleBracket, ..] => new Condition(conditionalLogicalOp),
                 [Entity, Dot, PropertyAccess, ..] => new Condition(),
                 [MethodCall, ..] => new Condition(),
                 _ => null

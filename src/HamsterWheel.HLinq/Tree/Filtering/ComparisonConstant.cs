@@ -22,7 +22,7 @@ public sealed class ComparisonConstant(NameOrValue value) : TreeLeaf([value])
             return context.Tokens switch
             {
                 [NameOrValue value, IComparisonToken, ..] => new ComparisonConstant(value),
-                [NameOrValue value, IConditionalLogicalOperationToken or RightCircleBracket or RightSquareBracket, ..]
+                [NameOrValue value, ILogicalOperatorToken or RightCircleBracket or RightSquareBracket, ..]
                     => new ComparisonConstant(value),
                 _ => null
             };

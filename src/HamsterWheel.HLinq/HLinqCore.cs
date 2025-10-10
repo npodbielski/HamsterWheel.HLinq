@@ -5,8 +5,8 @@ using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Request;
-using HamsterWheel.HLinq.Tokenizer;
 using HamsterWheel.HLinq.Tokens;
+using HamsterWheel.HLinq.Tree.Filtering;
 using HamsterWheel.HLinq.ValueConverters;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -24,34 +24,32 @@ internal static class HLinqCore
         servicesCollection.AddSingleton<IHLinqOptions>(options);
 
         //tokens
-        var tokenPossibilities = GetTypesFromAssemblyWithStatic<IHLinqTokenPossibility>();
-        foreach (var tp in tokenPossibilities)
+        foreach (var tp in GetTypesFromAssemblyWithStatic<IHLinqTokenPossibility>())
         {
             servicesCollection.AddSingleton(typeof(IHLinqTokenPossibility), tp);
         }
 
         //parsers
-        var elementParsers = GetTypesFromAssemblyWithStatic<IElementParser>();
-        foreach (var ep in elementParsers)
+        foreach (var ep in GetTypesFromAssemblyWithStatic<IElementParser>())
         {
             servicesCollection.AddSingleton(typeof(IElementParser), ep);
         }
 
         //converters
-        var toExpressionConverters =
-            GetTypesFromAssemblyWithStatic<IElementToExpressionConverter>();
-        foreach (var tec in toExpressionConverters)
+        foreach (var tec in GetTypesFromAssemblyWithStatic<IElementToExpressionConverter>())
         {
             servicesCollection.AddSingleton(typeof(IElementToExpressionConverter), tec);
         }
 
-        var memberAssignmentConverters =
-            GetTypesFromAssemblyWithStatic<IElementToMemberAssignmentConverter>();
-        foreach (var mac in memberAssignmentConverters)
+        foreach (var mac in GetTypesFromAssemblyWithStatic<IElementToMemberAssignmentConverter>())
         {
             servicesCollection.AddSingleton(typeof(IElementToMemberAssignmentConverter), mac);
         }
 
+        servicesCollection.AddSingleton<IPropertyMethodToExpressionConverter, PropertyMethodToExpressionConverter>();
+        servicesCollection.AddSingleton<IStaticMethodToExpressionConverter, StaticMethodToExpressionConverter>();
+
+        //value converters
         var valueConverters = GetTypesFromAssemblyWithStatic<IValueConverter>();
         foreach (var vc in valueConverters.Where(t => t != typeof(ConfigurableToPlainValueConverter)))
         {
@@ -59,18 +57,17 @@ internal static class HLinqCore
             servicesCollection.AddSingleton(vc, vc);
         }
 
-        var configurableValueConverters = GetTypesFromAssemblyWithStatic<IConfigurableValueConverter>();
-        foreach (var vc in configurableValueConverters)
+        foreach (var vc in GetTypesFromAssemblyWithStatic<IConfigurableValueConverter>())
         {
             servicesCollection.AddSingleton(typeof(IConfigurableValueConverter), c => c.GetRequiredService(vc));
             servicesCollection.AddSingleton(vc, vc);
         }
 
+        //factories
         servicesCollection.AddSingleton<IValueConverterFactory, ValueConverterFactory>();
         servicesCollection.AddSingleton<IConverterFactory, ConverterFactory>();
 
-        var appliers = GetTypesFromAssemblyWithStatic<IApplier>();
-        foreach (var c in appliers)
+        foreach (var c in GetTypesFromAssemblyWithStatic<IApplier>())
         {
             servicesCollection.AddSingleton(typeof(IApplier), c);
         }

@@ -1,6 +1,6 @@
 namespace HamsterWheel.HLinq.Tokens.Filtering;
 
-public sealed class Or(Range range) : TokenBase(range), IConditionalLogicalOperationToken
+public sealed class Or(Range range) : TokenBase(range), ILogicalOperatorToken
 {
     public const string TokenValue = "||";
 

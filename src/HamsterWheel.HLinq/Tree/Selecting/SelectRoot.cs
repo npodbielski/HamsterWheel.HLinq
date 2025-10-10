@@ -7,7 +7,6 @@ using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
-using HamsterWheel.HLinq.Tree.Select;
 using SelectToken = HamsterWheel.HLinq.Tokens.Selecting.Select;
 
 namespace HamsterWheel.HLinq.Tree.Selecting;

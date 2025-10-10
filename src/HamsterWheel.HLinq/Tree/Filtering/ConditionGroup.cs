@@ -12,13 +12,13 @@ public sealed class ConditionGroup : TreeBranch, ILogicalOperationGroupBranch
     {
     }
 
-    public ConditionGroup(IConditionalLogicalOperationToken logical, LeftCircleBracket bracket) :
+    public ConditionGroup(ILogicalOperatorToken logical, LeftCircleBracket bracket) :
         base([(TokenBase)logical, bracket])
     {
     }
 
-    public IConditionalLogicalOperationToken? ConditionalLogicalOp =>
-        Tokens.OfType<IConditionalLogicalOperationToken>().SingleOrDefault();
+    public ILogicalOperatorToken? LogicalOpToken =>
+        Tokens.OfType<ILogicalOperatorToken>().SingleOrDefault();
 
     public sealed class Parser : ElementParserBase<ConditionGroup>
     {
@@ -32,7 +32,7 @@ public sealed class ConditionGroup : TreeBranch, ILogicalOperationGroupBranch
         protected override ConditionGroup? BuildBranch(IParsingContext context) =>
             context.Tokens switch
             {
-                [IConditionalLogicalOperationToken logical, LeftCircleBracket circleBracket, ..] =>
+                [ILogicalOperatorToken logical, LeftCircleBracket circleBracket, ..] =>
                     new ConditionGroup(logical, circleBracket),
                 [LeftCircleBracket circleBracket, ..] => new ConditionGroup(circleBracket),
                 _ => null

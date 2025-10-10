@@ -1,11 +1,10 @@
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Ordering;
 using HamsterWheel.HLinq.Tokens.Paging;
 using HamsterWheel.HLinq.Tokens.Selecting;
 
-namespace HamsterWheel.HLinq.Tokenizer;
+namespace HamsterWheel.HLinq.Tokens;
 
 using CurrentTokenPossibility = (IHLinqTokenPossibility token, int possibility);
 

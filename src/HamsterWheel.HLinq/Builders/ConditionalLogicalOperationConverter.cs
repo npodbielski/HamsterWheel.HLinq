@@ -25,13 +25,13 @@ public abstract class ConditionalLogicalOperationConverter<TBranch> :
             }
             else
             {
-                if (branch.ConditionalLogicalOp is not null)
+                if (branch.LogicalOpToken is not null)
                 {
-                    body = branch.ConditionalLogicalOp switch
+                    body = branch.LogicalOpToken switch
                     {
                         And => Expression.AndAlso(body, innerBody),
                         Or => Expression.OrElse(body, innerBody),
-                        _ => throw new InvalidConditionalLogicalOperationException(branch.ConditionalLogicalOp)
+                        _ => throw new InvalidConditionalLogicalOperationException(branch.LogicalOpToken)
                     };
                 }
                 else
