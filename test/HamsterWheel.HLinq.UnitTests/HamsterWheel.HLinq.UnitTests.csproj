@@ -1,5 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+    <PropertyGroup>
+      <OutputType>Library</OutputType>
+    </PropertyGroup>
+
     <ItemGroup>
         <ProjectReference Include="..\..\demo\HamsterWheel.HLinq.Demo\HamsterWheel.HLinq.Demo.csproj" />
         <ProjectReference Include="..\..\src\HamsterWheel.HLinq.Client\HamsterWheel.HLinq.Client.csproj" />
