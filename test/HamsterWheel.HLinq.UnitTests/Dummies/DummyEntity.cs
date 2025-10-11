@@ -8,8 +8,8 @@ public class DummyEntity(string name) : IDummy
 {
     public Guid Id { get; set; } = new();
     public string Name { get; set; } = name;
-    public string Text { get; set; }
-    
+    public string Text { get; set; } = null!;
+
     public bool Flag { get; set; }
     public bool? NullableFlag { get; set; }
     public byte Byte { get; set; }
@@ -36,22 +36,22 @@ public class DummyEntity(string name) : IDummy
     public DateTime? NullableDateTime { get; set; }
     public DateTimeOffset? NullableDateTimeOffset { get; set; }
     
-    public NestedDummyEntity Nested { get; set; }
+    public NestedDummyEntity Nested { get; set; } = null!;
 }
 
 public class NestedDummyEntity
 {
     public Guid Id { get; set; }
-    public string Name { get; set; }
+    public string Name { get; set; } = null!;
 }
 
 public enum DummyEnum
 {
-    Zero=0,
-    One=1,
-    Two=2,
-    Longer=30,
-    Negative=-2
+    Zero = 0,
+    One = 1,
+    Two = 2,
+    Longer = 30,
+    Negative = -2
 }
 
 public interface IDummy
@@ -61,5 +61,5 @@ public interface IDummy
 
 public class NameOnlyEntity
 {
-    public string Name { get; set; }
+    public string Name { get; set; } = null!;
 }

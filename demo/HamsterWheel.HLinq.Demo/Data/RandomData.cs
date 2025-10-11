@@ -68,7 +68,7 @@ public class RandomData
 public class NestedRandom
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public string Name { get; set; }
+    public string Name { get; set; } = null!;
 }
 
 public enum RandomEnum

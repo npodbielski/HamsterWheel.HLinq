@@ -21,7 +21,6 @@ public class WebHLinqQueryBinderUnitTests
     public void BindModelAsync_WhenCalledWithNull_ThenThrows()
     {
         //arrange
-        var expected = "";
         var parser = Substitute.For<IHLinqParser>();
         var tokenizer = Substitute.For<IHLinqTokenizer>();
         var methodsCache = Substitute.For<IMethodsCache>();
@@ -30,7 +29,7 @@ public class WebHLinqQueryBinderUnitTests
         services.AddSingleton(methodsCache);
         services.AddSingleton(tokenizer);
         var sut = new WebHLinqQueryBinder(new TestServicesCollection().BinderDependenciesBag);
-        var action = () => sut.BindModelAsync(null);
+        var action = () => sut.BindModelAsync(null!);
 
         //act && assert
         action.Should().ThrowAsync<ArgumentNullException>();

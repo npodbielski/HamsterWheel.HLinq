@@ -21,6 +21,7 @@ partial class HLinqTokenizerUnitTests
             ">" => GreaterThan,
             "<=" => LessOrEqualThan,
             "<" => LessThan,
+            _ => throw new ArgumentOutOfRangeException(nameof(comparison), comparison, null)
         };
         tokens.Should().HaveSequenceOf(query, [
             Where,

@@ -43,7 +43,7 @@ public class WhereRootBuilder<T>(StringBuilder query)
             }
 
             GetStringForBinaryExpression(leftBe);
-            query.Append($" {be.NodeType switch { ExpressionType.AndAlso => "&&", ExpressionType.OrElse => "||" }} ");
+            AppendLogicalOperator(be);
             GetStringForBinaryExpression(rightBe);
             if (nested)
             {
@@ -74,6 +74,10 @@ public class WhereRootBuilder<T>(StringBuilder query)
             }
         }
     }
+
+    private void AppendLogicalOperator(BinaryExpression be) =>
+        query.Append(
+            $" {be.NodeType switch { ExpressionType.AndAlso => "&&", ExpressionType.OrElse => "||", _ => " " }} ");
 
     private static bool IsEfMethodCall(Expression expression) =>
         expression is MethodCallExpression cd && EfDbFunctionsMatcher.IsEfDbFunction(cd.Method);
