@@ -6,9 +6,6 @@ public class StaticMethodSourceWrapper(IEnumerable<IStaticMethodSource> childSou
 {
     public Type[] Types { get; } = childSource.SelectMany(c => c.Types).ToArray();
 
-    public static bool IsEfDbFunction(ParameterInfo[] parameters) =>
-        parameters is [{ Name: "_", ParameterType.Name: "DbFunctions" }, ..];
-
     public static IBindingParameterInfo[] MapEfDbFunctionParams(ParameterInfo[] parameters)
     {
         var list = new List<IBindingParameterInfo>();

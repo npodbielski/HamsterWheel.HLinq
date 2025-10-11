@@ -23,7 +23,9 @@ public class ResponseHLinqClientQueryBuilder<T> : ResponseHLinqClientQueryBuilde
     protected ResponseHLinqClientQueryBuilder(JsonSerializerOptions? options = null) =>
         _jsonSerializerOptions = options ?? DefaultJsonSerializerOptions;
 
-    public string BuildQuery() => UrlEncoder.Default.Encode(Query.ToString());
+    public string BuildAndEncode() => UrlEncoder.Default.Encode(Build());
+
+    public string Build() => Query.ToString();
 
     public T Deserialize(string json) => JsonSerializer.Deserialize<T>(json, _jsonSerializerOptions) ??
                                          throw new CouldNotDeserializeException<T>(json);

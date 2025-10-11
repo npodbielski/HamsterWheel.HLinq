@@ -24,11 +24,11 @@ partial class DbDataTests
     public async Task WhenILikeUsedOnDb_ThenCanFilter()
     {
         //act
-        var response = await fixture.Client.GetAsync("/demo/db?where[ilike(x.firstName, bill)]");
+        var response = await fixture.Client.GetWithHLinq("/demo/db",
+            q => q.For<Person>().Where(x => EF.Functions.ILike(x.FirstName, "Bill")));
 
         //assert
-        var data = await response.Content.ReadFromJsonAsync<Person[]>();
-        data.Should().BeEquivalentTo(Persons.Where(x => EF.Functions.ILike(x.FirstName, "Bill")));
+        response.Should().BeEquivalentTo(Persons.Where(x => EF.Functions.ILike(x.FirstName, "Bill")));
     }
 
     [Fact]
@@ -50,7 +50,7 @@ partial class DbDataTests
     {
         //act
         var response = await fixture.Client.GetAsync("/demo/db?" + new HLinqClientQueryBuilderFactory().For<Person>()
-            .Where(x => x.FirstName.Contains("Billy", StringComparison.OrdinalIgnoreCase)).BuildQuery());
+            .Where(x => x.FirstName.Contains("Billy", StringComparison.OrdinalIgnoreCase)).BuildAndEncode());
 
         //assert
         response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
@@ -116,15 +116,14 @@ partial class DbDataTests
     public async Task WhenConditionGroups_ThenCanFilter()
     {
         //act
-        //TODO: enhance client where to support groups
         var response =
-            await fixture.Client.GetAsync(
-                "/demo/db?where[(x.FirstName==Billy&&x.LastName==Montgomery)||(x.id==2||x.id==3)]");
+            await fixture.Client.GetWithHLinq("/demo/db",
+                q => q.For<Person>()
+                    .Where(x => (x.FirstName == "Billy" && x.LastName == "Montgomery")
+                                || (x.Id == 2 || x.Id == 3)));
 
         //assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var data = await response.Content.ReadFromJsonAsync<Person[]>();
-        data.Should().BeEquivalentTo(Persons.Where(x =>
+        response.Should().BeEquivalentTo(Persons.Where(x =>
             (x.FirstName == "Billy" && x.LastName == "Montgomery") || (x.Id == 2 || x.Id == 3)));
     }
 

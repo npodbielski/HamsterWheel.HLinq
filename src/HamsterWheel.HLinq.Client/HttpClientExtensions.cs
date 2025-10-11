@@ -6,7 +6,7 @@ public static class HttpClientExtensions
         Func<HLinqClientQueryBuilderFactory, ResponseHLinqClientQueryBuilder<TResult>> builder)
     {
         var hLinqClient = builder(new HLinqClientQueryBuilderFactory());
-        var response = await client.GetAsync($"{path}?{hLinqClient.BuildQuery()}");
+        var response = await client.GetAsync($"{path}?{hLinqClient.BuildAndEncode()}");
         return response.IsSuccessStatusCode
             ? hLinqClient.Deserialize(await response.Content.ReadAsStringAsync())
             : throw new HttpRequestException(await response.Content.ReadAsStringAsync());

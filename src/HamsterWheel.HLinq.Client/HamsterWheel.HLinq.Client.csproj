@@ -12,4 +12,10 @@
         <ProjectReference Include="..\HamsterWheel.HLinq\HamsterWheel.HLinq.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Include="..\HamsterWheel.HLinq\EFDbFunctionsMatcher.cs">
+        <Link>EFDbFunctionsMatcher.cs</Link>
+      </Compile>
+    </ItemGroup>
+
 </Project>

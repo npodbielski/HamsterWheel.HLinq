@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
+        <ProjectReference Include="..\..\demo\HamsterWheel.HLinq.Demo\HamsterWheel.HLinq.Demo.csproj" />
         <ProjectReference Include="..\..\src\HamsterWheel.HLinq.Client\HamsterWheel.HLinq.Client.csproj" />
         <ProjectReference Include="..\..\src\HamsterWheel.HLinq.PgSql\HamsterWheel.HLinq.PgSql.csproj" />
         <ProjectReference Include="..\..\src\HamsterWheel.HLinq\HamsterWheel.HLinq.csproj" />

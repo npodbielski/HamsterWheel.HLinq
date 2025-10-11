@@ -82,7 +82,7 @@ public sealed class ExpressionBuilder(
             .ToArray();
 
         ParameterInfo[] EfFunctionParametersTransformer(ParameterInfo[] infos) =>
-            StaticMethodSourceWrapper.IsEfDbFunction(infos) ? infos[1..] : infos;
+            EfDbFunctionsMatcher.IsEfDbFunction(infos) ? infos[1..] : infos;
     }
 
     public MethodInfo[] GetMostProbableMethods(Type propType, string name,
