@@ -10,9 +10,7 @@ public class DemoContext(DbContextOptions<DemoContext> options) : DbContext(opti
     public async Task EnsureDbAndData(CancellationToken cancellationToken = default)
     {
         await Database.EnsureCreatedAsync(cancellationToken);
-        var person = Persons.FirstOrDefault();
-
-        if (person is null)
+        if (Persons.FirstOrDefault() is null)
         {
             var assembly = typeof(DemoContext).Assembly;
             var jsonResource = assembly.GetManifestResourceNames().FirstOrDefault(r => r.Contains("persons.json"));

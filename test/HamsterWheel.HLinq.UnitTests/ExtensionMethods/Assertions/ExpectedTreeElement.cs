@@ -1,6 +1,6 @@
 using HamsterWheel.HLinq.Tree;
-using HamsterWheel.HLinq.Tree.Filter;
-using HamsterWheel.HLinq.Tree.Select;
+using HamsterWheel.HLinq.Tree.Filtering;
+using HamsterWheel.HLinq.Tree.Selecting;
 
 namespace HamsterWheel.HLinq.UnitTests.Assertions;
 
@@ -40,6 +40,8 @@ public class ExpectedTreeElement(
         new(typeof(ConditionGroup), children);
 
     public static ExpectedTreeElement Property(params ExpectedToken[] tokens) => new(typeof(Property), tokens: tokens);
+    public static ExpectedTreeElement ComparisonOperation(ExpectedToken token) => new(typeof(ComparisonOperation), tokens: [token]);
+    public static ExpectedTreeElement ComparisonConstant(ExpectedToken token) => new(typeof(ComparisonConstant), tokens: [token]);
 
     public static ExpectedTreeElement MethodElement(params ExpectedTreeElement[] children) =>
         new(typeof(Method), children);

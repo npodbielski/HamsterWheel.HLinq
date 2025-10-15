@@ -1,6 +1,5 @@
 using System.Reflection;
 using FluentAssertions;
-using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.UnitTests.Dummies;
@@ -15,22 +14,22 @@ public class HLinqQueryBinderUnitTests
     {
         //arrange
         var expected = new HLinqQuery<DummyEntity>();
-        var serviceProviderFactory = new DummyHLinqServiceProviderFactory();
-        serviceProviderFactory.Parser.Parse<DummyEntity>(Arg.Any<IToken[]>(), Arg.Any<string>()).Returns(expected);
-        var parserMethod = typeof(IHLinqParser).GetMethods().First(m => m.Name == "Parse")
-            .MakeGenericMethod(typeof(DummyEntity));
-        serviceProviderFactory.MethodsCache
-            .GetInstanceGeneric(Arg.Any<Type>(), Arg.Any<string>(), Arg.Any<Func<ParameterInfo[], bool>>(),
-                Arg.Any<Type[]>()).Returns(parserMethod);
+        var dummyServices = new DummyHLinqServiceProviderFactory();
+        dummyServices.Parser.Parse(Arg.Any<HLinqQuery<DummyEntity>>(), Arg.Any<IToken[]>()).Returns(expected);
         var hlinqQueryMethod = typeof(HLinqQuery<DummyEntity>).GetMethods().First(m => m.Name == "Parse");
-        serviceProviderFactory.MethodsCache.GetStatic(Arg.Any<Type>(), Arg.Any<string>(), Arg.Any<Func<ParameterInfo[], bool>>())
+        dummyServices.MethodsCache
+            .GetStaticOrThrow(Arg.Any<Type>(), Arg.Any<string>(), Arg.Any<Func<ParameterInfo[], bool>>())
             .Returns(hlinqQueryMethod);
-        var sut = new HLinqQueryBinder(new HLinqCore(serviceProviderFactory.CreateServiceProvider()));
+        var sut = new HLinqQueryBinder(dummyServices.BinderDependenciesBag);
+        var queryString = "where[x.name==test]";
 
         //act
-        var actual = sut.BindQuery("where[x.name==test]", typeof(DummyEntity));
+        var actual = sut.BindQuery(queryString, typeof(HLinqQuery<DummyEntity>));
 
         //assert
-        actual.Should().BeOfType<HLinqQuery<DummyEntity>>().Subject.Should().BeSameAs(expected);
+        actual.Should().BeOfType<HLinqQuery<DummyEntity>>();
+        actual.Children.Should().BeEmpty();
+        actual.NoChildren.Should().BeTrue();
+        actual.SourceQueryString.Should().Be(queryString);
     }
 }

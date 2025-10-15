@@ -7,18 +7,18 @@ public class DemoFixture : IAsyncLifetime
 {
     public bool IsInCi => Environment.GetEnvironmentVariable("CI_SERVER") != null;
 
-    public string ConnectionString =>
+    private string ConnectionString =>
         IsInCi
             ? $"Host={Environment.GetEnvironmentVariable("POSTGRES_HOST")};Port=5432;" +
               $"Database={Environment.GetEnvironmentVariable("POSTGRES_DB")};Username=postgres;" +
               $"Password={Environment.GetEnvironmentVariable("POSTGRES_PASSWORD")};Include Error Detail=true"
             : "Host=localhost;Port=55432;Database=Demo;Username=postgres;Password=outflank-outage-undoing;Include Error Detail=true";
 
-    public PostGreSqlFixture PgSqlFixture { get; set; }
+    public PostGreSqlFixture PgSqlFixture { get; private set; } = null!;
 
-    internal DemoTestHost DemoTestHost { get; set; }
+    public HttpClient Client { get; private set; } = null!;
 
-    public HttpClient Client { get; set; }
+    private DemoTestHost DemoTestHost { get; set; } = null!;
 
     public async Task InitializeAsync()
     {

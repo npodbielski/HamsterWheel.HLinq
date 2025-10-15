@@ -1,5 +1,6 @@
 using AutoFixture.Xunit2;
 using FluentAssertions;
+using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.UnitTests.Dummies;
 using HamsterWheel.HLinq.UnitTests.Fixtures.AutoData;
 
@@ -13,12 +14,16 @@ partial class HLinqQueryApplierUnitTests
     {
         //arrange
         var queryString = "where[]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = entities.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeEquivalentTo(entities);
@@ -31,12 +36,16 @@ partial class HLinqQueryApplierUnitTests
         //arrange
         const string dateTimeFilter = "2025-12-01T00:00:00.000Z";
         const string queryString = $"where[x.DateTime>{dateTimeFilter}]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = entities.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeEquivalentTo(entities
@@ -51,12 +60,16 @@ partial class HLinqQueryApplierUnitTests
         //arrange
         const string dateTimeFilter = "2025-12-01T00:00:00.000Z";
         const string queryString = $"where[x.DateTimeOffset>{dateTimeFilter}]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = entities.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeEquivalentTo(entities
@@ -69,13 +82,17 @@ partial class HLinqQueryApplierUnitTests
     public void Apply_WhenUnequal_ThenCanApply(DummyEntity[] entities)
     {
         //arrange
-        const string queryString = $"where[x.Int!=100]";
+        const string queryString = "where[x.Int!=100]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = entities.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeEquivalentTo(entities.Where(x => x.Int != 100));
@@ -86,13 +103,17 @@ partial class HLinqQueryApplierUnitTests
     public void Apply_WhenEnumOr_ThenCanApply(DummyEntity[] entities)
     {
         //arrange
-        const string queryString = $"where[x.Enum==Longer||x.Enum==Negative]";
+        const string queryString = "where[x.Enum==Longer||x.Enum==Negative]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = entities.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeEquivalentTo(entities.Where(x => x.Enum is DummyEnum.Longer or DummyEnum.Negative));
@@ -103,13 +124,17 @@ partial class HLinqQueryApplierUnitTests
     public void Apply_WhenEnumOrInGroup_ThenCanApply(DummyEntity[] entities)
     {
         //arrange
-        const string queryString = $"where[(x.Enum==Longer||x.Enum==Negative)&&x.Int!=100]";
+        const string queryString = "where[(x.Enum==Longer||x.Enum==Negative)&&x.Int!=100]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = entities.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeEquivalentTo(entities.Where(x => (x.Enum is DummyEnum.Longer or DummyEnum.Negative) && x.Int != 100));
@@ -122,12 +147,16 @@ partial class HLinqQueryApplierUnitTests
         //arrange
         const string dateTimeFilter = "2025-12-01T00:00:00.000Z";
         var queryString = $"where[x.Name=={entities[0].Name}&&x.DateTime>{dateTimeFilter}]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = entities.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeEquivalentTo(entities
@@ -140,18 +169,23 @@ partial class HLinqQueryApplierUnitTests
     [Theory]
     [InlineAutoData("value", "test", 0)]
     [InlineAutoData("value", "value", 1)]
+    [InlineAutoData("John Doe", "John Doe", 1)]
     public void Apply_WhenWhereOnly_ThenCanApply(string actualName, string searchedName, int expectedCount,
         DummyEntity entity)
     {
         //arrange
         entity.Name = actualName;
         var queryString = $"where[x.Name.Contains({searchedName})]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = new[] { entity }.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeOfType<object[]>();
@@ -167,12 +201,16 @@ partial class HLinqQueryApplierUnitTests
         entity.Name = actualName;
         entity.Text = "core";
         const string queryString = "where[x.name==RegenerateAllFilesFlow && x.text==core]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = new[] { entity }.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeOfType<object[]>();
@@ -189,12 +227,16 @@ partial class HLinqQueryApplierUnitTests
         var entity = entities[0];
         entity.Name = actualName;
         var queryString = $"where[x.Name.Contains({searchedName})].skip[1]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
-        var queryable = entities.AsQueryable();
+        _parser.Parse(hlinqQuery, tokens);
+        var queryable = new[] { entity }.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeOfType<object[]>();
@@ -208,12 +250,16 @@ partial class HLinqQueryApplierUnitTests
     {
         //arrange
         var queryString = "where[x.Int>100].orderBy[x.Enum].thenByDescending[x.Int].skip[10].take[20]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = entities.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeEquivalentTo(entities
@@ -232,12 +278,16 @@ partial class HLinqQueryApplierUnitTests
         //arrange
         var queryString =
             "where[x.Int>100].orderBy[x.Enum].thenByDescending[x.Int].skip[10].take[20].select[x.Id,x.Name]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = entities.AsQueryable();
 
         //act
-        var actual = _sut.Apply(queryable, query);
+        var actual = _sut.Apply(queryable, hlinqQuery);
 
         //assert
         actual.Should().BeEquivalentTo(entities

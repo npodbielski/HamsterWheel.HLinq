@@ -5,7 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 // ReSharper disable UnusedType.Global; Reason those files are imported in other projects and used indirectly there via compiler
 namespace System.Runtime.CompilerServices;
 
-//"This is added just to enable init setters for .net standard version of the library and this code is not actually used."
+//"This is added just to enable init setters for .net standard version of the library, and this code is not actually used."
 /// <summary>Reserved to be used by the compiler for tracking metadata.
 /// This class should not be used by developers in source code.
 /// </summary>

@@ -32,9 +32,9 @@ partial class DbDataTests
     public async Task WhenSkipWithValue_ThenReturnsCorrectData(int skip)
     {
         //act
-        var response = await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>().Skip(skip));
+        var response = await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>().Skip(skip).Take(100));
 
         //assert
-        response.Should().BeEquivalentTo(Persons.Skip(skip));
+        response.Should().BeEquivalentTo(Persons.Skip(skip).Take(100));
     }
 }

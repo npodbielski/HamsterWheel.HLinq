@@ -2,8 +2,8 @@ using System.Linq.Expressions;
 using System.Reflection;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tree;
-using HamsterWheel.HLinq.Tree.Filter;
-using HamsterWheel.HLinq.Tree.Select;
+using HamsterWheel.HLinq.Tree.Filtering;
+using HamsterWheel.HLinq.Tree.Selecting;
 
 namespace HamsterWheel.HLinq.Builders;
 
@@ -28,5 +28,5 @@ public interface IExpressionBuilder
     MethodInfo[] GetMostProbableMethods(Type propType, string name,
         (string value, MemberExpression? expression)[] parameters);
 
-    IPropertyContext GetPropertyWithType(Type sourceType, Expression source, string[] path);
+    IPropertyContext GetProperty(Type sourceType, Expression source, string[] path);
 }

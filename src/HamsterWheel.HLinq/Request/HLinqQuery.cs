@@ -12,11 +12,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HamsterWheel.HLinq.Request;
 
-public class HLinqQuery<T> : IHLinqQuery where T : class
+public partial class HLinqQuery<T> : IHLinqQuery where T : class
 {
     public ITreeElement[] Children { get; private set; } = [];
-    public string SourceQueryString { get; init; } = null!;
-    public bool IsLeaf => false;
+    public Type ItemType { get; } = typeof(T);
+    public string SourceQueryString { get; internal init; } = null!;
     public bool NoChildren => Children.Length == 0;
 
     /// <summary>
@@ -26,36 +26,36 @@ public class HLinqQuery<T> : IHLinqQuery where T : class
 
     internal IHLinqOptions? Options { get; set; }
 
-    IEnumerable<T1> ITreeElement.GetAll<T1>() => ThisTree.Children.OfType<T1>();
-    bool ITreeElement.IsBranch => true;
-    bool ITreeElement.Finished => _finished;
-    private ITreeBranch ThisTree => this;
-
     /// <summary>
     ///     If query is valid this should always be empty. If not then we should have an error in <see cref="Finish" />
     /// </summary>
     IToken[] ITreeElement.Tokens => [];
 
-    void ITreeElement.Finish(IParsingContext context, IToken[] _)
+    void ITreeBranch.Finish(IParsingContext context, IToken[] _)
     {
         if (context.Tokens.Length > 0)
-            //TODO: format better message
-            throw new NonParsableTokenSequenceException(context.Tokens, []);
+        {
+            throw new NonParsableTokenSequenceException(context.SourceQueryString, context.Tokens, []);
+        }
 
-        _finished = true;
         Children = context.Current.Children.ToArray();
     }
-
-    private bool _finished;
 
     public object? ApplyTo(IQueryable<T> queryable, CancellationToken token = default)
     {
         if (QueryApplier is null)
-            throw new HLinqQueryQueryApplierNullException(this);
-
-        if (!ThisTree.Children.Any(t => t is TakeRoot or CountRoot) && Options?.HttpDefaultMaxTakeRecords is not null)
         {
-            Children = [..ThisTree.Children, new TakeRoot(Options.HttpDefaultMaxTakeRecords)];
+            throw new HLinqQueryQueryApplierNullException();
+        }
+
+        if (!Children.Any(t => t is TakeRoot or CountRoot) && Options?.HttpDefaultMaxTakeRecords is not null)
+        {
+            Children = [..Children, new TakeRoot(Options.HttpDefaultMaxTakeRecords)];
+        }
+
+        if (Children.All(t => t is not CountRoot) && Children.LastOrDefault() is TakeRoot take)
+        {
+            take.MaxTake = Options?.HttpDefaultMaxTakeRecords ?? HLinqOptions.DefaultMaxTakeRecords;
         }
 
         return QueryApplier?.Apply(queryable, this, token);
@@ -65,42 +65,42 @@ public class HLinqQuery<T> : IHLinqQuery where T : class
     /// Used from Minimal APIs to bind Parameters of <see cref="HLinqQuery{T}"/>
     /// </summary>
     /// <returns>Instance of <see cref="HLinqQuery{T}"/> that can be applied to <see cref="IQueryable{T}"/></returns>
+    // ReSharper disable once UnusedMember.Global - used by Minimal APIs
+    // ReSharper disable once UnusedParameter.Global - it is necessary by the binder
     public static ValueTask<HLinqQuery<T>> BindAsync(HttpContext context, ParameterInfo parameter)
     {
         var queryString = context.Request.QueryString.Value ?? "";
-
-        var query = Parse(context.RequestServices.GetRequiredService<IHLinqCore>(), queryString);
-
+        var query = Parse(context.RequestServices.GetRequiredService<HLinqBinderDependenciesBag>(), queryString);
         return ValueTask.FromResult(query);
     }
 
     /// <summary>
     /// Used via Asp.Net controllers and Minimal APIs endpoint binders to parse query string into instance of <see cref="HLinqQuery{T}"/> 
     /// </summary>
-    /// <param name="core">Instance of <see cref="IHLinqCore"/> from DI</param>
+    /// <param name="dependenciesBag">Instance of <see cref="HLinqBinderDependenciesBag"/> from DI</param>
     /// <param name="queryString">HTTP query string</param>
     /// <returns>Instance of <see cref="HLinqQuery{T}"/></returns>
-    public static HLinqQuery<T> Parse(IHLinqCore core, string queryString)
+    public static HLinqQuery<T> Parse(HLinqBinderDependenciesBag dependenciesBag, string queryString)
     {
+        queryString = HttpUtility.UrlDecode(queryString);
         if (queryString.StartsWith('?'))
         {
             queryString = queryString[1..];
         }
 
-        queryString = HttpUtility.UrlDecode(queryString);
-
-        var parser = core.HLinqParser;
-        var tokenizer = core.Tokenizer;
-        var methodsCache = core.MethodsCache;
+        var hlinqQuery = new HLinqQuery<T>
+        {
+            SourceQueryString = queryString,
+        };
+        var parser = dependenciesBag.HLinqParser;
+        var tokenizer = dependenciesBag.Tokenizer;
 
         var tokens = tokenizer.Tokenize(queryString);
 
-        var parserMethod =
-            methodsCache.GetInstanceGeneric(parser.GetType(), nameof(parser.Parse), typeParams: typeof(T));
-        var query = (HLinqQuery<T>)parserMethod.Invoke(parser, [tokens, queryString])!;
-        query.QueryApplier = core.QueryApplier;
-        query.Options = core.Options;
-        return query;
+        parser.Parse(hlinqQuery, tokens);
+        hlinqQuery.QueryApplier = dependenciesBag.QueryApplier;
+        hlinqQuery.Options = dependenciesBag.Options;
+        return hlinqQuery;
     }
 
     public class HLinqQueryApplier(IApplierFactory applierFactory, IMethodsCache methodsCache) : IHLinqQueryApplier

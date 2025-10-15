@@ -1,6 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+    <PropertyGroup>
+      <OutputType>Library</OutputType>
+    </PropertyGroup>
+
     <ItemGroup>
+        <ProjectReference Include="..\..\demo\HamsterWheel.HLinq.Demo\HamsterWheel.HLinq.Demo.csproj" />
+        <ProjectReference Include="..\..\src\HamsterWheel.HLinq.Client\HamsterWheel.HLinq.Client.csproj" />
         <ProjectReference Include="..\..\src\HamsterWheel.HLinq.PgSql\HamsterWheel.HLinq.PgSql.csproj" />
         <ProjectReference Include="..\..\src\HamsterWheel.HLinq\HamsterWheel.HLinq.csproj" />
     </ItemGroup>
@@ -27,10 +33,10 @@
         <Compile Update="Select.cs">
             <DependentUpon>ExpressionBuilderUnitTests.cs</DependentUpon>
         </Compile>
-        <Compile Update="WhiteSpace.cs">
+        <Compile Update="TokenizerWhiteSpaceTests.cs">
             <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
         </Compile>
-        <Compile Update="DifferentCase.cs">
+        <Compile Update="TokenizerDifferentCaseTests.cs">
             <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
         </Compile>
         <Compile Update="Data\Converter\ConvertToT1.cs">
@@ -41,6 +47,12 @@
         </Compile>
         <Compile Update="Data\Converter\ConvertToBoolean.cs">
           <DependentUpon>DefaultConverterUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="TokenizerWhereTests.cs">
+          <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="TokenizerSelectTests.cs">
+          <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
         </Compile>
     </ItemGroup>
 </Project>

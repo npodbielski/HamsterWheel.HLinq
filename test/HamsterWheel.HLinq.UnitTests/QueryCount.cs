@@ -1,5 +1,6 @@
 using AutoFixture.Xunit2;
 using FluentAssertions;
+using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.UnitTests.Dummies;
 
 namespace HamsterWheel.HLinq.UnitTests;
@@ -12,12 +13,16 @@ partial class HLinqQueryApplierUnitTests
     {
         //arrange
         var queryString = "count[]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
         var tokens = _tokenizer.Tokenize(queryString);
-        var query = _parser.Parse<DummyEntity>(tokens, queryString);
+        _parser.Parse(hlinqQuery, tokens);
         var queryable = entities.AsQueryable();
 
         //act
-        var actual = _sut.ApplyGetType(queryable, query);
+        var actual = _sut.ApplyGetType(queryable, hlinqQuery);
 
         //assert
         actual.Count.Should().Be(entities.Length);

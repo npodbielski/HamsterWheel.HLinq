@@ -4,6 +4,7 @@
 namespace System.Diagnostics.CodeAnalysis;
 
 /// <summary>Fake version of the StringSyntaxAttribute, which was introduced in .NET 7</summary>
+[ExcludeFromCodeCoverage]
 public sealed class StringSyntaxAttribute : Attribute
 {
     /// <summary>The syntax identifier for strings containing composite formats for string formatting.</summary>

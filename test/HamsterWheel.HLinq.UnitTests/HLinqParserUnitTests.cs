@@ -1,30 +1,23 @@
-using FluentAssertions;
 using HamsterWheel.HLinq.Parsers;
-using HamsterWheel.HLinq.Tokenizer;
 using HamsterWheel.HLinq.Tokens;
-using HamsterWheel.HLinq.Tokens.Filter;
-using HamsterWheel.HLinq.Tokens.Select;
-using HamsterWheel.HLinq.Tree.Filter;
+using HamsterWheel.HLinq.Tokens.Filtering;
+using HamsterWheel.HLinq.Tokens.Selecting;
 using HamsterWheel.HLinq.UnitTests.Assertions;
 using HamsterWheel.HLinq.UnitTests.Dummies;
 using static HamsterWheel.HLinq.UnitTests.Assertions.ExpectedTreeElement;
-using Property = HamsterWheel.HLinq.Tree.Property;
 
 namespace HamsterWheel.HLinq.UnitTests;
 
 public class HLinqParserUnitTests
 {
-    private readonly IHLinqParsersCollection _parsersCollection = new HLinqServicesCollection(new HLinqCore());
-    private readonly HLinqParser _sut;
-
-    public HLinqParserUnitTests() => _sut = new HLinqParser(_parsersCollection);
-
+    private static readonly TestServicesCollection TestServicesCollection = new();
+    private readonly HLinqParser _sut = new(TestServicesCollection.Parsers);
 
     [Fact]
     public void Parse_WhenSingleRename_ThenCanParse()
     {
         const string query = "select[x.name]";
-        TokenBase[] tokens =
+        IToken[] tokens =
         [
             new Select(default),
             new LeftSquareBracket(default),
@@ -34,7 +27,7 @@ public class HLinqParserUnitTests
             new RightSquareBracket(default)
         ];
 
-        ITreeBranch tree = _sut.Parse<DummyEntity>(tokens, query);
+        var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
 
         tree.Should().HaveStructureOf(query, [
             SelectRoot(
@@ -49,7 +42,7 @@ public class HLinqParserUnitTests
     public void Parse_WhenPropertyWithConstValue_ThenCanParse()
     {
         const string query = "select[Directory=Core]";
-        TokenBase[] tokens =
+        IToken[] tokens =
         [
             new Select(default),
             new LeftSquareBracket(default),
@@ -59,7 +52,7 @@ public class HLinqParserUnitTests
             new RightSquareBracket(default)
         ];
 
-        ITreeBranch tree = _sut.Parse<DummyEntity>(tokens, query);
+        var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
 
         tree.Should().HaveStructureOf(query, [
             SelectRoot(
@@ -75,7 +68,7 @@ public class HLinqParserUnitTests
     public void Parse_WhenSourcePropertyAndPropertyWithConstValue_ThenCanParse()
     {
         const string query = "select[x.Id,Directory=Core]";
-        TokenBase[] tokens =
+        IToken[] tokens =
         [
             new Select(default),
             new LeftSquareBracket(default),
@@ -89,7 +82,7 @@ public class HLinqParserUnitTests
             new RightSquareBracket(default)
         ];
 
-        ITreeBranch tree = _sut.Parse<DummyEntity>(tokens, query);
+        var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
 
         tree.Should().HaveStructureOf(query, [
             SelectRoot(
@@ -111,41 +104,34 @@ public class HLinqParserUnitTests
     public void Parse_WhenValidAndPropEqual_ThenCanParse()
     {
         const string query = "where[x.Name.Contains(test)]";
-        TokenBase[] tokens =
+        IToken[] tokens =
         [
             new Where(default), new LeftSquareBracket(default), new Entity(default),
             new Dot(default), new PropertyAccess(default), new Dot(default), new MethodCall(default),
             new LeftCircleBracket(default), new NameOrValue(default), new RightCircleBracket(default),
             new RightSquareBracket(default)
         ];
-        ITreeBranch tree = _sut.Parse<DummyEntity>(tokens, query);
-        tree.Children.Should().HaveCount(1);
-        var where = tree.Children.FirstOrDefault() as WhereRoot;
-        AssertionExtensions.Should(where).NotBeNull();
-        where!.Children.Should().ContainSingle();
-        var first = where.Children.First();
-        first.Should().BeOfType<Condition>();
-        var condition = (Condition)first;
-        condition.Children.Should().HaveCount(2);
-        first = condition.Children.First();
-        var second = condition.Children.ElementAt(1);
-        first.Should().BeOfType<Property>();
-        second.Should().BeOfType<Method>();
-        var property = (Property)first;
-        var method = (Method)second;
-        AssertionExtensions.Should(property.Tokens).HaveCount(3);
-        method.Children.Should().ContainSingle();
-        var param = method.Children.First();
-        param.Should().BeOfType<MethodConstParam>();
-        var valueParam = (MethodConstParam)param;
-        AssertionExtensions.Should(valueParam.Tokens).ContainSingle();
+        var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
+
+        tree.Should().HaveStructureOf(query, [
+            WhereRoot(
+                ConditionElement(
+                    Property(
+                        ExpectedToken.Entity(),
+                        ExpectedToken.Dot,
+                        ExpectedToken.Prop("Name")),
+                    MethodElement(
+                        MethodConstParam(ExpectedToken.NameOrValue("test"))
+                    )
+                ))
+        ]);
     }
 
     [Fact]
     public void Parse_WhenStaticMethodCallWithPropAndConstant_ThenCanParse()
     {
         const string query = "where[ilike(x.Name, test)]";
-        TokenBase[] tokens =
+        IToken[] tokens =
         [
             new Where(default),
             new LeftSquareBracket(default),
@@ -159,7 +145,7 @@ public class HLinqParserUnitTests
             new RightCircleBracket(default),
             new RightSquareBracket(default)
         ];
-        ITreeBranch tree = _sut.Parse<DummyEntity>(tokens, query);
+        var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
         tree.Should().HaveStructureOf(query, [
             WhereRoot(
                 ConditionElement(
@@ -183,27 +169,30 @@ public class HLinqParserUnitTests
     public void Parse_WhenTwoConditions_ThenCanParse()
     {
         const string query = "where[x.Name.Contains(test)&&x.Id==77774169-BB9D-4DF9-A4A7-52019C4A445D]";
-        var tokens = new HLinqTokenizer(new HLinqServicesCollection(new HLinqCore())).Tokenize(query);
-        ITreeBranch tree = _sut.Parse<DummyEntity>(tokens, query);
-        tree.Children.Should().HaveCount(1);
-        var where = tree.Children.FirstOrDefault() as WhereRoot;
-        AssertionExtensions.Should(where).NotBeNull();
-        where!.Children.Should().HaveCount(2);
-        var first = where.Children.First();
-        first.Should().BeOfType<Condition>();
-        var condition = (Condition)first;
-        condition.Children.Should().HaveCount(2);
-        first = condition.Children.First();
-        var second = condition.Children.ElementAt(1);
-        first.Should().BeOfType<Property>();
-        second.Should().BeOfType<Method>();
-        var property = (Property)first;
-        var method = (Method)second;
-        AssertionExtensions.Should(property.Tokens).HaveCount(3);
-        method.Children.Should().ContainSingle();
-        var param = method.Children.First();
-        param.Should().BeOfType<MethodConstParam>();
-        var valueParam = (MethodConstParam)param;
-        AssertionExtensions.Should(valueParam.Tokens).ContainSingle();
+        var tokens = new HLinqTokenizer(TestServicesCollection.TokenPossibilities).Tokenize(query);
+
+        var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
+
+        tree.Should().HaveStructureOf(query, [
+            WhereRoot(
+                ConditionElement(
+                    Property(
+                        ExpectedToken.Entity(),
+                        ExpectedToken.Dot,
+                        ExpectedToken.Prop("Name")),
+                    MethodElement(
+                        MethodConstParam(ExpectedToken.NameOrValue("test"))
+                    )
+                ),
+                ConditionElement(
+                    Property(
+                        ExpectedToken.Entity(),
+                        ExpectedToken.Dot,
+                        ExpectedToken.Prop("Id")),
+                    ComparisonOperation(ExpectedToken.Equality),
+                    ComparisonConstant(ExpectedToken.NameOrValue("77774169-BB9D-4DF9-A4A7-52019C4A445D"))
+                )
+            )
+        ]);
     }
 }

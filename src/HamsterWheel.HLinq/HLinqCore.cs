@@ -5,112 +5,72 @@ using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Request;
-using HamsterWheel.HLinq.Tokenizer;
 using HamsterWheel.HLinq.Tokens;
+using HamsterWheel.HLinq.Tree.Filtering;
 using HamsterWheel.HLinq.ValueConverters;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HamsterWheel.HLinq;
 
-//TODO: this should be internal to disallow core services manipulation via extensions
-//...it is possible to allow extend/overwrite less important services but they need to be wrapped in some safe sandbox/performance analyzer
-//...i.e. it should not be possible to do extensive I/O operations in small services or otherwise whole system could break
-//...also if extended service/parser/converter will throw exceptions very often, should be disabled entirely
-internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
+internal static class HLinqCore
 {
-    private IElementParser[]? _coreParsers;
-    private IElementToExpressionConverter[]? _coreConverters;
-    private IElementToMemberAssignmentConverter[]? _coreMemberAssignmentConverters;
-    private IHLinqTokenPossibility[]? _coreTokenPossibilities;
-    
-    //can we use global provider here? or maybe we should use existing one for extensions only and if those services fail, fallback to core ones
-    private IServiceProvider Provider => provider ?? CreateDefault();
-    private IElementParser[] CoreParsers => _coreParsers ??= GetFromAssemblyWith<TreeBranch, IElementParser>();
-
-    private IElementToExpressionConverter[] CoreExpressionConverters =>
-        _coreConverters ??= GetFromAssemblyWith<TreeBranch, IElementToExpressionConverter>();
-    
-    private IElementToMemberAssignmentConverter[] CoreMemberAssignmentConverters =>
-        _coreMemberAssignmentConverters ??= GetFromAssemblyWith<TreeBranch, IElementToMemberAssignmentConverter>();
-
-    private IHLinqTokenPossibility[] CoreTokenPossibilities =>
-        _coreTokenPossibilities ??= GetFromAssemblyWith<TokenBase, IHLinqTokenPossibility>();
-
-    public IConverterFactory ConverterFactory => Provider.GetRequiredService<IConverterFactory>();
-    public IHLinqQueryApplier QueryApplier => Provider.GetRequiredService<IHLinqQueryApplier>();
-    public IHLinqOptions Options => Provider.GetRequiredService<IHLinqOptions>();
-    public IHLinqParser HLinqParser => Provider.GetRequiredService<IHLinqParser>();
-    public IHLinqTokenizer Tokenizer => Provider.GetRequiredService<IHLinqTokenizer>();
-    public IMethodsCache MethodsCache => Provider.GetRequiredService<IMethodsCache>();
-
-    public IElementParser[] Parsers => CoreParsers;
-    public IElementToExpressionConverter[] ExpressionConverters => CoreExpressionConverters;
-    public IElementToMemberAssignmentConverter[] AssignmentConverters => CoreMemberAssignmentConverters;
-    public IHLinqTokenPossibility[] TokenPossibilities => CoreTokenPossibilities;
-    public IValueConverterFactory ValueConverterFactory => Provider.GetRequiredService<IValueConverterFactory>();
-
-    public T[] GetFromAssemblyWith<TSource, T>() => GetFromAssemblyWithStatic<TSource, T>();
-
-    public TypeInfo[] GetTypesFromAssemblyWith<TSource, T>() => GetTypesFromAssemblyWithStatic<TSource, T>();
-
-    public static TypeInfo[] GetTypesFromAssemblyWithStatic<TSource, T>() =>
-        typeof(TSource).Assembly.DefinedTypes
+    private static TypeInfo[] GetTypesFromAssemblyWithStatic<T>() =>
+        typeof(HLinqCore).Assembly.DefinedTypes
             .Where(t => !t.IsAbstract && t.ImplementedInterfaces.Contains(typeof(T)))
             .ToArray();
 
-    private static T[] GetFromAssemblyWithStatic<TSource, T>()
+    public static void ConfigureServices(IServiceCollection servicesCollection, HLinqOptions options)
     {
-        //TODO: probably each activator should be wrapped in try, catch to make this code resilient
-        return GetTypesFromAssemblyWithStatic<TSource, T>()
-            .Select(Activator.CreateInstance).Cast<T>().ToArray();
-    }
+        servicesCollection.AddSingleton<IHLinqOptions>(options);
 
-    //why concrete class return have better performance
-    private IServiceProvider CreateDefault()
-    {
-        var servicesCollection = new ServiceCollection();
-        ConfigureServices(servicesCollection);
+        //tokens
+        foreach (var tp in GetTypesFromAssemblyWithStatic<IHLinqTokenPossibility>())
+        {
+            servicesCollection.AddSingleton(typeof(IHLinqTokenPossibility), tp);
+        }
 
-        return servicesCollection.BuildServiceProvider();
-    }
+        //parsers
+        foreach (var ep in GetTypesFromAssemblyWithStatic<IElementParser>())
+        {
+            servicesCollection.AddSingleton(typeof(IElementParser), ep);
+        }
 
-    public static void ConfigureServices(IServiceCollection servicesCollection,
-        IServiceProvider? apiServicesCollection = null)
-    {
-        servicesCollection.AddSingleton<IHLinqCore, HLinqCore>();
+        //converters
+        foreach (var tec in GetTypesFromAssemblyWithStatic<IElementToExpressionConverter>())
+        {
+            servicesCollection.AddSingleton(typeof(IElementToExpressionConverter), tec);
+        }
 
-        var valueConverters = GetTypesFromAssemblyWithStatic<HLinqCore, IValueConverter>();
+        foreach (var mac in GetTypesFromAssemblyWithStatic<IElementToMemberAssignmentConverter>())
+        {
+            servicesCollection.AddSingleton(typeof(IElementToMemberAssignmentConverter), mac);
+        }
+
+        servicesCollection.AddSingleton<IPropertyMethodToExpressionConverter, PropertyMethodToExpressionConverter>();
+        servicesCollection.AddSingleton<IStaticMethodToExpressionConverter, StaticMethodToExpressionConverter>();
+
+        //value converters
+        var valueConverters = GetTypesFromAssemblyWithStatic<IValueConverter>();
         foreach (var vc in valueConverters.Where(t => t != typeof(ConfigurableToPlainValueConverter)))
         {
             servicesCollection.AddSingleton(typeof(IValueConverter), c => c.GetRequiredService(vc));
             servicesCollection.AddSingleton(vc, vc);
         }
 
-        var configurableValueConverters = GetTypesFromAssemblyWithStatic<HLinqCore, IConfigurableValueConverter>();
-        foreach (var vc in configurableValueConverters)
+        foreach (var vc in GetTypesFromAssemblyWithStatic<IConfigurableValueConverter>())
         {
             servicesCollection.AddSingleton(typeof(IConfigurableValueConverter), c => c.GetRequiredService(vc));
             servicesCollection.AddSingleton(vc, vc);
         }
 
+        //factories
         servicesCollection.AddSingleton<IValueConverterFactory, ValueConverterFactory>();
-
-        var converters = GetTypesFromAssemblyWithStatic<HLinqCore, IElementToExpressionConverter>();
-        foreach (var c in converters)
-        {
-            servicesCollection.AddSingleton(typeof(IElementToExpressionConverter), c);
-        }
-        
-        var assignmentConverters = GetTypesFromAssemblyWithStatic<HLinqCore, IElementToMemberAssignmentConverter>();
-        foreach (var c in assignmentConverters)
-        {
-            servicesCollection.AddSingleton(typeof(IElementToMemberAssignmentConverter), c);
-        }
-
         servicesCollection.AddSingleton<IConverterFactory, ConverterFactory>();
 
-        var appliers = GetTypesFromAssemblyWithStatic<HLinqCore, IApplier>();
-        foreach (var c in appliers) servicesCollection.AddSingleton(typeof(IApplier), c);
+        foreach (var c in GetTypesFromAssemblyWithStatic<IApplier>())
+        {
+            servicesCollection.AddSingleton(typeof(IApplier), c);
+        }
 
         servicesCollection.AddSingleton<IApplierFactory, ApplierFactory>();
         servicesCollection.AddSingleton<IHLinqQueryApplier, HLinqQuery<object>.HLinqQueryApplier>();
@@ -124,14 +84,8 @@ internal sealed class HLinqCore(IServiceProvider? provider = null) : IHLinqCore
         servicesCollection.AddSingleton<IMethodsCache, MethodsCache>();
         servicesCollection.AddSingleton<IHLinqParser, HLinqParser>();
         servicesCollection.AddSingleton<IHLinqTokenizer, HLinqTokenizer>();
-        servicesCollection.AddSingleton<IHLinqParsersCollection, HLinqServicesCollection>();
         servicesCollection.AddSingleton<IDefaultConverter, DefaultConverter>();
         servicesCollection.AddSingleton<IHLinqOptions, HLinqOptions>();
-
-        if (apiServicesCollection is not null)
-        {
-            servicesCollection.AddSingleton<IStaticMethodSource>(_ =>
-                new StaticMethodSourceWrapper(apiServicesCollection.GetServices<IStaticMethodSource>()));
-        }
+        servicesCollection.AddSingleton<HLinqBinderDependenciesBag>();
     }
 }

@@ -8,7 +8,7 @@ namespace HamsterWheel.HLinq.AspNet.Binder;
 /// <param name="parser"></param>
 /// <param name="tokenizer"></param>
 /// <param name="methodsCache"></param>
-public class WebHLinqQueryBinder(IHLinqCore core) : HLinqQueryBinder(core), IModelBinder
+public class WebHLinqQueryBinder(HLinqBinderDependenciesBag dependenciesBag) : HLinqQueryBinder(dependenciesBag), IModelBinder
 {
     public Task BindModelAsync(ModelBindingContext bindingContext)
     {
@@ -16,9 +16,7 @@ public class WebHLinqQueryBinder(IHLinqCore core) : HLinqQueryBinder(core), IMod
 
         var httpQueryString = bindingContext.HttpContext.Request.QueryString;
         var queryString = httpQueryString.ToString();
-        var genericArgument = bindingContext.ModelType.GetGenericArguments()[0];
-
-        var query = BindQuery(queryString, genericArgument);
+        var query = BindQuery(queryString, bindingContext.ModelType);
 
         bindingContext.Result = ModelBindingResult.Success(query);
 

@@ -3,30 +3,32 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using HamsterWheel.HLinq.Client;
 using HamsterWheel.HLinq.Demo.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace HamsterWheel.HLinq.IntegrationTests;
 
 partial class DbDataTests
 {
     [Fact]
-    public async Task WhenEmptyWhere_ThenReturnsNotFilteredCollection()
+    public async Task WhenEmptyWhere_ThenReturnsNotFilteredCollectionButWithMaxTakeApplied()
     {
         //act
         var response = await fixture.Client.GetAsync("/demo/db?where[]");
 
         //assert
         var data = await response.Content.ReadFromJsonAsync<Person[]>();
-        data.Should().BeEquivalentTo(Persons);
+        data.Should().BeEquivalentTo(Persons.Take(HLinqOptions.DefaultMaxTakeRecords));
     }
 
     [Fact]
-    public async Task WhenILikeUsedOnInMemoryConnection_ThenBadRequest()
+    public async Task WhenILikeUsedOnDb_ThenCanFilter()
     {
         //act
-        var response = await fixture.Client.GetAsync("/demo/db?where[ilike(x.name, billy)]");
+        var response = await fixture.Client.GetWithHLinq("/demo/db",
+            q => q.For<Person>().Where(x => EF.Functions.ILike(x.FirstName, "Bill")));
 
         //assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.Should().BeEquivalentTo(Persons.Where(x => EF.Functions.ILike(x.FirstName, "Bill")));
     }
 
     [Fact]
@@ -40,15 +42,29 @@ partial class DbDataTests
         response.Should().BeEquivalentTo(Persons.Where(x => x.FirstName.Contains("Billy")));
     }
 
+    /// <summary>
+    /// This does not work in EF out of the box either.
+    /// </summary>
     [Fact]
     public async Task WhenStringContainsIgnoreCase_ThenThrows()
     {
         //act
         var response = await fixture.Client.GetAsync("/demo/db?" + new HLinqClientQueryBuilderFactory().For<Person>()
-            .Where(x => x.FirstName.Contains("Billy", StringComparison.OrdinalIgnoreCase)).BuildQuery());
+            .Where(x => x.FirstName.Contains("Billy", StringComparison.OrdinalIgnoreCase)).BuildAndEncode());
 
         //assert
         response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+    }
+
+    [Fact]
+    public async Task WhenEFFunction_ThenCanFilter()
+    {
+        //act
+        var response = await fixture.Client.GetWithHLinq("/demo/db",
+            q => q.For<Person>().Where(x => EF.Functions.ILike(x.FirstName, "Billy")));
+
+        //assert
+        response.Should().BeEquivalentTo(Persons.Where(x => EF.Functions.ILike(x.FirstName, "Billy")));
     }
 
     [Fact]
@@ -63,14 +79,26 @@ partial class DbDataTests
     }
 
     [Fact]
+    public async Task WhenStringPropertyEqualsAndDataIsNotInFirst1000Records_ThenCanFilter()
+    {
+        //act
+        var response =
+            await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>().Where(x => x.FirstName == "Montgomery"));
+
+        //assert
+        response.Should().BeEquivalentTo(Persons.Where(x => x.FirstName == "Montgomery"));
+    }
+
+    [Fact]
     public async Task WhenStringPropertyNotEquals_ThenCanFilter()
     {
         //act
         var response =
-            await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>().Where(x => x.FirstName != "Billy"));
+            await fixture.Client.GetWithHLinq("/demo/db",
+                q => q.For<Person>().Where(x => x.FirstName != "Billy").Take(100));
 
         //assert
-        response.Should().BeEquivalentTo(Persons.Where(x => x.FirstName != "Billy"));
+        response.Should().BeEquivalentTo(Persons.Where(x => x.FirstName != "Billy").Take(100));
     }
 
     [Fact]
@@ -82,6 +110,21 @@ partial class DbDataTests
 
         //assert
         response.Should().BeEquivalentTo(Persons.Where(x => x.IpAddress == null));
+    }
+
+    [Fact]
+    public async Task WhenConditionGroups_ThenCanFilter()
+    {
+        //act
+        var response =
+            await fixture.Client.GetWithHLinq("/demo/db",
+                q => q.For<Person>()
+                    .Where(x => (x.FirstName == "Billy" && x.LastName == "Montgomery")
+                                || (x.Id == 2 || x.Id == 3)));
+
+        //assert
+        response.Should().BeEquivalentTo(Persons.Where(x =>
+            (x.FirstName == "Billy" && x.LastName == "Montgomery") || (x.Id == 2 || x.Id == 3)));
     }
 
     [Theory]

@@ -1,38 +1,34 @@
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.Tokens;
 
 namespace HamsterWheel.HLinq.Parsers;
 
-public sealed class HLinqParser(IHLinqParsersCollection parsersCollection) : IHLinqParser
+public sealed class HLinqParser(IEnumerable<IElementParser> allParsers) : IHLinqParser
 {
-    private IElementParser[] Parsers => parsersCollection.Parsers;
+    private IElementParser[] Parsers => allParsers.ToArray();
 
-    private IElementParser[] RootParsers { get; } = parsersCollection.Parsers.Where(p => p.IsRoot).ToArray();
+    private IElementParser[] RootParsers { get; } = allParsers.Where(p => p.IsRoot).ToArray();
 
-    public IHLinqQuery Parse<T>(IToken[] tokens, string stringQuery) where T : class
+    public IHLinqQuery Parse(IHLinqQuery query, IToken[] tokens)
     {
-        var query = new HLinqQuery<T>
-        {
-            SourceQueryString = stringQuery
-        };
         var context = new ParsingContext(query)
         {
             Tokens = tokens
         };
-        Parse<T>(context);
-        ((ITreeElement)query).Finish(context, context.Tokens);
+        Parse(context);
+        query.Finish(context, context.Tokens);
         return query;
     }
 
-    private void Parse<T>(IParsingContext context)
+    private void Parse(IParsingContext context)
     {
         var parsers = context.CurrentElement is IHLinqQuery
             ? RootParsers
             : Parsers.Where(p => p.ChildOf(context.CurrentElement)).ToArray();
         if (parsers.Length == 0 && !context.CurrentElement.NoChildren)
-            throw new InvalidOperationException(
-                $"Element of type {context.CurrentElement.GetType().Name} does not have any children parsers!");
+        {
+            throw new MissingParserException(context);
+        }
 
         var numberOfInvalidParsers = 0;
         while (context.Tokens.Length > 0)
@@ -40,12 +36,11 @@ public sealed class HLinqParser(IHLinqParsersCollection parsersCollection) : IHL
             numberOfInvalidParsers = 0;
             foreach (var parser in parsers)
             {
-                //TODO: pass T to parser to validate if Type has properties, methods etc.
                 if (parser.TryBuildElement(context))
                 {
                     if (context.CurrentElement is TreeBranch)
                     {
-                        Parse<T>(context);
+                        Parse(context);
                     }
 
                     parser.Finish(context);
@@ -60,7 +55,13 @@ public sealed class HLinqParser(IHLinqParsersCollection parsersCollection) : IHL
             if (numberOfInvalidParsers == parsers.Length) break;
         }
 
-        if (context.CurrentElement is IHLinqQuery && numberOfInvalidParsers == parsers.Length)
-            throw new NonParsableTokenSequenceException(context.Tokens, parsers);
+        if (context.CurrentElement is IHLinqQuery && numberOfInvalidParsers >= parsers.Length)
+        {
+            throw new NonParsableTokenSequenceException(context.SourceQueryString, context.Tokens, parsers);
+        }
     }
+
+    private sealed class MissingParserException(IParsingContext context)
+        : HLinqQueryException(
+            $"Element of type {context.CurrentElement.GetType().Name} does not have any children parsers!");
 }

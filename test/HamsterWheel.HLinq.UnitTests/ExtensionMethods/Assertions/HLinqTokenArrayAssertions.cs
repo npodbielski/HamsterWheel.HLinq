@@ -11,9 +11,7 @@ public class HLinqTokenArrayAssertions(IToken[] instance) :
     protected override string Identifier => "hLinqTokenArray";
 
     public AndConstraint<HLinqTokenArrayAssertions> HaveSequenceOf(string query,
-        IEnumerable<ExpectedToken> expected,
-        string because = "",
-        params object[] becauseArgs)
+        IEnumerable<ExpectedToken> expected, bool assertTokensValues = true)
     {
         var expectedTokens = expected as ExpectedToken[] ?? expected.ToArray();
         Subject.Length.Should().Be(expectedTokens.Length,
@@ -25,7 +23,11 @@ public class HLinqTokenArrayAssertions(IToken[] instance) :
         for (var index = 0; index < Subject.Length; index++)
         {
             var token = Subject[index];
-            token.Should().BeOfType(expectedTokens.ElementAt(index).Type);
+            var and = token.Should().BeOfType(expectedTokens.ElementAt(index).Type).And;
+            if (assertTokensValues)
+            {
+                and.HaveValueOf(query, expectedTokens.ElementAt(index).TokenValue);
+            }
         }
 
         return new AndConstraint<HLinqTokenArrayAssertions>(this);

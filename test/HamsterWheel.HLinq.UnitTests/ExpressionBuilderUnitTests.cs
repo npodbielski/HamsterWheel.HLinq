@@ -2,26 +2,22 @@ using System.Globalization;
 using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.PgSql;
-using HamsterWheel.HLinq.Reflection;
-using HamsterWheel.HLinq.Tokenizer;
+using HamsterWheel.HLinq.Tokens;
 
 namespace HamsterWheel.HLinq.UnitTests;
 
 public partial class ExpressionBuilderUnitTests
 {
     private readonly ExpressionBuilder _sut;
-    private readonly HLinqTokenizer _tokenizer = new(ServicesCollection);
-    private readonly HLinqParser _parser = new(ServicesCollection);
+    private static readonly TestServicesCollection HLinqServices = new();
+    private readonly HLinqTokenizer _tokenizer = new(HLinqServices.TokenPossibilities);
+    private readonly HLinqParser _parser = new(HLinqServices.Parsers);
     private readonly ParametersConverter _parametersConverter = new();
-    private static readonly HLinqCore HLinqCore = new();
-    private static readonly HLinqServicesCollection ServicesCollection = new(HLinqCore);
 
     public ExpressionBuilderUnitTests()
     {
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-        var propertiesCache = new PropertiesCache();
-        var methodsCache = new MethodsCache();
-        _sut = new ExpressionBuilder(propertiesCache, methodsCache, HLinqCore.ConverterFactory, _parametersConverter,
+        _sut = new ExpressionBuilder(HLinqServices.PropertiesCache, HLinqServices.MethodsCache, HLinqServices.ConverterFactory, _parametersConverter,
             [new EntityFrameworkStaticMethodProvider()]);
     }
 }

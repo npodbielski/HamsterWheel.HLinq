@@ -1,8 +1,8 @@
 using HamsterWheel.HLinq.Tokens;
-using HamsterWheel.HLinq.Tokens.Filter;
-using HamsterWheel.HLinq.Tokens.Order;
+using HamsterWheel.HLinq.Tokens.Filtering;
+using HamsterWheel.HLinq.Tokens.Ordering;
 using HamsterWheel.HLinq.Tokens.Paging;
-using HamsterWheel.HLinq.Tokens.Select;
+using HamsterWheel.HLinq.Tokens.Selecting;
 
 namespace HamsterWheel.HLinq.UnitTests.Assertions;
 
@@ -22,7 +22,7 @@ public class ExpectedToken(Type type, string value)
     public static ExpectedToken Equality => new(typeof(Equality), "==");
     public static ExpectedToken GreaterOrEqualThan => new(typeof(GreaterOrEqualThan), ">=");
     public static ExpectedToken LessOrEqualThan => new(typeof(LessOrEqualThan), "<=");
-    public static ExpectedToken LessThan => new(typeof(HLinq.Tokens.Filter.LessThan), "<");
+    public static ExpectedToken LessThan => new(typeof(LessThan), "<");
     public static ExpectedToken GreaterThan => new(typeof(GreaterThan), ">");
     public static ExpectedToken Assignment => new(typeof(Assignment), "=");
     public static ExpectedToken NameOrValue(string value) => new(typeof(NameOrValue), value);
@@ -34,7 +34,7 @@ public class ExpectedToken(Type type, string value)
     public static ExpectedToken Take => new(typeof(Take), "take");
     public static ExpectedToken Skip => new(typeof(Skip), "skip");
     public static ExpectedToken OrderBy => new(typeof(OrderBy), "orderBy");
-    public static ExpectedToken ThenBy => new(typeof(ThenBy), "thanBy");
-    public static ExpectedToken ThenByDescending => new(typeof(ThenByDescending), "thanByDescending");
+    public static ExpectedToken ThenBy => new(typeof(ThenBy), "thenBy");
+    public static ExpectedToken ThenByDescending => new(typeof(ThenByDescending), "thenByDescending");
     public static ExpectedToken OrderByDescending => new(typeof(OrderByDescending), "orderByDescending");
 }

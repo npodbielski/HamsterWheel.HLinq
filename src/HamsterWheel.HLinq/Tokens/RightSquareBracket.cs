@@ -1,4 +1,4 @@
-using HamsterWheel.HLinq.Tokens.Filter;
+using HamsterWheel.HLinq.Tokens.Filtering;
 
 namespace HamsterWheel.HLinq.Tokens;
 
@@ -8,15 +8,10 @@ public sealed class RightSquareBracket(Range range) : TokenBase(range)
 
     public sealed class Possibility() : TokenPossibility<RightSquareBracket>(TokenValue)
     {
-        protected override bool PreviousTokenMatchImpl(IToken previousToken)
-        {
-            return previousToken is PropertyAccess or NameOrValue or RightCircleBracket
+        protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
+            previousToken is PropertyAccess or NameOrValue or RightCircleBracket
                 or LeftSquareBracket;
-        }
 
-        protected override RightSquareBracket BuildImpl(Range range)
-        {
-            return new RightSquareBracket(range);
-        }
+        protected override RightSquareBracket BuildImpl(Range range) => new(range);
     }
 }

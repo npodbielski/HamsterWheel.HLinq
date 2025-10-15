@@ -12,19 +12,15 @@ public sealed class EnumValueConverter : BaseConfigurableValueConverter
 
 public sealed class NullableEnumValueConverter(EnumValueConverter baseConverter) : BaseConfigurableValueConverter
 {
-    public override bool CanConvert(Type destination)
-    {
-        return destination.IsGenericType 
-               && destination.GetGenericTypeDefinition() == typeof(Nullable<>)
-               && destination.GetGenericArguments().First().IsEnum;
-    }
+    public override bool CanConvert(Type destination) =>
+        destination.IsGenericType
+        && destination.GetGenericTypeDefinition() == typeof(Nullable<>)
+        && destination.GetGenericArguments().First().IsEnum;
 
-    public override object? ConvertTo(string stringValue, Type destination)
-    {
-        return stringValue switch
+    public override object? ConvertTo(string stringValue, Type destination) =>
+        stringValue switch
         {
             "null" => null,
             _ => baseConverter.ConvertTo(stringValue, destination.GetGenericArguments().First())
         };
-    }
 }

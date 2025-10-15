@@ -1,9 +1,9 @@
 using HamsterWheel.HLinq.Parsers;
-using HamsterWheel.HLinq.Tokens;
+using HamsterWheel.HLinq.Tokens.Filtering;
 
 namespace HamsterWheel.HLinq.Tree;
 
 public interface ILogicalOperationGroupBranch : ITreeBranch
 {
-    IConditionalLogicalOperationToken? ConditionalLogicalOp { get; }
+    ILogicalOperatorToken? LogicalOpToken { get; }
 }

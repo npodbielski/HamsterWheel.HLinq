@@ -10,27 +10,25 @@ public class ResponseHLinqClientQueryBuilder
 {
     public static JsonSerializerOptions DefaultJsonSerializerOptions { get; } = new(JsonSerializerDefaults.Web);
 
-    static ResponseHLinqClientQueryBuilder()
-    {
+    static ResponseHLinqClientQueryBuilder() =>
         DefaultJsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    }
 }
 
 public class ResponseHLinqClientQueryBuilder<T> : ResponseHLinqClientQueryBuilder
 {
-    public ResponseHLinqClientQueryBuilder()
-    {
-    }
-
-    public ResponseHLinqClientQueryBuilder(JsonSerializerOptions options) => _jsonSerializerOptions = options;
+    private readonly JsonSerializerOptions _jsonSerializerOptions;
 
     protected StringBuilder Query = new();
-    private readonly JsonSerializerOptions _jsonSerializerOptions = DefaultJsonSerializerOptions;
 
-    public string BuildQuery() => UrlEncoder.Default.Encode(Query.ToString());
+    protected ResponseHLinqClientQueryBuilder(JsonSerializerOptions? options = null) =>
+        _jsonSerializerOptions = options ?? DefaultJsonSerializerOptions;
+
+    public string BuildAndEncode() => UrlEncoder.Default.Encode(Build());
+
+    public string Build() => Query.ToString();
 
     public T Deserialize(string json) => JsonSerializer.Deserialize<T>(json, _jsonSerializerOptions) ??
-                                         throw new CouldNotDeserialize<T>(json);
+                                         throw new CouldNotDeserializeException<T>(json);
 
     protected void AddDotIfNecessary()
     {
@@ -48,13 +46,13 @@ public class ResponseHLinqClientQueryBuilder<T> : ResponseHLinqClientQueryBuilde
         };
 
     protected static UnorderedHLinqClientQueryBuilder<TNext> Next<TNext>(ResponseHLinqClientQueryBuilder<T> previous) =>
-        new()
+        new(previous._jsonSerializerOptions)
         {
             Query = previous.Query
         };
 
     protected static ResponseHLinqClientQueryBuilder<int> NextCounted(ResponseHLinqClientQueryBuilder<T> previous) =>
-        new()
+        new(previous._jsonSerializerOptions)
         {
             Query = previous.Query
         };

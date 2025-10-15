@@ -1,8 +1,10 @@
 using System.Linq.Expressions;
+using System.Text.Json;
 
 namespace HamsterWheel.HLinq.Client;
 
-public class UnorderedHLinqClientQueryBuilder<T> : HLinqClientQueryBuilder<T>
+public class UnorderedHLinqClientQueryBuilder<T>(JsonSerializerOptions? jsonSerializerOptions = null)
+    : HLinqClientQueryBuilder<T>(jsonSerializerOptions)
 {
     public OrderedHLinqClientQueryBuilder<T> OrderBy(Expression<Func<T, object?>> selector)
     {

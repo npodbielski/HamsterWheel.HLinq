@@ -1,16 +1,17 @@
 using System.Reflection;
 using FluentAssertions;
-using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.AspNet.Binder;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.Tokens;
+using HamsterWheel.HLinq.UnitTests.Assertions;
 using HamsterWheel.HLinq.UnitTests.Dummies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using static HamsterWheel.HLinq.UnitTests.Assertions.ExpectedTreeElement;
 
 namespace HamsterWheel.HLinq.UnitTests.AspNet.Binder;
 
@@ -20,7 +21,6 @@ public class WebHLinqQueryBinderUnitTests
     public void BindModelAsync_WhenCalledWithNull_ThenThrows()
     {
         //arrange
-        var expected = "";
         var parser = Substitute.For<IHLinqParser>();
         var tokenizer = Substitute.For<IHLinqTokenizer>();
         var methodsCache = Substitute.For<IMethodsCache>();
@@ -28,8 +28,8 @@ public class WebHLinqQueryBinderUnitTests
         services.AddSingleton(parser);
         services.AddSingleton(methodsCache);
         services.AddSingleton(tokenizer);
-        var sut = new WebHLinqQueryBinder(new HLinqCore(services.BuildServiceProvider()));
-        var action = () => sut.BindModelAsync(null);
+        var sut = new WebHLinqQueryBinder(new TestServicesCollection().BinderDependenciesBag);
+        var action = () => sut.BindModelAsync(null!);
 
         //act && assert
         action.Should().ThrowAsync<ArgumentNullException>();
@@ -40,24 +40,35 @@ public class WebHLinqQueryBinderUnitTests
     {
         //arrange
         var servicesFactory = new DummyHLinqServiceProviderFactory();
-        var method = typeof(IHLinqParser).GetMethods().First(m => m.Name == "Parse").MakeGenericMethod(typeof(DummyEntity));
-        servicesFactory.MethodsCache.GetInstanceGeneric(Arg.Any<Type>(), Arg.Any<string>(), Arg.Any<Func<ParameterInfo[], bool>>(), Arg.Any<Type[]>())
-            .Returns(method);
         var hlinqQueryMethod = typeof(HLinqQuery<DummyEntity>).GetMethods().First(m => m.Name == "Parse");
-        servicesFactory.MethodsCache.GetStatic(Arg.Any<Type>(), Arg.Any<string>(), Arg.Any<Func<ParameterInfo[], bool>>())
+        servicesFactory.MethodsCache
+            .GetStaticOrThrow(Arg.Any<Type>(), Arg.Any<string>(), Arg.Any<Func<ParameterInfo[], bool>>())
             .Returns(hlinqQueryMethod);
         var query = new HLinqQuery<DummyEntity>();
-        servicesFactory.Parser.Parse<DummyEntity>(Arg.Any<IToken[]>(), Arg.Any<string>()).Returns(query);
-        var sut = new WebHLinqQueryBinder(new HLinqCore(servicesFactory.CreateServiceProvider()));
+        servicesFactory.Parser.Parse(Arg.Any<HLinqQuery<DummyEntity>>(), Arg.Any<IToken[]>()).Returns(query);
+        var sut = new WebHLinqQueryBinder(new TestServicesCollection().BinderDependenciesBag);
         var context = Substitute.For<ModelBindingContext>();
-        context.HttpContext.Request.QueryString.Returns(new QueryString("?key=value"));
+        var queryString = "?where[x.key==value]";
+        context.HttpContext.Request.QueryString.Returns(new QueryString(queryString));
         context.ModelType.Returns(typeof(HLinqQuery<DummyEntity>));
 
         //act
         await sut.BindModelAsync(context);
 
         //assert
-        context.Result.Model.Should().NotBeNull();
-        context.Result.Model.Should().Be(query);
+        var actual = context.Result.Model.Should().BeOfType<HLinqQuery<DummyEntity>>().Which;
+        actual.ItemType.Should().Be(typeof(DummyEntity));
+        actual.Should().HaveStructureOf(queryString, [
+            WhereRoot(
+                ConditionElement(
+                    Property(
+                        ExpectedToken.Entity(),
+                        ExpectedToken.Dot,
+                        ExpectedToken.Prop("key")),
+                    ComparisonOperation(ExpectedToken.Equality),
+                    ComparisonConstant(ExpectedToken.NameOrValue("value"))
+                ))
+        ]);
+        actual.SourceQueryString.Should().Be(queryString[1..]);
     }
 }

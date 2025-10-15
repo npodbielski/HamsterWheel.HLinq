@@ -2,15 +2,14 @@ using System.Linq.Expressions;
 using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tokens;
-using HamsterWheel.HLinq.Tokens.Filter;
-using HamsterWheel.HLinq.Tokens.Select;
-using HamsterWheel.HLinq.Tree.Filter;
-using HamsterWheel.HLinq.Tree.Order;
-using HamsterWheel.HLinq.Tree.Select;
+using HamsterWheel.HLinq.Tokens.Filtering;
+using HamsterWheel.HLinq.Tokens.Selecting;
+using HamsterWheel.HLinq.Tree.Filtering;
+using HamsterWheel.HLinq.Tree.Ordering;
+using HamsterWheel.HLinq.Tree.Selecting;
 
 namespace HamsterWheel.HLinq.Tree;
 
-//TODO: copy to PropertyName to all select[Node=x.Name] kind of select
 public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamElement
 {
     public string GetValue(string hLinqQuery) => string.Join('.', GetPath(hLinqQuery));
@@ -20,10 +19,13 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
 
     public sealed class Parser : ElementParserBase<Property>
     {
+        public override IToken[] ExampleTokens { get; } =
+            [new Entity(default), new Dot(default), new PropertyAccess(default)];
+
         protected override Type[] ValidParents { get; } =
         [
-            typeof(Condition), typeof(Method), typeof(OrderByRoot), typeof(OrderByDescendingRoot), typeof(ThanByRoot),
-            typeof(ThanByDescendingRoot), typeof(PropertyAssignment)
+            typeof(Condition), typeof(Method), typeof(OrderByRoot), typeof(OrderByDescendingRoot), typeof(ThenByRoot),
+            typeof(ThenByDescendingRoot), typeof(PropertyAssignment)
         ];
 
         protected override Property? BuildBranch(IParsingContext context)
@@ -59,7 +61,18 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
         protected override Expression Build(IBuilderContext context, Property element)
         {
             var path = element.GetPath(context.HLinqQuery);
-            return context.Builder.GetPropertyWithType(context.Type, context.Param, path).Member;
+            var memberExpression = context.Builder.GetProperty(context.Type, context.Param, path).Member;
+            switch (context)
+            {
+                case IArithmeticComparisonConditionBuilderContext conditionBuilderContext:
+                    conditionBuilderContext.ComparisonPropertyType = memberExpression.Type;
+                    break;
+                case IMethodCallConditionBuilderContext methodCallConditionBuilderContext:
+                    methodCallConditionBuilderContext.MethodSource = memberExpression;
+                    break;
+            }
+
+            return memberExpression;
         }
     }
 }

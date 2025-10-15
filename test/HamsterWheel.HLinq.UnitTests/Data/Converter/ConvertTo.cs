@@ -1,6 +1,6 @@
 using System.Text.Json;
 using FluentAssertions;
-using HamsterWheel.HLinq.Tree.Filter;
+using HamsterWheel.HLinq.Tree.Filtering;
 using HamsterWheel.HLinq.UnitTests.Dummies;
 
 #pragma warning disable CA2263
@@ -365,5 +365,31 @@ partial class DefaultConverterUnitTests
         {
             Name = entity.Name
         });
+    }
+
+    [Fact]
+    public void ConvertTo_WhenWithDateTimeOffsetToString_ThenReturnsCorrectValue()
+    {
+        //arrange 
+        var dateTimeOffset = DateTimeOffset.UtcNow;
+
+        //act
+        var actual = _sut.ConvertTo(typeof(string), dateTimeOffset);
+
+        //assert
+        actual.Should().Be(dateTimeOffset.ToString("O"));
+    }
+
+    [Fact]
+    public void ConvertTo_WhenWithDateTimeToString_ThenReturnsCorrectValue()
+    {
+        //arrange 
+        var dateTime = DateTime.UtcNow;
+
+        //act
+        var actual = _sut.ConvertTo(typeof(string), dateTime);
+
+        //assert
+        actual.Should().Be(dateTime.ToString("O"));
     }
 }

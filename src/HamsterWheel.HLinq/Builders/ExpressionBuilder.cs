@@ -4,8 +4,8 @@ using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tree;
-using HamsterWheel.HLinq.Tree.Filter;
-using HamsterWheel.HLinq.Tree.Select;
+using HamsterWheel.HLinq.Tree.Filtering;
+using HamsterWheel.HLinq.Tree.Selecting;
 
 namespace HamsterWheel.HLinq.Builders;
 
@@ -24,7 +24,7 @@ public sealed class ExpressionBuilder(
 
         var delegateType = typeof(Func<,>).MakeGenericType(source, typeof(bool));
 
-        return Expression.Lambda(delegateType, body, (IEnumerable<ParameterExpression>) [context.Param]);
+        return Expression.Lambda(delegateType, body, (IEnumerable<ParameterExpression>)[context.Param]);
     }
 
     public (LambdaExpression Expression, Type PropType) GetProperty(Type source, ITreeRoot query, string hLinqQuery) =>
@@ -51,7 +51,7 @@ public sealed class ExpressionBuilder(
 
         var delegateType = typeof(Func<,>).MakeGenericType(source, resultType);
 
-        return (Expression.Lambda(delegateType, body, (IEnumerable<ParameterExpression>) [context.Param]), resultType);
+        return (Expression.Lambda(delegateType, body, context.Param), resultType);
     }
 
     public Expression BuildBody(IBuilderContext context, ITreeBranch root) => ToExpression(context, root);
@@ -77,44 +77,12 @@ public sealed class ExpressionBuilder(
                 .Distinct();
         }
 
-        return FilterMethodsViaParameterValues(parameters, allMethods, ParametersTransformer)
-            .Select(m => (m, BindingParametersTransformer(m.GetParameters()).ToArray()))
+        return FilterMethodsViaParameterValues(parameters, allMethods, EfFunctionParametersTransformer)
+            .Select(m => (m, StaticMethodSourceWrapper.MapEfDbFunctionParams(m.GetParameters()).ToArray()))
             .ToArray();
 
-        ParameterInfo[] ParametersTransformer(ParameterInfo[] infos)
-        {
-            //TODO: this should be part of IStaticMethodSource
-            if (infos[0].Name == "_" && infos[0].ParameterType.Name == "DbFunctions")
-            {
-                return infos[1..];
-            }
-
-            return infos;
-        }
-
-        IBindingParameterInfo[] BindingParametersTransformer(ParameterInfo[] infos)
-        {
-            var list = new List<BindingParameterInfo>();
-            //TODO: this should be part of IStaticMethodSource
-            foreach (var info in infos)
-            {
-                if (info is { Name: "_", ParameterType.Name: "DbFunctions" })
-                {
-                    list.Add(new BindingParameterInfo
-                    {
-                        Info = info,
-                        ConstantValue = null,
-                        ConstantType = info.ParameterType
-                    });
-                }
-                else
-                {
-                    list.Add(new BindingParameterInfo { Info = info });
-                }
-            }
-
-            return list.ToArray();
-        }
+        ParameterInfo[] EfFunctionParametersTransformer(ParameterInfo[] infos) =>
+            EfDbFunctionsMatcher.IsEfDbFunction(infos) ? infos[1..] : infos;
     }
 
     public MethodInfo[] GetMostProbableMethods(Type propType, string name,
@@ -179,7 +147,7 @@ public sealed class ExpressionBuilder(
         return methodsWithProbability.OrderBy(p => p.probability).Select(p => p.method).ToArray();
     }
 
-    public IPropertyContext GetPropertyWithType(Type sourceType, Expression source, string[] path)
+    public IPropertyContext GetProperty(Type sourceType, Expression source, string[] path)
     {
         var expression = source;
         var currentType = sourceType;
@@ -194,12 +162,6 @@ public sealed class ExpressionBuilder(
             }
 
             currentType = targetProp.PropertyType;
-            //TODO: it would be nice to attempt to create expression if all types are just objects but I am not sure if this is even possible via expressions
-            //...to make this work expression builder needs to have an access to actual object here which is not possible currently since this whole code does not know about the actual data just types
-            // if (currentType == typeof(object) && targetProp.GetMethod is not null)
-            // {
-            //     currentType = targetProp.GetMethod.Invoke();
-            // }
             expression = GetProperty(expression, targetProp);
         }
 
@@ -218,7 +180,7 @@ public sealed class ExpressionBuilder(
 
         var delegateType = typeof(Func<,>).MakeGenericType(source, propType);
 
-        return (Expression.Lambda(delegateType, body, (IEnumerable<ParameterExpression>) [context.Param]), propType);
+        return (Expression.Lambda(delegateType, body, (IEnumerable<ParameterExpression>)[context.Param]), propType);
     }
 
     private IElementToExpressionConverter GetToExpressionConverter<T>(T element) where T : ITreeElement =>
@@ -228,4 +190,7 @@ public sealed class ExpressionBuilder(
         Expression.Property(source, prop);
 
     public IParametersConverter GetParametersConverter() => parametersConverter;
+
+    public class ExpectedMemberOrMemberInitExpressionException() : HLinqQueryException(
+        $"At this point type of expression should be {nameof(MemberExpression)} or {nameof(MemberInitExpression)}.");
 }

@@ -1,8 +1,8 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tokens;
-using HamsterWheel.HLinq.Tree.Order;
-using HamsterWheel.HLinq.Tree.Select;
+using HamsterWheel.HLinq.Tree.Ordering;
+using HamsterWheel.HLinq.Tree.Selecting;
 using NSubstitute;
 
 namespace HamsterWheel.HLinq.UnitTests.Parsers;
@@ -52,7 +52,7 @@ public class ElementParserBaseUnitTests
     public void Finish_WhenCalled_ThenCallsCorrectMethod()
     {
         //arrange
-        var currentElement = Substitute.For<ITreeElement>();
+        var currentElement = Substitute.For<IHLinqQuery>();
         var context = new ParsingContext(currentElement);
         var sut = new TestElementParser();
 
@@ -111,5 +111,6 @@ public class ElementParserBaseUnitTests
 
 public class TestElementParser(SelectRoot? root = null) : ElementParserBase<SelectRoot>
 {
+    public override IToken[] ExampleTokens { get; } = [];
     protected override SelectRoot BuildBranch(IParsingContext context) => root ?? new SelectRoot([]);
 }

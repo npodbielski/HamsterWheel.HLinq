@@ -17,7 +17,7 @@ public sealed class HLinqQueryExceptionHandler(ILogger<HLinqQueryExceptionHandle
             return false;
         }
 
-        logger.LogWarning(string.Format(hLinqException.Message));
+        LogHLinqOriginalMessage(hLinqException);
         var problemDetails = GetDetails(hLinqException);
         httpContext.Response.StatusCode = problemDetails.Status ?? (int)HttpStatusCode.InternalServerError;
         await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
@@ -40,4 +40,10 @@ public sealed class HLinqQueryExceptionHandler(ILogger<HLinqQueryExceptionHandle
             Status = (int)HttpStatusCode.BadRequest,
             Title = exception.Message
         };
+
+    private static readonly Action<ILogger, string, Exception> LogHLinqOriginalMessageAction =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(13, nameof(TryHandleAsync)), "{Message}");
+
+    private void LogHLinqOriginalMessage(HLinqQueryException exception) =>
+        LogHLinqOriginalMessageAction(logger, exception.Message, exception);
 }

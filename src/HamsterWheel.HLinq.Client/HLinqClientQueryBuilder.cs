@@ -1,11 +1,15 @@
 using System.Linq.Expressions;
-using System.Reflection;
-using HamsterWheel.HLinq.Data.Converters;
+using System.Text.Json;
+using HamsterWheel.HLinq.Client.RootBuilders;
 
 namespace HamsterWheel.HLinq.Client;
 
 public class HLinqClientQueryBuilder<T> : ResponseHLinqClientQueryBuilder<T[]>
 {
+    protected HLinqClientQueryBuilder(JsonSerializerOptions? jsonSerializerOptions = null) : base(jsonSerializerOptions)
+    {
+    }
+
     public UnorderedHLinqClientQueryBuilder<TResult> Select<TResult>(Expression<Func<T, TResult>> selector)
     {
         switch (selector.Body)
@@ -32,46 +36,8 @@ public class HLinqClientQueryBuilder<T> : ResponseHLinqClientQueryBuilder<T[]>
 
     public UnorderedHLinqClientQueryBuilder<T> Where(Expression<Func<T, bool>> predicate)
     {
-        if (predicate.Body is MethodCallExpression cd &&
-            cd.Method.GetParameters().FirstOrDefault()?.ParameterType.FullName ==
-            "Microsoft.EntityFrameworkCore.DbFunctions")
-        {
-            AddDotIfNecessary();
-            Query.Append($"where[{predicate.Body.ToString().Replace("EF.Functions.", "")}]");
-        }
-        else if (predicate.Body is BinaryExpression be)
-        {
-            var left = be.Left is UnaryExpression lue ? lue.Operand : be.Left;
-            var right = be.Right is UnaryExpression rue ? rue.Operand : be.Right;
-
-            object? value = null;
-            if (right is ConstantExpression ce)
-            {
-                value = ce.Value ?? "null";
-            }
-
-            if (value is null && right is MemberExpression { Expression: ConstantExpression mce } me)
-            {
-                value = me.Member is FieldInfo fi ? fi.GetValue(mce.Value) ?? "null" : null;
-            }
-
-            if (value is not null)
-            {
-                AddDotIfNecessary();
-                Query.Append("where[")
-                    .Append(
-                        be.ToString().Replace(be.Left.ToString(), left.ToString()).TrimStart('(')
-                            .Replace(be.Right.ToString(), DefaultConverter.Instance.ConvertTo<string>(value)).TrimEnd(')')
-                    )
-                    .Append(']');
-            }
-        }
-        else
-        {
-            AddDotIfNecessary();
-            Query.Append($"where[{predicate.Body.ToString()}]");
-        }
-        
+        AddDotIfNecessary();
+        new WhereRootBuilder<T>(Query).Build(predicate);
         return Next<T>(this);
     }
 

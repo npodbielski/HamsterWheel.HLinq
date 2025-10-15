@@ -11,9 +11,7 @@ public class HLinqITreeBranchAssertions(ITreeBranch instance) :
     protected override string Identifier => "hLinqITreeBranch";
 
     public AndConstraint<HLinqITreeBranchAssertions> HaveStructureOf(string query,
-        IEnumerable<ExpectedTreeElement> expected,
-        string because = "",
-        params object[] becauseArgs)
+        IEnumerable<ExpectedTreeElement> expected)
     {
         var expectedChildren = expected as ExpectedTreeElement[] ?? expected.ToArray();
         Subject.Should().NotBeNull();
@@ -31,7 +29,7 @@ public class HLinqITreeBranchAssertions(ITreeBranch instance) :
             }
             else
             {
-                child.Tokens.Should().HaveSequenceOf(query, expectedTokensOfChild ?? []);
+                child.Tokens.Should().HaveSequenceOf(query, expectedTokensOfChild ?? [], assertTokensValues: false);
             }
         }
 

@@ -9,15 +9,14 @@ public sealed class SkipOrTakeConstant(NameOrValue value) : TreeLeaf([value])
 
     public sealed class Parser : ElementParserBase<SkipOrTakeConstant>
     {
-        protected override Type[] ValidParents => [typeof(SkipRoot), typeof(TakeRoot)];
+        public override IToken[] ExampleTokens { get; } = [new TokenExample("10")];
+        protected override Type[] ValidParents { get; } = [typeof(SkipRoot), typeof(TakeRoot)];
 
-        protected override SkipOrTakeConstant? BuildBranch(IParsingContext context)
-        {
-            return context.Tokens switch
+        protected override SkipOrTakeConstant? BuildBranch(IParsingContext context) =>
+            context.Tokens switch
             {
                 [NameOrValue value, ..] => new SkipOrTakeConstant(value),
                 _ => null
             };
-        }
     }
 }
