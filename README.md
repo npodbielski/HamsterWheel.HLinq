@@ -260,13 +260,14 @@ There are various filters possible in HLinq:
 - greater or equal
 - lesser
 - lesser or equal
-- string contains (with case-insensitive variant)
-- string starts with (with case-insensitive variant)
-- string ends with (with case-insensitive variant)
+- string contains (with case-insensitive variant) - usually not supported by DB
+- string starts with (with case-insensitive variant) - usually not supported by DB
+- string ends with (with case-insensitive variant) - usually not supported by DB
+- EF DbFunctions
 
 If this is not enough, you can write your own extension to support new operators or functions.
 
-### Equals
+#### Equals
 In example to look for entity with specific Id:
 ```http request
 GET /data?where[x.Id==1]
@@ -309,7 +310,7 @@ Equals can be used inside a group as any other filtering condition:
 GET where[(x.Name==John||x.Name==Doe)]
 ```
 
-### Not equals
+#### Not equals
 Usage is the same as for equals, but with `!=` operator.
 ```http request
 GET /data?where[x.Id!=1]
@@ -318,31 +319,31 @@ GET /data?where[x.Id!=77774169-BB9D-4DF9-A4A7-52019C4A445D]
 ```
 Not equals comparison operator is `!=` which is consistent with C# syntax of Linq.
 
-### Greater
+#### Greater
 Usage is the same as for equals, but with `>` operator.
 ```http request
 GET /data?where[x.Id>1]
 ```
 
-### Greater or equal
+#### Greater or equal
 Usage is the same as for equals, but with `>=` operator.
 ```http request
 GET /data?where[x.Int>=1]
 ```
 
-### Lesser
+#### Lesser
 Usage is the same as for equals, but with `<` operator.
 ```http request
 GET /data?where[x.Int<1]
 ```
 
-### Lesser or equal
+#### Lesser or equal
 Usage is the same as for equals, but with `<=` operator.
 ```http request
 GET /data?where[x.Int<=1]
 ```
 
-### String contains
+#### String contains
 Testing for string contents is a bit different but still resembles Linq syntax. 
 ```csharp
 queryable.Where(x => x.Name.Contains("John"));
@@ -356,7 +357,10 @@ You can use the white space in the string:
 GET /data?where[x.Name.Contains(John Doe)]
 ```
 
-### String contains with case-insensitive
+#### String contains with case-insensitive
+> [!WARNING]  
+> Though this is supported by HLinq and Linq, it is not supported by EF. Use it for memory collections only. 
+
 Of course usage of `string.Contains` is consistent with Linq and is case-sensitive.
 To use a case-insensitive version, you need to add an extra parameter just like in C#:
 ```http request
@@ -368,25 +372,89 @@ GET /data?where[ilike(x.Name, n)]
 ```
 This is equivalent of a Linq query:
 ```csharp
-queryable.Where(x => EF.Functions.ILike(x.Name, "n"));
+queryable.Where(x => x.Name.Contains("n", StringComparison.InvariantCultureIgnoreCase));
 ```
 
-### String StartsWith
+#### String StartsWith
+> [!WARNING]  
+> Though this is supported by HLinq and Linq, it is not supported by EF. Use it for memory collections only.
+
 In the same manner as `Contains` can be used `StartsWith` method:
 ```http request
 GET /data?where[x.Name.StartsWith(John)]
 ```
 To use a case-insensitive version, you need to add an extra parameter just like in C#:
 ```http request
-GET /data?where[x.Name.Contains(John, StringComparison.InvariantCultureIgnoreCase)]
+GET /data?where[x.Name.StartsWith(John, StringComparison.InvariantCultureIgnoreCase)]
 ```
 
-### String EndsWith
+#### String EndsWith
+> [!WARNING]  
+> Though this is supported by HLinq and Linq, it is not supported by EF. Use it for memory collections only.
+
 In the same manner as `Contains` and `StartsWith` can be used `EndsWith` method:
 ```http request
 GET /data?where[x.Name.EndsWith(n)]
 ```
 To use a case-insensitive version, you need to add an extra parameter just like in C#:
 ```http request
-GET /data?where[x.Name.Contains(John, StringComparison.InvariantCultureIgnoreCase)]
+GET /data?where[x.Name.EndsWith(John, StringComparison.InvariantCultureIgnoreCase)]
 ```
+
+#### EF DbFunctions
+> [!WARNING]  
+> Support for those functions vary between DB engines and their EF providers. Check which ones are by your DB engine and EF.
+
+> [!WARNING]  
+> This is supported by HLinq and Linq and EF but cannot be used on memory collections. Use it for DB collections only.
+
+##### PGSQL 
+###### ILike
+This is very similar to `string.Contains(str, StringComparison.InvariantCultureIgnoreCase)` but instead of using .net runtime function it is translated to db function, and it is applied by DB engine.
+For example:
+```http request
+/demo/db?where[ilike(x.NAME, John Doe)]
+```
+This is equivalent of a Linq query:
+```csharp
+queryable.Where(x => EF.Functions.ILike(x.Name, "John Doe"));
+```
+
+###### ILike with escape character
+Very similar to regular ILike but allows for a third argument: escape character.
+```http request
+GET /demo/db?where[ilike(x.firstName, arlan, \)]
+```
+
+This is equivalent of a Linq query:
+```csharp
+queryable.Where(x => EF.Functions.ILike(x.Name, "John Doe", "\\"));
+```
+
+
+### Selecting
+Selecting is used to specify which properties should be returned to the client. It is done by specifying a comma-separated list of property names after the `select` keyword. It is possible to rename properties by specifying new name with `newName=propertyName` syntax.
+For example:
+```http request
+GET /data/persons?select[x.Name,x.Age]
+```
+
+This is equivalent of Linq query:
+```csharp
+personQueryable.Select(x => new { x.Name, x.Age });
+```
+
+This will return only `Name` and `Age` properties of each person only.
+
+If you want to rename `Name` property to `FullName` then you do:
+```http request
+GET /data/persons?select[fullName=x.name,x.age]
+```
+
+This, in turn usually translates to Linq query as follows:
+```csharp
+personQueryable.Select(x => new { FullName = x.Name, x.Age });
+```
+
+HLinq creates a new type on the fly to be serialized to JSON and returns it to the client. This means that other properties of the original type are not returned.
+Selecting is not an exclusive operation. You need to be specific by providing which properties you are interested in. You cannot exclude properties by excluding them from the query.
