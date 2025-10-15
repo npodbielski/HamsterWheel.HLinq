@@ -100,6 +100,14 @@ If a user is trying to fetch a huge quantity of data from the API by specifing i
 builder.Services.ConfigureHLinq(c => c.HLinqOptions.HttpDefaultMaxTakeRecords = 100);
 ```
 
+### Adding EF DB Functions
+In Linq you can use DB functions from inside the C# code. Those functions are not evaluated on the .net side but translated in SQL and evaluated by the DB engine. HLinq allows you to use them, but it is not aware of your environment.
+To tell HLinq about your DB capabilities, you need to configure it inside `ConfigureHLinq` method call.
+For example, the following line adds PgSql specific functions to HLinq:
+```csharp
+services.ConfigureHLinq(c => c.AddHLingToPgSql());
+```
+
 # How to use on the client
 
 HLinq have a client that allows you to build HLinq queries in a more type safe manner using `Expression`s syntax of Linq. Not full Linq is supported in HLinq (mostly because limited support of URLs characters), but many of filtering methods, ordering, selects, skip, take directives are possible.
@@ -250,6 +258,17 @@ This allows for simple and expressive paging of data on the client side. I.e., i
 ```csharp
 await httpClient.GetAsync($"/demo/memory?skip[{pageSize*page}].take[{pageSize}]");
 ```
+
+To count total number of records in the collection you are querying you need to use `count[]` root.
+```http request
+GET /demo/memory?count[]
+```
+
+Count can be applied after filtering (or any other root for that matter) to get only the number of records in a filtered collection instead.
+```http request
+GET /demo/memory?where[x.name.contains(Ant)].count[]
+```
+This will give you the number of records in the collection that have `name` property containing `Ant` value.
 
 ### Filtering
 
@@ -431,7 +450,6 @@ This is equivalent of a Linq query:
 queryable.Where(x => EF.Functions.ILike(x.Name, "John Doe", "\\"));
 ```
 
-
 ### Selecting
 Selecting is used to specify which properties should be returned to the client. It is done by specifying a comma-separated list of property names after the `select` keyword. It is possible to rename properties by specifying new name with `newName=propertyName` syntax.
 For example:
@@ -439,7 +457,7 @@ For example:
 GET /data/persons?select[x.Name,x.Age]
 ```
 
-This is equivalent of Linq query:
+This is equivalent of a Linq query:
 ```csharp
 personQueryable.Select(x => new { x.Name, x.Age });
 ```
@@ -451,10 +469,38 @@ If you want to rename `Name` property to `FullName` then you do:
 GET /data/persons?select[fullName=x.name,x.age]
 ```
 
-This, in turn usually translates to Linq query as follows:
+This, in turn, usually translates to a Linq query as follows:
 ```csharp
 personQueryable.Select(x => new { FullName = x.Name, x.Age });
 ```
 
+There is possibility to add constant value to the property:
+```http request
+GET /demo/memory?select[Name=1]
+```
+It can be useful when real property was filtered by select, but a client requires it, i.e., for serialization. It can be also used to achieve compatibility on the client when a server data model is changed without changing the actual code.
+
 HLinq creates a new type on the fly to be serialized to JSON and returns it to the client. This means that other properties of the original type are not returned.
 Selecting is not an exclusive operation. You need to be specific by providing which properties you are interested in. You cannot exclude properties by excluding them from the query.
+
+### Ordering
+If you need to fetch data in a specific order, you can use `orderBy` and `orderByDescending` roots.
+This orders a collection by `Name` property in ascending order:
+```http request
+GET /demo/memory?orderBy[x.Name]
+```
+There reverse order use `orderByDescending` root instead.
+```http request
+GET /demo/memory?orderByDescending[x.Name]
+```
+It is possible to order by more than one property at a time.
+To do this use any number of `thanBy` or `thanByDescending` roots after `orderBy` or `orderByDescending` roots.
+```http request
+GET /demo/memory?orderBy[x.Name].thenBy[x.realName]
+```
+
+
+
+
+
+# Using 

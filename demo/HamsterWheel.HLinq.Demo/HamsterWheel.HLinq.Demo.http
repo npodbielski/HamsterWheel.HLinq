@@ -70,3 +70,10 @@ Accept: application/json
 ###
 GET {{HostAddress}}/demo/db?select[Name=x.firstName + x.lastName]
 Accept: application/json
+
+### ordering 
+GET {{HostAddress}}/demo/memory?orderBy[x.Name].thenBy[x.realName]
+Accept: application/json
+###
+GET {{HostAddress}}/demo/memory?where[x.name.contains(Ant)].count[]
+Accept: application/json
