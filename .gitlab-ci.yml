@@ -41,7 +41,7 @@ tests:
     - 'dotnet tool run dotnet-coverage merge -o $TEST_CODE_PATH/merged.cobertura.xml -f cobertura $TEST_CODE_PATH/**/coverage.cobertura.xml'
     - 'dotnet tool run reportgenerator -reports:$TEST_CODE_PATH/merged.cobertura.xml -targetdir:coveragereport -reporttypes:JsonSummary'
     - 'cat coveragereport/Summary.json | grep linecoverage'
-  coverage: '/linecoverage":\s(\d+?),/'
+  coverage: '/linecoverage":\s([\d\.]+?),/'
   artifacts:
     when: always
     paths:
