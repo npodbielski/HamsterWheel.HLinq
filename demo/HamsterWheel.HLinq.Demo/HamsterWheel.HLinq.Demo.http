@@ -14,6 +14,14 @@ Accept: application/json
 GET {{HostAddress}}/demo/db?where[ilike(x.firstName, billy)]
 Accept: application/json
 
+###case insensitve PGSQL search with escape character
+GET {{HostAddress}}/demo/db?where[GreaterThan(x.Id, arlan, \)]
+Accept: application/json
+
+###PGSQL string split
+GET {{HostAddress}}/demo/db?where[stringToArray(x.firstName, ' ')]
+Accept: application/json
+
 ##random
 ###
 GET {{HostAddress}}/demo/random
@@ -61,4 +69,11 @@ GET {{HostAddress}}/demo/db?where[Name=x.Name]
 Accept: application/json
 ###
 GET {{HostAddress}}/demo/db?select[Name=x.firstName + x.lastName]
+Accept: application/json
+
+### ordering 
+GET {{HostAddress}}/demo/memory?orderBy[x.Name].thenBy[x.realName]
+Accept: application/json
+###
+GET {{HostAddress}}/demo/memory?where[x.name.contains(Ant)].count[]
 Accept: application/json
