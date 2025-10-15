@@ -55,7 +55,7 @@ public class InvalidTokenCollectionException(
         return stringBuilder.ToString();
     }
 
-    private static string ExampleOfTokenValue(IToken token, Type type)
+    internal static string ExampleOfTokenValue(IToken token, Type type)
     {
         if (token is TokenExample tokenExample)
         {
@@ -66,8 +66,8 @@ public class InvalidTokenCollectionException(
         {
             "Select" => "select",
             "Where" => "where",
-            "OrderBy" => "orderby",
-            "OrderByDescending" => "orderbyDescending",
+            "OrderBy" => "orderBy",
+            "OrderByDescending" => "orderByDescending",
             "ThenBy" => "thenBy",
             "ThenByDescending" => "thenByDescending",
             "LeftSquareBracket" => "[",
@@ -83,6 +83,7 @@ public class InvalidTokenCollectionException(
             "Or" => "||",
             "MethodCall" => "MethodCall",
             "RightCircleBracket" => ")",
+            "LeftCircleBracket" => "(",
             _ => type.Name
         };
     }

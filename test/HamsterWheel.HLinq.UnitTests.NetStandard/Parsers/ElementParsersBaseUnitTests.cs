@@ -95,7 +95,7 @@ public class ElementParserBaseUnitTests
 public class TestElementParser(DummySelectRoot? root = null) : ElementParserBase<DummySelectRoot>
 {
     public override IToken[] ExampleTokens { get; } = [];
-    protected override DummySelectRoot? BuildBranch(IParsingContext context) => root!;
+    protected override DummySelectRoot? BuildBranch(IParsingContext context) => root;
 }
 
 public class DummyOrderRoot : ITreeBranch
