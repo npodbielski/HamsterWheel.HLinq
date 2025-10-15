@@ -12,6 +12,10 @@ public static class AspNetInstaller
         configure?.Invoke(configuration);
 
         serviceCollection.AddExceptionHandler<HLinqQueryExceptionHandler>();
+        serviceCollection.AddSingleton<IHLinqOptions>(new HLinqOptions
+        {
+            HttpDefaultMaxTakeRecords = configuration.HLinqOptions.HttpDefaultMaxTakeRecords
+        });
         serviceCollection.AddControllers(options =>
         {
             options.ModelBinderProviders.Insert(0, new HLinqQueryBinderProvider());
