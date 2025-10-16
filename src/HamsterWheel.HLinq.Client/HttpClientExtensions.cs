@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace HamsterWheel.HLinq.Client;
 
 public static class HttpClientExtensions

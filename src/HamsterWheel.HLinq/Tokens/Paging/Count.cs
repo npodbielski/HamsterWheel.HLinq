@@ -2,12 +2,12 @@ namespace HamsterWheel.HLinq.Tokens.Paging;
 
 public sealed class Count(Range range) : TokenBase(range)
 {
-    public const string TokenValue = "count";
-
     public sealed class Possibility() : TokenPossibility<Count>(TokenValue)
     {
+        public const string TokenValue = "count";
+
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            previousTokens.Count == 0 || previousTokens is [.., RightSquareBracket, Dot];
+            GrammarRules.SelectPreviousTokensMatch<Count>(previousTokens);
 
         protected override Count BuildImpl(Range range) => new(range);
     }

@@ -13,11 +13,11 @@ public class HLinqToPgSqlInstallExtensionsUnitTests
     {
         //arrange
         var services = new ServiceCollection();
-        var config = new HLinqServicesConfiguration();
+        var config = new HLinqConfiguration();
 
         //act
         var actual = config.AddHLingToPgSql();
-        config.Extensions.ForEach(c => c(services));
+        config.Extensions.CustomServices.ForEach(c => c(services));
 
         //assert
         actual.Should().Be(config);

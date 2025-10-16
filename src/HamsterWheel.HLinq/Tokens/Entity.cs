@@ -5,7 +5,7 @@ namespace HamsterWheel.HLinq.Tokens;
 
 public sealed class Entity(Range range) : TokenBase(range)
 {
-    public sealed class Possibility() : TokenPossibility<Entity>(delimiters: [Dot.TokenValue.AsSpan()[0]])
+    public sealed class Possibility() : TokenPossibility<Entity>(delimiters: [Dot.Possibility.TokenValue.AsSpan()[0]])
     {
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
             previousToken is LeftSquareBracket or And or Or or Comma or LeftCircleBracket or Assignment;

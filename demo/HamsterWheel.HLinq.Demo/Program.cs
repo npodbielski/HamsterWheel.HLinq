@@ -1,8 +1,11 @@
 using System.Text.Json.Serialization;
 using HamsterWheel.HLinq.AspNet;
 using HamsterWheel.HLinq.Demo.Data;
+using HamsterWheel.HLinq.Demo.Extensions.Translations.pl;
 using HamsterWheel.HLinq.PgSql;
 using HamsterWheel.HLinq.Request;
+using HamsterWheel.HLinq.Tokens;
+using HamsterWheel.HLinq.Tokens.Selecting;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,7 +13,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi()
-    .ConfigureHLinq(c => c.AddHLingToPgSql())
+    .ConfigureHLinq(c =>
+    {
+        c.AddHLingToPgSql();
+        c.Extensions.AddTokenPossibility<SelectPossibility>();
+    })
     .AddDbContext<DemoContext>(o => { o.UseNpgsql(builder.Configuration.GetConnectionString("Demo")); });
 
 builder.Services.AddControllers();

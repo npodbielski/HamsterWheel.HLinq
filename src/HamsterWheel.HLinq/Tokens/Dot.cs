@@ -4,10 +4,9 @@ namespace HamsterWheel.HLinq.Tokens;
 
 public sealed class Dot(Range range) : TokenBase(range)
 {
-    public const string TokenValue = ".";
-
     public sealed class Possibility() : TokenPossibility<Dot>(TokenValue)
     {
+        public const string TokenValue = ".";
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
             previousToken is Entity or PropertyAccess or RightSquareBracket;
 

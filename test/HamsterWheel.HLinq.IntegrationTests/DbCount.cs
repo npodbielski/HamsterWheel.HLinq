@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FluentAssertions;
 using HamsterWheel.HLinq.Client;
 using HamsterWheel.HLinq.Demo.Data;
@@ -30,7 +31,7 @@ partial class DbDataTests
     public async Task WhenCountAfterSkip_ThenReturnsCorrectCount(int skip)
     {
         //act
-        var response = await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>().Skip(skip).Count());
+        var response = await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>(new JsonSerializerOptions()).Skip(skip).Count());
 
         //assert
         response.Should().Be(Persons.Count() - skip);

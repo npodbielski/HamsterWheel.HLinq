@@ -13,7 +13,7 @@ public class AspNetInstallerUnitTests
         var services = new ServiceCollection();
 
         //act
-        var actual = services.ConfigureHLinq(c => c.Extensions.Add(s => s.AddSingleton<Func<int>>(() => 1)))
+        var actual = services.ConfigureHLinq(c => c.Extensions.CustomServices.Add(s => s.AddSingleton<Func<int>>(() => 1)))
             .BuildServiceProvider();
 
         //assert
