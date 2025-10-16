@@ -34,6 +34,6 @@ partial class DbDataTests
         var error = (await response.Content.ReadFromJsonAsync<ProblemDetails>()).Should().NotBeNull()
             .And.BeOfType<ProblemDetails>().Which;
         error.Status.Should().Be(400);
-        error.Title.Should().MatchEquivalentOf($"Invalid property path 'x.x' for entity *");
+        error.Title.Should().MatchEquivalentOf("Invalid property path 'x.x' for entity *");
     }
 }

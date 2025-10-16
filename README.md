@@ -503,4 +503,104 @@ GET /demo/memory?orderBy[x.Name].thenBy[x.realName]
 
 
 
-# Using 
+## Using a C # client
+
+HLinq have dedicated C# client built on top of `HttpClient` class. It is available in the `HLinq.Client` package.
+To use it, you need to create an instance of this `HttpClient` with all the necessary configurations: your API url, authentication, retry policies, etc.
+In case of the demo project it can be done as follows:
+```csharp
+var client = new HttpClient();
+client.BaseAddress = new Uri("http://localhost:5000");
+```
+Then you can call an extension method that allows you to build HLinq GET query with Linq syntax:
+```csharp
+var result = client.GetWithHLinq("/demo/db", q => q.For<Person>().Count());
+```
+The first argument is the path to the endpoint you want to call.
+The Second argument is the Linq expression that will be translated to HLinq query.
+
+In the above example it will be translated into:
+```http request
+GET http://localhost:5000/demo/db?count[]
+```
+Noticed that value of the `result` variable is an `int`. This is because the builder expression returns an int type. If a builder query returns a collection or any other type, `GetWithHLinq` will automatically deserialize server JSON response into that type.
+
+If you change the type by doing a custom select operation, the return type will be changed accordingly.
+```csharp
+var response = await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>().Select(x => x.FirstName).Take(100));
+```
+The above query will return an array of strings.
+On the other hand, if you will ask for custom select which require anonymous type:
+```csharp
+var response = await fixture.Client.GetWithHLinq("/demo/db", 
+    q => q.For<Person>().Select(x => new { N = x.FirstName }).Take(100));
+```
+JSON response will be deserialized into an array of those objects with single `N` property of a type of string.
+
+![anonymous_type.png](readme_files/anonymous_types.png)
+
+The serialization is done by `System.Text.Json` library with default settings of `JsonSerializerDefaults.Web`.
+If you do not like default serialization rules, you can change them by providing your own `JsonSerializerOptions` instance to the builder factory `For` method.
+```csharp
+var response = await fixture.Client.GetWithHLinq("/demo/db", q => q
+    .For<Person>(new JsonSerializerOptions())
+    .Where(x => EF.Functions.ILike(x.FirstName, "Bill")));
+```
+
+# Extensions
+
+HLinq architecture allows for easy extension of many aspects of the library.
+HLinq is designed around interfaces retrieved from DI container. If you do not like default behavior, you can provide your own implementations of those interfaces. Just be careful! You might break something :)
+
+## Translations
+
+For example, HLinq queries can be translated to different languages. Linq syntax is pseudo english. You can translate it to you own language by providing different implementations of `ITokenPossibility` interfaces.
+Almost each `ITokenPossibility` implementation poses `TokenValue` constant that represent this token in the query.
+If you want to change how `select` token is represented in the query, you can provide different implementation of `ITokenPossibility` interface. 
+Or even better use `TokenPossibility<T>` class. 
+In Polish, you would write `wybierz` instead of `select`, so new implementation would look like this:
+```csharp
+public class SelectPossibility() : TokenPossibility<Select>(TokenValue)
+{
+    public const string TokenValue = "wybierz";
+
+    protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
+        GrammarRules.SelectPreviousTokensMatch<Select>(previousTokens);
+
+    protected override Select BuildImpl(Range range) => new(range);
+}
+```
+
+Then add it to the DI container:
+```csharp
+services.ConfigureHLinq(c => c.Extensions.AddTokenPossibility<SelectPossibility>());
+```
+
+This adds new `select` token characters in new language, `wybierz`. This works along the old syntax, so both are valid:
+```http request
+GET /demo/db?wybierz[x.Name]
+```
+```http request
+GET /demo/db?select[x.Name]
+```
+
+If you want to replace the token instead, use:
+```csharp
+services.ConfigureHLinq(c => c.Extensions.OverWriteTokenPossibility<SelectPossibility, Select>());
+```
+
+This will cause `select[x.Name]` to be invalid and attempt to use it will result in HTTP 400 error with the following response:
+```json
+{
+  "title": "HLinq query 'select[x.Name]' is invalid and not finished properly.",
+  "status": 400
+}
+```
+
+# Roadmap
+- [ ] Add support for other DBs
+- [ ] Add support for grouping
+- [ ] Add support for nested type selects: `select[Addresses=select[a.Street,a.City]]`
+- [ ] Add support for methods in selects: `select[reverse(x.Name)]`
+- [ ] Add support for other than bool methods in filters: `where[Distance(x.DateOfBirth, 2025-10-05)<=10]`
+- [ ] Add support for property operation in selects: `select[FullName=x.Name+' '+x.Surname]`
