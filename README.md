@@ -589,7 +589,7 @@ If you want to replace the token instead, use:
 services.ConfigureHLinq(c => c.Extensions.OverWriteTokenPossibility<SelectPossibility, Select>());
 ```
 
-This will cause `select[x.Name]` to be invalid and attempt to use it will result in HTTP 400 error with the following response:
+This will cause `select[x.Name]` to be invalid and an attempt to use it will result in HTTP 400 error with the following response:
 ```json
 {
   "title": "HLinq query 'select[x.Name]' is invalid and not finished properly.",
@@ -597,10 +597,34 @@ This will cause `select[x.Name]` to be invalid and attempt to use it will result
 }
 ```
 
+It is worth to mention that HLinq does not require Ascii characters only. You can use any characters you want. Translation does not have to be only letters. For example, for sorting/ordering you may choose more expressive Unicode characters:
+- ↓ for orderByDescending
+- ↑ for oderBy
+
+Then `orderBy` token possibility can look like this:
+```csharp
+public class OrderByDescendingPossibility() : TokenPossibility<OrderByDescending>(TokenValue)
+{
+    public const string TokenValue = "↓";
+
+    protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
+        GrammarRules.SelectPreviousTokensMatch<OrderByDescending>(previousTokens);
+
+    protected override OrderByDescending BuildImpl(Range range) => new(range);
+}
+```
+And to order you call your API with:
+```http request
+GET /demo/db?↓[x.firstName]
+```
+
+
 # Roadmap
 - [ ] Add support for other DBs
 - [ ] Add support for grouping
+- [ ] Add support for nested counts `[NumberOfAddresses=x.Addresses.Count[]]`
 - [ ] Add support for nested type selects: `select[Addresses=select[a.Street,a.City]]`
-- [ ] Add support for methods in selects: `select[reverse(x.Name)]`
+- [ ] Add support for methods in select: `select[reverse(x.Name)]`
 - [ ] Add support for other than bool methods in filters: `where[Distance(x.DateOfBirth, 2025-10-05)<=10]`
-- [ ] Add support for property operation in selects: `select[FullName=x.Name+' '+x.Surname]`
+- [ ] Add support for property operation in select: `select[FullName=x.Name+' '+x.Surname]`
+- [ ] Add support for changing grammar rules 
