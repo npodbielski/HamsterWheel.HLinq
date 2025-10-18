@@ -20,6 +20,37 @@ This project contains of two main parts:
 
 Navigation:
  - [How to use on server](#how-to-use-on-server)
+   - [Usage within minimal API](#usage-within-minimal-api)
+   - [Usage inside Controller](#usage-inside-controller)
+   - [Configuring HLinq inside API](#configuring-hlinq-inside-api)
+     - [Default limit of records returned](#default-limit-of-records-returned)
+     - [Overriding user requested number of records](#overriding-user-requested-number-of-records)
+     - [Adding EF DB Functions](#adding-ef-db-functions)
+ - [How to use on the client](#how-to-use-on-the-client)
+   - [Syntax](#syntax)
+     - [White space management](#white-space-management)
+   - [HTTP Queries](#http-queries)
+     - [Paging](#paging)
+     - [Filtering](#filtering)
+       - [Equals](#equals)
+       - [Not equals](#not-equals)
+       - [Greater](#greater)
+       - [Greater or equal](#greater-or-equal)
+       - [Lesser](#lesser)
+       - [Lesser or equal](#lesser-or-equal)
+       - [String contains](#string-contains)
+       - [String contains with case-insensitive](#string-contains-with-case-insensitive)
+       - [String StartsWith](#string-startswith)
+       - [String EndsWith](#string-endswith)
+       - [EF DbFunctions](#ef-dbfunctions)
+         - [PgSql](#pgsql)
+     - [Selecting](#selecting)
+     - [Ordering](#ordering)
+   - [Using the C# client](#using-the-c--client)
+ - [Extensions](#extensions)
+   - [Translations](#translations)
+   - [Custom filters](#custom-filters)
+ - [Roadmap](#roadmap)
 
 # How to use on server
 
@@ -427,7 +458,7 @@ GET /data?where[x.Name.EndsWith(John, StringComparison.InvariantCultureIgnoreCas
 > [!WARNING]  
 > This is supported by HLinq and Linq and EF but cannot be used on memory collections. Use it for DB collections only.
 
-##### PGSQL 
+##### PGSQL
 ###### ILike
 This is very similar to `string.Contains(str, StringComparison.InvariantCultureIgnoreCase)` but instead of using .net runtime function it is translated to db function, and it is applied by DB engine.
 For example:
@@ -499,11 +530,7 @@ To do this use any number of `thanBy` or `thanByDescending` roots after `orderBy
 GET /demo/memory?orderBy[x.Name].thenBy[x.realName]
 ```
 
-
-
-
-
-## Using a C # client
+## Using the C # client
 
 HLinq have dedicated C# client built on top of `HttpClient` class. It is available in the `HLinq.Client` package.
 To use it, you need to create an instance of this `HttpClient` with all the necessary configurations: your API url, authentication, retry policies, etc.
@@ -685,11 +712,11 @@ and API will return one record:
 ```
 
 # Roadmap
-- [ ] Add support for other DBs
 - [ ] Add support for grouping
 - [ ] Add support for nested counts `[NumberOfAddresses=x.Addresses.Count[]]`
 - [ ] Add support for nested type selects: `select[Addresses=select[a.Street,a.City]]`
 - [ ] Add support for methods in select: `select[reverse(x.Name)]`
 - [ ] Add support for other than bool methods in filters: `where[Distance(x.DateOfBirth, 2025-10-05)<=10]`
 - [ ] Add support for property operation in select: `select[FullName=x.Name+' '+x.Surname]`
+- [ ] Add support for other DBs
 - [ ] Add support for changing grammar rules 
