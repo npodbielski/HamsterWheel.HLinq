@@ -58,12 +58,8 @@ public static class GrammarRules
 
         if (typeof(TToken) == typeof(Equality)
             || typeof(TToken) == typeof(GreaterOrEqualThan)
-            || typeof(TToken) == typeof(GreaterThan))
-        {
-            return previousToken is PropertyAccess or RightSquareBracket;
-        }
-
-        if (typeof(TToken) == typeof(Inequality))
+            || typeof(TToken) == typeof(GreaterThan)
+            || typeof(TToken) == typeof(Inequality))
         {
             return previousToken is PropertyAccess or NameOrValue;
         }

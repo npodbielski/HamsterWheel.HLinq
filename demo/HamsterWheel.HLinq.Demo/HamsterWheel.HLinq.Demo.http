@@ -82,3 +82,7 @@ Accept: application/json
 ###translation
 GET {{HostAddress}}/demo/db?wybierz[x.firstName]
 Accept: application/json
+
+### unicode
+GET {{HostAddress}}/demo/db?↓[x.firstName]
+Accept: application/json
