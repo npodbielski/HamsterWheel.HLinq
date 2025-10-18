@@ -1,9 +1,11 @@
 using System.Text.Json.Serialization;
 using HamsterWheel.HLinq.AspNet;
 using HamsterWheel.HLinq.Demo.Data;
+using HamsterWheel.HLinq.Demo.Extensions.Filters;
 using HamsterWheel.HLinq.Demo.Extensions.Translations.pl;
 using HamsterWheel.HLinq.PgSql;
 using HamsterWheel.HLinq.Request;
+using HamsterWheel.HLinq.Tree.Filtering;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +18,11 @@ builder.Services.AddOpenApi()
         c.AddHLingToPgSql();
         c.Extensions.AddTokenPossibility<SelectPossibility>();
         c.Extensions.AddTokenPossibility<HamsterWheel.HLinq.Demo.Extensions.Translations.math.OrderByDescendingPossibility>();
+        c.Extensions.CustomServices.Add(s =>
+        {
+            c.Extensions.RemoveService<IStaticMethodToExpressionConverter>(s);
+            s.AddSingleton<IStaticMethodToExpressionConverter, CustomFilterConverter>();
+        });
     })
     .AddDbContext<DemoContext>(o => { o.UseNpgsql(builder.Configuration.GetConnectionString("Demo")); });
 

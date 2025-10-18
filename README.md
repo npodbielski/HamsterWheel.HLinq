@@ -618,6 +618,71 @@ And to order you call your API with:
 GET /demo/db?↓[x.firstName]
 ```
 
+## Custom filters
+
+It is also possible to extend HLinq by writing custom expression converters. For example, if you need very complex filtering rules that require one or two simple parameters, you can write a custom converter.
+Let's say you want to find a person by their full name and your model (like in /demo/db endpoint) does not have a `FullName` property.
+You can write a custom converter that will take one parameter and will use them to build a custom expression.
+```csharp
+public class CustomFilterConverter(IPropertiesCache propertiesCache) : IStaticMethodToExpressionConverter
+{
+    private readonly StaticMethodToExpressionConverter _converter = new();
+
+    public Expression BuildStatic(IBuilderContext context, IMethod method, IParametersConverter parametersConverter)
+    {
+        if (method.GetName(context.HLinqQuery) != "hasFullName")
+        {
+            return _converter.BuildStatic(context, method, parametersConverter);
+        }
+
+        var fullNameSearchConstant = method.Children[1].Tokens[0].GetValue(context.HLinqQuery);
+
+        var stringConcatMethod = typeof(string).GetMethod("Concat", [typeof(string), typeof(string)]);
+        
+        var firstNamePlusSpace = Expression.Add(Expression.Property(context.Param, propertiesCache.Single(context.Type, "FirstName")), Expression.Constant(" "), stringConcatMethod);
+        var firstNameSpaceAndLastName = Expression.Add(firstNamePlusSpace, Expression.Property(context.Param, propertiesCache.Single(context.Type, "LastName")), stringConcatMethod);
+        return Expression.Equal(firstNameSpaceAndLastName, Expression.Constant(fullNameSearchConstant));
+    }
+}
+```
+Expression returned when name of the method is `hasFullName` is equivalent to:
+```csharp
+(Person p) => p.FirstName + " " + p.LastName == fullNameSearchConstant;
+```
+If you will replace default implementation of `IStaticMethodToExpressionConverter` and register yours:
+```csharp
+services.ConfigureHLinq(c =>
+    {
+        c.Extensions.CustomServices.Add(s =>
+        {
+            c.Extensions.RemoveService<IStaticMethodToExpressionConverter>(s);
+            s.AddSingleton<IStaticMethodToExpressionConverter, CustomFilterConverter>();
+        });
+    })
+```
+then you can call your endpoint with:
+```http request
+GET /demo/db?where[hasFullName(x, Nolan Cowle)]
+```
+For the PgSql it will result in SQL
+```sql
+SELECT p."Id", p."Email", p."FirstName", p."IpAddress", p."LastName"
+      FROM "Persons" AS p
+      WHERE p."FirstName" || ' ' || p."LastName" = 'Nolan Cowle'
+      LIMIT @__p_0
+```
+and API will return one record:
+```json
+[
+  {
+    "id": 1,
+    "firstName": "Nolan",
+    "lastName": "Cowle",
+    "email": "ncowle0@netvibes.com",
+    "ipAddress": "115.65.156.48"
+  }
+]
+```
 
 # Roadmap
 - [ ] Add support for other DBs

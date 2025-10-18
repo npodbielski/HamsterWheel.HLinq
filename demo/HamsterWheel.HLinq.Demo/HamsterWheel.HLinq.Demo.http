@@ -79,10 +79,17 @@ GET {{HostAddress}}/demo/memory?where[x.name.contains(Ant)].count[]
 Accept: application/json
 
 
+## Extensions
+
 ###translation
 GET {{HostAddress}}/demo/db?wybierz[x.firstName]
 Accept: application/json
 
-### unicode
+### translation unicode
 GET {{HostAddress}}/demo/db?↓[x.firstName]
+Accept: application/json
+
+
+### custom filter
+GET {{HostAddress}}/demo/db?where[hasFullName(x, Nolan Cowle)]
 Accept: application/json

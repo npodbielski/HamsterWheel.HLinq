@@ -28,6 +28,12 @@ public class HLinqExtensionsConfiguration
         });
     }
 
+    public void RemoveService<T>(IServiceCollection s) where T : class
+    {
+        var originalImplementation = s.First(sd => sd.ServiceType == typeof(T));
+        s.Remove(originalImplementation);
+    }
+
     public void AddDbFunctions<T>() where T : class, IStaticMethodSource =>
         CustomServices.Add(s => s.AddSingleton<IStaticMethodSource, T>());
 
