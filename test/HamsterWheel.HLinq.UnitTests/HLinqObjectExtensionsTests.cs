@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace HamsterWheel.HLinq.UnitTests;
 
@@ -39,4 +40,6 @@ public class HLinqObjectExtensionsTests
         actual.Should().NotBeNull();
         actual.Should().Be(expected);
     }
+    
+    //TODO: write tests for executing hlinq on collection 
 }

@@ -20,8 +20,8 @@ public abstract class TokenPossibility(string? keyword = null, char[]? delimiter
                 if (keyword.AsSpan()[..subset.Length].Equals(subset, StringComparison.OrdinalIgnoreCase))
                 {
                     possibility += 50 * subset.Length / keyword.Length;
-                    //check next char -> i.e. if we have subset 'orderBy' and next char is '['
-                    //...then possibility of 'orderByDescending' is zero at this point
+                    //check next char -> i.e., if we have subset 'orderBy' and the next char is '['
+                    //...then the possibility of 'orderByDescending' is zero at this point
                     if (keyword.Length > subset.Length && next != keyword[subset.Length]) possibility = 0;
                 }
                 else

@@ -5,7 +5,7 @@ namespace HamsterWheel.HLinq.Demo.Extensions.Translations.pl;
 
 public class SelectPossibility() : TokenPossibility<Select>(TokenValue)
 {
-    public const string TokenValue = "wybierz";
+    private const string TokenValue = "wybierz";
 
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
         GrammarRules.SelectPreviousTokensMatch<Select>(previousTokens);

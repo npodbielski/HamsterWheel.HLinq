@@ -5,7 +5,7 @@ namespace HamsterWheel.HLinq.Demo.Extensions.Translations.math;
 
 public class OrderByDescendingPossibility() : TokenPossibility<OrderByDescending>(TokenValue)
 {
-    public const string TokenValue = "↓";
+    private const string TokenValue = "↓";
 
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
         GrammarRules.SelectPreviousTokensMatch<OrderByDescending>(previousTokens);

@@ -50,6 +50,7 @@ Navigation:
  - [Extensions](#extensions)
    - [Translations](#translations)
    - [Custom filters](#custom-filters)
+ - [Dynamic object transformation]
  - [Roadmap](#roadmap)
 
 # How to use on server
@@ -710,6 +711,10 @@ and API will return one record:
   }
 ]
 ```
+
+# Dynamic object transformation
+
+TODO: write about obj.ExecuteHLinq("select[x.Name]")
 
 # Roadmap
 - [ ] Add support for grouping

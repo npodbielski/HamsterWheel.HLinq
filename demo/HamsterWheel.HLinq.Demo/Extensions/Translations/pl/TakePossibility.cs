@@ -5,7 +5,7 @@ namespace HamsterWheel.HLinq.Demo.Extensions.Translations.pl;
 
 public class TakePossibility() : TokenPossibility<Take>(TokenValue)
 {
-    public const string TokenValue = "wez";
+    private const string TokenValue = "wez";
 
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
         GrammarRules.SelectPreviousTokensMatch<Take>(previousTokens);
