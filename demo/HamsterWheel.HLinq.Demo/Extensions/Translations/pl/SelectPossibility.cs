@@ -8,7 +8,7 @@ public class SelectPossibility() : TokenPossibility<Select>(TokenValue)
     private const string TokenValue = "wybierz";
 
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-        GrammarRules.SelectPreviousTokensMatch<Select>(previousTokens);
+        GrammarRules.PreviousTokensMatch<Select>(previousTokens);
 
     protected override Select BuildImpl(Range range) => new(range);
 }

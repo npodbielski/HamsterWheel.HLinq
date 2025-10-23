@@ -8,7 +8,7 @@ public class ThenByPossibility() : TokenPossibility<ThenBy>(TokenValue)
     private const string TokenValue = "potemPo";
 
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-        GrammarRules.SelectPreviousTokensMatch<ThenBy>(previousTokens);
+        GrammarRules.PreviousTokensMatch<ThenBy>(previousTokens);
 
     protected override ThenBy BuildImpl(Range range) => new(range);
 }

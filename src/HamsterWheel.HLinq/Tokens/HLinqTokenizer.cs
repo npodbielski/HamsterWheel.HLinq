@@ -31,7 +31,7 @@ public sealed class HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPoss
                 continue;
             }
 
-            var currentPossibleTokens = (nextPossibleTokens.Count > 0 ? [..nextPossibleTokens] : allTokens).ToArray();
+            var currentPossibleTokens = GetPossibleTokens(nextPossibleTokens, allTokens, index).ToArray();
             nextPossibleTokens.Clear();
             foreach (var pt in currentPossibleTokens)
             {
@@ -87,6 +87,17 @@ public sealed class HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPoss
         }
 
         return tokens.ToArray();
+    }
+
+    private static CurrentTokenPossibility[] GetPossibleTokens(List<CurrentTokenPossibility> nextPossibleTokens,
+        CurrentTokenPossibility[] allTokens, int index)
+    {
+        if (index == 0)
+        {
+            return allTokens.Where(t => t.token.CanBeFirst).ToArray();
+        }
+        
+        return nextPossibleTokens.Count > 0 ? [..nextPossibleTokens] : allTokens;
     }
 
     public sealed class UnknownTokenException(string queryString, IToken[] expectedTokens)

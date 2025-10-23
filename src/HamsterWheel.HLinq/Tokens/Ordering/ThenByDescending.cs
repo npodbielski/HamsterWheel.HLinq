@@ -7,7 +7,7 @@ public sealed class ThenByDescending(Range range) : TokenBase(range)
         public const string TokenValue = "thenByDescending";
 
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            GrammarRules.SelectPreviousTokensMatch<ThenByDescending>(previousTokens);
+            GrammarRules.PreviousTokensMatch<ThenByDescending>(previousTokens);
 
         protected override bool NextIsAllowedWhenKeywordMatch(char? next) =>
             GrammarRules.NextCharIsAllowed<ThenByDescending>(next);

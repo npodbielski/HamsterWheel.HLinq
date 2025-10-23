@@ -7,7 +7,7 @@ public sealed class Count(Range range) : TokenBase(range)
         public const string TokenValue = "count";
 
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            GrammarRules.SelectPreviousTokensMatch<Count>(previousTokens);
+            GrammarRules.PreviousTokensMatch<Count>(previousTokens);
 
         protected override Count BuildImpl(Range range) => new(range);
     }

@@ -11,8 +11,7 @@ public sealed class LeftSquareBracket(Range range) : TokenBase(range)
     {
         public const string TokenValue = "[";
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            previousToken is Where or Skip or Take or OrderBy or OrderByDescending or ThenBy or ThenByDescending
-                or Select or Count;
+           GrammarRules.PreviousTokenMatch<LeftSquareBracket>(previousToken);
 
         protected override LeftSquareBracket BuildImpl(Range range) => new(range);
     }

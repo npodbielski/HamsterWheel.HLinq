@@ -7,7 +7,7 @@ public sealed class GreaterThan(Range range) : TokenBase(range), IComparisonToke
         public const string TokenValue = ">";
 
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            GrammarRules.SelectPreviousTokenMatch<GreaterThan>(previousToken);
+            GrammarRules.PreviousTokenMatch<GreaterThan>(previousToken);
 
         protected override GreaterThan BuildImpl(Range range) => new(range);
 

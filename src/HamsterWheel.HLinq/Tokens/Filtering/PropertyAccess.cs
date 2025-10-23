@@ -18,7 +18,7 @@ public sealed class PropertyAccess(Range range) : MemberAccess(range)
     ])
     {
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            GrammarRules.SelectPreviousTokensMatch<PropertyAccess>(previousTokens);
+            GrammarRules.PreviousTokensMatch<PropertyAccess>(previousTokens);
 
         protected override PropertyAccess BuildImpl(Range range) => new(range);
     }

@@ -8,7 +8,7 @@ public class SkipPossibility() : TokenPossibility<Skip>(TokenValue)
     private const string TokenValue = "pomin";
 
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-        GrammarRules.SelectPreviousTokensMatch<Skip>(previousTokens);
+        GrammarRules.PreviousTokensMatch<Skip>(previousTokens);
 
     protected override Skip BuildImpl(Range range) => new(range);
 }

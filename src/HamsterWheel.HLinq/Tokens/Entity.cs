@@ -1,6 +1,3 @@
-using HamsterWheel.HLinq.Tokens.Filtering;
-using HamsterWheel.HLinq.Tokens.Selecting;
-
 namespace HamsterWheel.HLinq.Tokens;
 
 public sealed class Entity(Range range) : TokenBase(range)
@@ -8,7 +5,7 @@ public sealed class Entity(Range range) : TokenBase(range)
     public sealed class Possibility() : TokenPossibility<Entity>(delimiters: [Dot.Possibility.TokenValue.AsSpan()[0]])
     {
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            previousToken is LeftSquareBracket or And or Or or Comma or LeftCircleBracket or Assignment;
+            GrammarRules.PreviousTokenMatch<Entity>(previousToken);
 
         public override int CanBeAt(int index, ReadOnlySpan<char> subset, char? next, List<IToken> previousToken)
         {

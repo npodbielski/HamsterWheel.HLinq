@@ -7,7 +7,7 @@ public sealed class Assignment(Range range) : TokenBase(range)
         public const string TokenValue = "=";
 
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            GrammarRules.SelectPreviousTokenMatch<Assignment>(previousToken);
+            GrammarRules.PreviousTokenMatch<Assignment>(previousToken);
 
         protected override Assignment BuildImpl(Range range) => new(range);
     }

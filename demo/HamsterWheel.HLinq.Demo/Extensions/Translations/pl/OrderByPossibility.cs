@@ -8,7 +8,7 @@ public class OrderByPossibility() : TokenPossibility<OrderBy>(TokenValue)
     private const string TokenValue = "sortujPo";
 
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-        GrammarRules.SelectPreviousTokensMatch<OrderBy>(previousTokens);
+        GrammarRules.PreviousTokensMatch<OrderBy>(previousTokens);
 
     protected override OrderBy BuildImpl(Range range) => new(range);
 }

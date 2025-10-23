@@ -6,7 +6,7 @@ public sealed class Take(Range range) : TokenBase(range)
     {
         public const string TokenValue = "take";
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            GrammarRules.SelectPreviousTokensMatch<Take>(previousTokens);
+            GrammarRules.PreviousTokensMatch<Take>(previousTokens);
 
         protected override Take BuildImpl(Range range) => new(range);
     }

@@ -7,7 +7,7 @@ public sealed class Comma(Range range) : TokenBase(range)
         public const string TokenValue = ",";
 
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            GrammarRules.SelectPreviousTokenMatch<Comma>(previousToken);
+            GrammarRules.PreviousTokenMatch<Comma>(previousToken);
 
         protected override Comma BuildImpl(Range range) => new(range);
     }

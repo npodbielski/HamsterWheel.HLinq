@@ -7,7 +7,7 @@ public sealed class LessThan(Range range) : TokenBase(range), IComparisonToken
         public const string TokenValue = "<";
 
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            GrammarRules.SelectPreviousTokenMatch<LessThan>(previousToken);
+            GrammarRules.PreviousTokenMatch<LessThan>(previousToken);
 
         protected override LessThan BuildImpl(Range range) => new(range);
 

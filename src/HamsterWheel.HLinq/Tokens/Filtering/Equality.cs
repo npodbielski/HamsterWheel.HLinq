@@ -7,7 +7,7 @@ public sealed class Equality(Range range) : TokenBase(range), IComparisonToken
         public const string TokenValue = "==";
 
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            GrammarRules.SelectPreviousTokenMatch<Equality>(previousToken);
+            GrammarRules.PreviousTokenMatch<Equality>(previousToken);
 
         protected override Equality BuildImpl(Range range) => new(range);
     }

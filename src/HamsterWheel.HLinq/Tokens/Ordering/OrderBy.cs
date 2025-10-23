@@ -7,7 +7,7 @@ public sealed class OrderBy(Range range) : TokenBase(range)
         public const string TokenValue = "orderBy";
 
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            GrammarRules.SelectPreviousTokensMatch<OrderBy>(previousTokens);
+            GrammarRules.PreviousTokensMatch<OrderBy>(previousTokens);
 
         protected override bool NextIsAllowedWhenKeywordMatch(char? next) =>
             next is not null &&

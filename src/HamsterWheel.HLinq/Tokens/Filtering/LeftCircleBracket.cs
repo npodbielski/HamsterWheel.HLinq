@@ -7,7 +7,7 @@ public sealed class LeftCircleBracket(Range range) : TokenBase(range)
         public const string TokenValue = "(";
 
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            GrammarRules.SelectPreviousTokenMatch<LeftCircleBracket>(previousToken);
+            GrammarRules.PreviousTokenMatch<LeftCircleBracket>(previousToken);
 
         protected override LeftCircleBracket BuildImpl(Range range) => new(range);
     }

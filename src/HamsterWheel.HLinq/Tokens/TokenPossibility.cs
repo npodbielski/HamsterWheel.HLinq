@@ -4,6 +4,8 @@ public abstract class TokenPossibility(string? keyword = null, char[]? delimiter
 {
     protected char[]? Delimiters { get; } = delimiters;
 
+    public abstract bool CanBeFirst { get; }
+
     public virtual int CanBeAt(int index, ReadOnlySpan<char> subset, char? next, List<IToken> previousToken)
     {
         var possibility = 0;
@@ -66,7 +68,7 @@ public abstract class TokenPossibility(string? keyword = null, char[]? delimiter
 public abstract class TokenPossibility<T>(string? tokenString = null, char[]? delimiters = null)
     : TokenPossibility(tokenString, delimiters) where T : TokenBase
 {
+    public sealed override bool CanBeFirst => GrammarRules.CanBeFirst<T>();
     protected abstract T BuildImpl(Range range);
-
-    public override TokenBase Build(Range range) => BuildImpl(range);
+    public sealed override TokenBase Build(Range range) => BuildImpl(range);
 }

@@ -6,7 +6,7 @@ public sealed class MethodCall(Range range) : MemberAccess(range)
         : TokenPossibility<MethodCall>(delimiters: [LeftCircleBracket.Possibility.TokenValue.AsSpan()[0]])
     {
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            GrammarRules.SelectPreviousTokenMatch<MethodCall>(previousToken);
+            GrammarRules.PreviousTokenMatch<MethodCall>(previousToken);
 
         protected override MethodCall BuildImpl(Range range) => new(range);
     }

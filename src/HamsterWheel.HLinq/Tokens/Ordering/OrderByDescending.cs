@@ -7,7 +7,7 @@ public sealed class OrderByDescending(Range range) : TokenBase(range)
         public const string TokenValue = "orderByDescending";
 
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            GrammarRules.SelectPreviousTokensMatch<OrderByDescending>(previousTokens);
+            GrammarRules.PreviousTokensMatch<OrderByDescending>(previousTokens);
 
         protected override OrderByDescending BuildImpl(Range range) => new(range);
     }

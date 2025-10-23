@@ -5,7 +5,7 @@ public sealed class RightCircleBracket(Range range) : TokenBase(range)
     public sealed class Possibility() : TokenPossibility<RightCircleBracket>(TokenValue)
     {
         public const string TokenValue = ")";
-        protected override bool PreviousTokenMatchImpl(IToken previousToken) => previousToken is PropertyAccess or NameOrValue or RightCircleBracket;
+        protected override bool PreviousTokenMatchImpl(IToken previousToken) => GrammarRules.PreviousTokenMatch<RightCircleBracket>(previousToken);
 
         protected override RightCircleBracket BuildImpl(Range range) => new(range);
     }

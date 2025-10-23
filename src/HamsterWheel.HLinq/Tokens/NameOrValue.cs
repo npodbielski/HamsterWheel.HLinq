@@ -21,11 +21,7 @@ public sealed class NameOrValue(Range range) : TokenBase(range)
     ])
     {
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            previousTokens is
-            [
-                .., _, IComparisonToken or LeftCircleBracket or LeftSquareBracket or Comma
-                or Assignment
-            ];
+            GrammarRules.PreviousTokensMatch<NameOrValue>(previousTokens);
 
         public override int CanBeAt(int index, ReadOnlySpan<char> subset, char? next, List<IToken> previousToken)
         {

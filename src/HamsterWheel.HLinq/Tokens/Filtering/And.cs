@@ -7,7 +7,7 @@ public sealed class And(Range range) : TokenBase(range), ILogicalOperatorToken
         public const string TokenValue = "&&";
 
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            GrammarRules.SelectPreviousTokenMatch<And>(previousToken);
+            GrammarRules.PreviousTokenMatch<And>(previousToken);
 
         protected override And BuildImpl(Range range) => new(range);
     }

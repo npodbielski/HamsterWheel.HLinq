@@ -6,7 +6,7 @@ public sealed class Inequality(Range range) : TokenBase(range), IComparisonToken
     {
         public const string TokenValue = "!=";
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            GrammarRules.SelectPreviousTokenMatch<Inequality>(previousToken);
+            GrammarRules.PreviousTokenMatch<Inequality>(previousToken);
 
         protected override Inequality BuildImpl(Range range) => new(range);
     }

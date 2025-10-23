@@ -8,7 +8,7 @@ public class CountPossibility() : TokenPossibility<Count>(TokenValue)
     private const string TokenValue = "zlicz";
 
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-        GrammarRules.SelectPreviousTokensMatch<Count>(previousTokens);
+        GrammarRules.PreviousTokensMatch<Count>(previousTokens);
 
     protected override Count BuildImpl(Range range) => new(range);
 }
