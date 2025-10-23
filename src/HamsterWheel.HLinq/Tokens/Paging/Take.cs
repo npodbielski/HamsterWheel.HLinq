@@ -2,9 +2,8 @@ namespace HamsterWheel.HLinq.Tokens.Paging;
 
 public sealed class Take(Range range) : TokenBase(range)
 {
-    public sealed class Possibility(IGrammar grammar) : TokenPossibility<Take>(grammar, TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<Take>(grammar, "take")
     {
-        public const string TokenValue = "take";
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
             Grammar.PreviousTokensMatch<Take>(previousTokens);
 

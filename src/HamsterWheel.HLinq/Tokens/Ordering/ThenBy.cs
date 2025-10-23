@@ -2,10 +2,8 @@ namespace HamsterWheel.HLinq.Tokens.Ordering;
 
 public sealed class ThenBy(Range range) : TokenBase(range)
 {
-    public sealed class Possibility(IGrammar grammar) : TokenPossibility<ThenBy>(grammar, TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<ThenBy>(grammar, "thenBy")
     {
-        public const string TokenValue = "thenBy";
-
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
             Grammar.PreviousTokensMatch<ThenBy>(previousTokens);
 

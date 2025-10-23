@@ -2,10 +2,8 @@ namespace HamsterWheel.HLinq.Tokens.Filtering;
 
 public sealed class Comma(Range range) : TokenBase(range)
 {
-    public sealed class Possibility(IGrammar grammar) : TokenPossibility<Comma>(grammar, TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<Comma>(grammar, ",")
     {
-        public const string TokenValue = ",";
-
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
             Grammar.PreviousTokenMatch<Comma>(previousToken);
 

@@ -16,12 +16,6 @@ public sealed class NameOrValue(Range range) : TokenBase(range)
             }
 
             var possibility = 50;
-            if (subset.Length == 1 && subset is "x" && next is '.')
-            {
-                possibility = 0;
-                return possibility;
-            }
-
             if (next is not null && Delimiters?.Contains(next.Value) == true)
             {
                 possibility += 50;
