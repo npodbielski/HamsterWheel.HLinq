@@ -2,15 +2,15 @@ namespace HamsterWheel.HLinq.Tokens.Ordering;
 
 public sealed class ThenBy(Range range) : TokenBase(range)
 {
-    public sealed class Possibility() : TokenPossibility<ThenBy>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<ThenBy>(grammar, TokenValue)
     {
         public const string TokenValue = "thenBy";
 
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            GrammarRules.PreviousTokensMatch<ThenBy>(previousTokens);
+            Grammar.PreviousTokensMatch<ThenBy>(previousTokens);
 
         protected override bool NextIsAllowedWhenKeywordMatch(char? next) =>
-            GrammarRules.NextCharIsAllowed<ThenBy>(next);
+            Grammar.NextCharIsAllowed<ThenBy>(next);
 
         protected override ThenBy BuildImpl(Range range) => new(range);
     }

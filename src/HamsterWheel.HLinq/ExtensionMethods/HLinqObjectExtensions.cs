@@ -23,7 +23,7 @@ public static class HLinqObjectExtensions
 
         if (!query.StartsWith("select["))
         {
-            query = "select[" + query + "]";
+            query = $"select[{query}]";
         }
 
         var hLinqQuery = Binder.BindQuery(query, typeof(HLinqQuery<T>));

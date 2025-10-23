@@ -2,10 +2,10 @@ namespace HamsterWheel.HLinq.Tokens;
 
 public sealed class Entity(Range range) : TokenBase(range)
 {
-    public sealed class Possibility() : TokenPossibility<Entity>(delimiters: [Dot.Possibility.TokenValue.AsSpan()[0]])
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<Entity>(grammar, haveDelimiters: true)
     {
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            GrammarRules.PreviousTokenMatch<Entity>(previousToken);
+            Grammar.PreviousTokenMatch<Entity>(previousToken);
 
         public override int CanBeAt(int index, ReadOnlySpan<char> subset, char? next, List<IToken> previousToken)
         {

@@ -2,12 +2,12 @@ namespace HamsterWheel.HLinq.Tokens.Paging;
 
 public sealed class Skip(Range range) : TokenBase(range)
 {
-    public sealed class Possibility() : TokenPossibility<Skip>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<Skip>(grammar, TokenValue)
     {
         public const string TokenValue = "skip";
 
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            GrammarRules.PreviousTokensMatch<Skip>(previousTokens);
+            Grammar.PreviousTokensMatch<Skip>(previousTokens);
 
         protected override Skip BuildImpl(Range range) => new(range);
     }

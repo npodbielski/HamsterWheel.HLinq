@@ -2,12 +2,12 @@ namespace HamsterWheel.HLinq.Tokens.Filtering;
 
 public sealed class LessThan(Range range) : TokenBase(range), IComparisonToken
 {
-    public sealed class Possibility() : TokenPossibility<LessThan>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<LessThan>(grammar, TokenValue)
     {
         public const string TokenValue = "<";
 
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            GrammarRules.PreviousTokenMatch<LessThan>(previousToken);
+            Grammar.PreviousTokenMatch<LessThan>(previousToken);
 
         protected override LessThan BuildImpl(Range range) => new(range);
 

@@ -2,12 +2,12 @@ namespace HamsterWheel.HLinq.Tokens.Ordering;
 
 public sealed class OrderBy(Range range) : TokenBase(range)
 {
-    public sealed class Possibility() : TokenPossibility<OrderBy>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<OrderBy>(grammar, TokenValue)
     {
         public const string TokenValue = "orderBy";
 
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            GrammarRules.PreviousTokensMatch<OrderBy>(previousTokens);
+            Grammar.PreviousTokensMatch<OrderBy>(previousTokens);
 
         protected override bool NextIsAllowedWhenKeywordMatch(char? next) =>
             next is not null &&

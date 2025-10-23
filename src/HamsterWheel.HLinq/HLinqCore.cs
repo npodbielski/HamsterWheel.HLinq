@@ -19,73 +19,74 @@ internal static class HLinqCore
             .Where(t => !t.IsAbstract && t.ImplementedInterfaces.Contains(typeof(T)))
             .ToArray();
 
-    public static void ConfigureServices(IServiceCollection servicesCollection, HLinqOptions options)
+    public static void ConfigureServices(IServiceCollection services, HLinqOptions options)
     {
-        servicesCollection.AddSingleton<IHLinqOptions>(options);
+        services.AddSingleton<IHLinqOptions>(options);
 
         //tokens
+        services.AddSingleton<IGrammar, Grammar>();
         foreach (var tp in GetTypesFromAssemblyWithStatic<IHLinqTokenPossibility>())
         {
-            servicesCollection.AddSingleton(typeof(IHLinqTokenPossibility), tp);
+            services.AddSingleton(typeof(IHLinqTokenPossibility), tp);
         }
 
         //parsers
         foreach (var ep in GetTypesFromAssemblyWithStatic<IElementParser>())
         {
-            servicesCollection.AddSingleton(typeof(IElementParser), ep);
+            services.AddSingleton(typeof(IElementParser), ep);
         }
 
         //converters
         foreach (var tec in GetTypesFromAssemblyWithStatic<IElementToExpressionConverter>())
         {
-            servicesCollection.AddSingleton(typeof(IElementToExpressionConverter), tec);
+            services.AddSingleton(typeof(IElementToExpressionConverter), tec);
         }
 
         foreach (var mac in GetTypesFromAssemblyWithStatic<IElementToMemberAssignmentConverter>())
         {
-            servicesCollection.AddSingleton(typeof(IElementToMemberAssignmentConverter), mac);
+            services.AddSingleton(typeof(IElementToMemberAssignmentConverter), mac);
         }
 
-        servicesCollection.AddSingleton<IPropertyMethodToExpressionConverter, PropertyMethodToExpressionConverter>();
-        servicesCollection.AddSingleton<IStaticMethodToExpressionConverter, StaticMethodToExpressionConverter>();
+        services.AddSingleton<IPropertyMethodToExpressionConverter, PropertyMethodToExpressionConverter>();
+        services.AddSingleton<IStaticMethodToExpressionConverter, StaticMethodToExpressionConverter>();
 
         //value converters
         var valueConverters = GetTypesFromAssemblyWithStatic<IValueConverter>();
         foreach (var vc in valueConverters.Where(t => t != typeof(ConfigurableToPlainValueConverter)))
         {
-            servicesCollection.AddSingleton(typeof(IValueConverter), c => c.GetRequiredService(vc));
-            servicesCollection.AddSingleton(vc, vc);
+            services.AddSingleton(typeof(IValueConverter), c => c.GetRequiredService(vc));
+            services.AddSingleton(vc, vc);
         }
 
         foreach (var vc in GetTypesFromAssemblyWithStatic<IConfigurableValueConverter>())
         {
-            servicesCollection.AddSingleton(typeof(IConfigurableValueConverter), c => c.GetRequiredService(vc));
-            servicesCollection.AddSingleton(vc, vc);
+            services.AddSingleton(typeof(IConfigurableValueConverter), c => c.GetRequiredService(vc));
+            services.AddSingleton(vc, vc);
         }
 
         //factories
-        servicesCollection.AddSingleton<IValueConverterFactory, ValueConverterFactory>();
-        servicesCollection.AddSingleton<IConverterFactory, ConverterFactory>();
+        services.AddSingleton<IValueConverterFactory, ValueConverterFactory>();
+        services.AddSingleton<IConverterFactory, ConverterFactory>();
 
         foreach (var c in GetTypesFromAssemblyWithStatic<IApplier>())
         {
-            servicesCollection.AddSingleton(typeof(IApplier), c);
+            services.AddSingleton(typeof(IApplier), c);
         }
 
-        servicesCollection.AddSingleton<IApplierFactory, ApplierFactory>();
-        servicesCollection.AddSingleton<IHLinqQueryApplier, HLinqQuery<object>.HLinqQueryApplier>();
+        services.AddSingleton<IApplierFactory, ApplierFactory>();
+        services.AddSingleton<IHLinqQueryApplier, HLinqQuery<object>.HLinqQueryApplier>();
 
         //builders
-        servicesCollection.AddSingleton<IExpressionBuilder, ExpressionBuilder>();
-        servicesCollection.AddSingleton<IParametersConverter, ParametersConverter>();
+        services.AddSingleton<IExpressionBuilder, ExpressionBuilder>();
+        services.AddSingleton<IParametersConverter, ParametersConverter>();
 
         //reflection helpers
-        servicesCollection.AddSingleton<IPropertiesCache, PropertiesCache>();
-        servicesCollection.AddSingleton<IMethodsCache, MethodsCache>();
-        servicesCollection.AddSingleton<IHLinqParser, HLinqParser>();
-        servicesCollection.AddSingleton<IHLinqTokenizer, HLinqTokenizer>();
-        servicesCollection.AddSingleton<IDefaultConverter, DefaultConverter>();
-        servicesCollection.AddSingleton<IHLinqOptions, HLinqOptions>();
-        servicesCollection.AddSingleton<HLinqBinderDependenciesBag>();
+        services.AddSingleton<IPropertiesCache, PropertiesCache>();
+        services.AddSingleton<IMethodsCache, MethodsCache>();
+        services.AddSingleton<IHLinqParser, HLinqParser>();
+        services.AddSingleton<IHLinqTokenizer, HLinqTokenizer>();
+        services.AddSingleton<IDefaultConverter, DefaultConverter>();
+        services.AddSingleton<IHLinqOptions, HLinqOptions>();
+        services.AddSingleton<HLinqBinderDependenciesBag>();
     }
 }

@@ -3,11 +3,17 @@ using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Ordering;
 using HamsterWheel.HLinq.Tokens.Paging;
 using HamsterWheel.HLinq.Tokens.Selecting;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HamsterWheel.HLinq.Tokens;
 
-public static class GrammarRules
+public class Grammar(IServiceProvider serviceProvider) : IGrammar
 {
+    private IEnumerable<IHLinqTokenPossibility>? _tokenPossibilities;
+
+    private IEnumerable<IHLinqTokenPossibility> TokenPossibilities =>
+        _tokenPossibilities ??= serviceProvider.GetServices<IHLinqTokenPossibility>();
+
     private static readonly List<IGrammarRule> Rules =
     [
         new GrammarRule<Select>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]]),
@@ -57,20 +63,28 @@ public static class GrammarRules
         new GrammarRule<MethodCall>(false, [typeof(Dot), typeof(LeftSquareBracket)]),
     ];
 
-    public static bool CanBeFirst<TToken>() => GetRuleFor<TToken>().CanBeFirst;
+    public bool CanBeFirst<TToken>() => GetRuleFor<TToken>().CanBeFirst;
 
-    public static bool PreviousTokensMatch<TToken>(List<IToken> previousTokens)
+    public char[] GetDelimiters(Type type) =>
+        Rules.Where(r => r.CanBeAfter.Length > 0 && r.CanBeAfter.Contains(type))
+            .Select(r => TokenPossibilities.First(tp => tp.ForType == r.ForType).Keyword).Where(k => k is not null)
+            .Cast<string>()
+            .Select(k => k[0]).ToArray();
+
+    public bool PreviousTokensMatch<TToken>(List<IToken> previousTokens)
     {
         var rule = GetRuleFor<TToken>();
         return previousTokens.Count == 0 && rule.CanBeFirst
                || rule.PreviousTokensMatchers.Length > 0 && rule.PreviousTokensMatchers.Any(m => m(previousTokens));
     }
 
-    public static bool PreviousTokenMatch<TToken>(IToken previousToken) => GetRuleFor<TToken>().CanBeAfter.Contains(previousToken.GetType());
+    public bool PreviousTokenMatch<TToken>(IToken previousToken) =>
+        GetRuleFor<TToken>().CanBeAfter.Contains(previousToken.GetType());
 
-    private static IGrammarRule GetRuleFor<TToken>() => Rules.FirstOrDefault(t => t.IsFor<TToken>()) ?? throw new UnknownTokenTypeException<TToken>();
+    private static IGrammarRule GetRuleFor<TToken>() => Rules.FirstOrDefault(t => t.IsFor<TToken>()) ??
+                                                        throw new UnknownTokenTypeException<TToken>();
 
-    public static bool NextCharIsAllowed<TToken>(char? next)
+    public bool NextCharIsAllowed<TToken>(char? next)
     {
         if (typeof(TToken) == typeof(GreaterThan))
         {
@@ -92,26 +106,4 @@ public static class GrammarRules
 
     private sealed class UnknownTokenTypeException<T>()
         : HLinqQueryException($"Unknown token type: '{typeof(T).Name}'. This token is not supported by HLinq grammar");
-}
-
-public class GrammarRule<T>(
-    bool canBeFirst,
-    Type[]? canBeAfter = null,
-    Func<List<IToken>, bool>[]? previousTokensMatchers = null)
-    : IGrammarRule
-{
-    public bool IsFor<TToken>() => typeof(TToken) == typeof(T);
-    public bool CanBeFirst => canBeFirst;
-
-    public Func<List<IToken>, bool>[] PreviousTokensMatchers { get; } = previousTokensMatchers ?? [];
-    public Type[] CanBeAfter { get; } = canBeAfter ?? [];
-}
-
-public interface IGrammarRule
-{
-    bool IsFor<TToken>();
-    bool CanBeFirst { get; }
-
-    Func<List<IToken>, bool>[] PreviousTokensMatchers { get; }
-    Type[] CanBeAfter { get; }
 }

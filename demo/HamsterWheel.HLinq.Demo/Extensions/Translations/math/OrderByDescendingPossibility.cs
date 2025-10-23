@@ -3,12 +3,12 @@ using HamsterWheel.HLinq.Tokens.Ordering;
 
 namespace HamsterWheel.HLinq.Demo.Extensions.Translations.math;
 
-public class OrderByDescendingPossibility() : TokenPossibility<OrderByDescending>(TokenValue)
+public class OrderByDescendingPossibility(IGrammar grammar) : TokenPossibility<OrderByDescending>(grammar, TokenValue)
 {
     private const string TokenValue = "↓";
 
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-        GrammarRules.PreviousTokensMatch<OrderByDescending>(previousTokens);
+        Grammar.PreviousTokensMatch<OrderByDescending>(previousTokens);
 
     protected override OrderByDescending BuildImpl(Range range) => new(range);
 }

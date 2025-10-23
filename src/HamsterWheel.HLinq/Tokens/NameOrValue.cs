@@ -1,27 +1,12 @@
-using HamsterWheel.HLinq.Tokens.Filtering;
-using HamsterWheel.HLinq.Tokens.Selecting;
-
 namespace HamsterWheel.HLinq.Tokens;
 
 public sealed class NameOrValue(Range range) : TokenBase(range)
 {
-    public sealed class Possibility() : TokenPossibility<NameOrValue>(delimiters:
-    [
-        Equality.Possibility.TokenValue.AsSpan()[0],
-        Inequality.Possibility.TokenValue.AsSpan()[0],
-        LessThan.Possibility.TokenValue.AsSpan()[0],
-        LessOrEqualThan.Possibility.TokenValue.AsSpan()[0],
-        GreaterThan.Possibility.TokenValue.AsSpan()[0],
-        GreaterOrEqualThan.Possibility.TokenValue.AsSpan()[0],
-        RightSquareBracket.Possibility.TokenValue.AsSpan()[0],
-        RightCircleBracket.Possibility.TokenValue.AsSpan()[0],
-        And.Possibility.TokenValue.AsSpan()[0],
-        Or.Possibility.TokenValue.AsSpan()[0],
-        Comma.Possibility.TokenValue.AsSpan()[0]
-    ])
+    public sealed class Possibility(IGrammar grammar)
+        : TokenPossibility<NameOrValue>(grammar, haveDelimiters: true)
     {
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            GrammarRules.PreviousTokensMatch<NameOrValue>(previousTokens);
+            Grammar.PreviousTokensMatch<NameOrValue>(previousTokens);
 
         public override int CanBeAt(int index, ReadOnlySpan<char> subset, char? next, List<IToken> previousToken)
         {

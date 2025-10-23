@@ -1,10 +1,34 @@
 namespace HamsterWheel.HLinq.Tokens;
 
-public abstract class TokenPossibility(string? keyword = null, char[]? delimiters = null) : IHLinqTokenPossibility
+public abstract class TokenPossibility(IGrammar grammar, string? keyword = null, bool haveDelimiters = false)
+    : IHLinqTokenPossibility
 {
-    protected char[]? Delimiters { get; } = delimiters;
+    private bool _delimitersFetched;
+    private char[]? _delimiters;
+
+    protected char[]? Delimiters
+    {
+        get
+        {
+            if (!haveDelimiters)
+            {
+                return null;
+            }
+
+            if (_delimitersFetched)
+            {
+                return _delimiters;
+            }
+
+            _delimitersFetched = true;
+            return _delimiters = Grammar.GetDelimiters(ForType);
+        }
+    }
 
     public abstract bool CanBeFirst { get; }
+    public string? Keyword { get; } = keyword;
+    protected IGrammar Grammar => grammar;
+    public abstract Type ForType { get; }
 
     public virtual int CanBeAt(int index, ReadOnlySpan<char> subset, char? next, List<IToken> previousToken)
     {
@@ -15,16 +39,19 @@ public abstract class TokenPossibility(string? keyword = null, char[]? delimiter
         }
 
         possibility += 50;
-        if (keyword is not null)
+        if (Keyword is not null)
         {
-            if (subset.Length < keyword.Length)
+            if (subset.Length < Keyword.Length)
             {
-                if (keyword.AsSpan()[..subset.Length].Equals(subset, StringComparison.OrdinalIgnoreCase))
+                if (Keyword.AsSpan()[..subset.Length].Equals(subset, StringComparison.OrdinalIgnoreCase))
                 {
-                    possibility += 50 * subset.Length / keyword.Length;
+                    possibility += 50 * subset.Length / Keyword.Length;
                     //check next char -> i.e., if we have subset 'orderBy' and the next char is '['
                     //...then the possibility of 'orderByDescending' is zero at this point
-                    if (keyword.Length > subset.Length && next != keyword[subset.Length]) possibility = 0;
+                    if (Keyword.Length > subset.Length && next != Keyword[subset.Length])
+                    {
+                        possibility = 0;
+                    }
                 }
                 else
                 {
@@ -33,7 +60,7 @@ public abstract class TokenPossibility(string? keyword = null, char[]? delimiter
             }
             else
             {
-                if (keyword.AsSpan().Equals(subset, StringComparison.OrdinalIgnoreCase) &&
+                if (Keyword.AsSpan().Equals(subset, StringComparison.OrdinalIgnoreCase) &&
                     NextIsAllowedWhenKeywordMatch(next))
                 {
                     possibility += 50;
@@ -65,10 +92,11 @@ public abstract class TokenPossibility(string? keyword = null, char[]? delimiter
     protected virtual bool NextIsAllowedWhenKeywordMatch(char? next) => true;
 }
 
-public abstract class TokenPossibility<T>(string? tokenString = null, char[]? delimiters = null)
-    : TokenPossibility(tokenString, delimiters) where T : TokenBase
+public abstract class TokenPossibility<T>(IGrammar grammar, string? tokenString = null, bool haveDelimiters = false)
+    : TokenPossibility(grammar, tokenString, haveDelimiters) where T : TokenBase
 {
-    public sealed override bool CanBeFirst => GrammarRules.CanBeFirst<T>();
+    public override Type ForType => typeof(T);
+    public sealed override bool CanBeFirst => Grammar.CanBeFirst<T>();
     protected abstract T BuildImpl(Range range);
     public sealed override TokenBase Build(Range range) => BuildImpl(range);
 }

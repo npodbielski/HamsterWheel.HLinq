@@ -2,12 +2,12 @@ namespace HamsterWheel.HLinq.Tokens.Filtering;
 
 public sealed class Comma(Range range) : TokenBase(range)
 {
-    public sealed class Possibility() : TokenPossibility<Comma>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<Comma>(grammar, TokenValue)
     {
         public const string TokenValue = ",";
 
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            GrammarRules.PreviousTokenMatch<Comma>(previousToken);
+            Grammar.PreviousTokenMatch<Comma>(previousToken);
 
         protected override Comma BuildImpl(Range range) => new(range);
     }

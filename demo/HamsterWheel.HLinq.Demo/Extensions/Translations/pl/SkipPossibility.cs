@@ -3,12 +3,12 @@ using HamsterWheel.HLinq.Tokens.Paging;
 
 namespace HamsterWheel.HLinq.Demo.Extensions.Translations.pl;
 
-public class SkipPossibility() : TokenPossibility<Skip>(TokenValue)
+public class SkipPossibility(IGrammar grammar) : TokenPossibility<Skip>(grammar, TokenValue)
 {
     private const string TokenValue = "pomin";
 
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-        GrammarRules.PreviousTokensMatch<Skip>(previousTokens);
+        Grammar.PreviousTokensMatch<Skip>(previousTokens);
 
     protected override Skip BuildImpl(Range range) => new(range);
 }
