@@ -31,7 +31,7 @@ public sealed partial class SkipRoot(IToken[] tokens) : TreeBranch(tokens), ITre
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
                 throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
-                    [new RightSquareBracket(default)]);
+                    [RightSquareBracket.Empty]);
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);
@@ -44,8 +44,7 @@ public sealed partial class SkipRoot(IToken[] tokens) : TreeBranch(tokens), ITre
 
         private static IToken[] SkipRootExampleTokens =>
         [
-            new Skip(default), new LeftSquareBracket(default), new TokenExample("10"),
-            new RightSquareBracket(default)
+            Skip.Empty, LeftSquareBracket.Empty, new TokenExample("10"), RightSquareBracket.Empty
         ];
     }
 

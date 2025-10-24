@@ -11,7 +11,7 @@ public sealed class ComparisonOperation(IComparisonToken comparison) : TreeLeaf(
     public sealed class Parser : ElementParserBase<ComparisonOperation>
     {
         protected override Type[] ValidParents { get; } = [typeof(Condition)];
-        public override IToken[] ExampleTokens { get; } = [new Equality(default)];
+        public override IToken[] ExampleTokens { get; } = [Equality.Empty];
 
         protected override ComparisonOperation? BuildBranch(IParsingContext context) =>
             context.Tokens switch

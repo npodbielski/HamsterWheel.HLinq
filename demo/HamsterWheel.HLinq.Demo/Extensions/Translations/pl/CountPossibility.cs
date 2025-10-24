@@ -7,6 +7,4 @@ public class CountPossibility(IGrammar grammar) : TokenPossibility<Count>(gramma
 {
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
         Rule.PreviousTokensMatch(previousTokens);
-
-    protected override Count BuildImpl(Range range) => new(range);
 }

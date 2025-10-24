@@ -28,14 +28,14 @@ public sealed class Method(IToken[] tokens) : TreeBranch(tokens), IMethod
         protected override Type[] ValidParents { get; } = [typeof(Condition)];
 
         public override IToken[] ExampleTokens { get; } =
-            [new MethodCall(default), new LeftCircleBracket(default), new RightCircleBracket(default)];
+            [MethodCall.Empty, LeftCircleBracket.Empty, RightCircleBracket.Empty];
 
         protected override void FinishImpl(IParsingContext context)
         {
             if (context.Tokens is not [RightCircleBracket bracket, ..])
             {
                 throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
-                    [new RightCircleBracket(default)]);
+                    [new RightCircleBracket()]);
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);

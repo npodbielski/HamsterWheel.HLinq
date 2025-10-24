@@ -1,6 +1,6 @@
 namespace HamsterWheel.HLinq.Tokens.Ordering;
 
-public sealed class ThenBy(Range range) : TokenBase(range)
+public sealed class ThenBy : TokenBase
 {
     public sealed class Possibility(IGrammar grammar) : TokenPossibility<ThenBy>(grammar, "thenBy")
     {
@@ -9,7 +9,8 @@ public sealed class ThenBy(Range range) : TokenBase(range)
 
         protected override bool NextIsAllowedWhenKeywordMatch(char? next) =>
             Rule.NextCharMatch(next);
-
-        protected override ThenBy BuildImpl(Range range) => new(range);
     }
+
+    public static ThenBy Build(Range range) => new() { Range = range };
+    public static ThenBy Empty { get; } = new() { Range = default };
 }

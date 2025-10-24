@@ -1,12 +1,13 @@
 namespace HamsterWheel.HLinq.Tokens.Selecting;
 
-public sealed class Assignment(Range range) : TokenBase(range)
+public sealed class Assignment : TokenBase
 {
     public sealed class Possibility(IGrammar grammar) : TokenPossibility<Assignment>(grammar, "=")
     {
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
             Rule.PreviousTokenMatch(previousToken);
-
-        protected override Assignment BuildImpl(Range range) => new(range);
     }
+
+    public static Assignment Build(Range range) => new() { Range = range };
+    public static Assignment Empty { get; } = new() { Range = default };
 }

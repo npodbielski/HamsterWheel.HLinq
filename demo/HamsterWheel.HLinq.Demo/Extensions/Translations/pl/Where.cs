@@ -7,6 +7,4 @@ public class WherePossibility(IGrammar grammar) : TokenPossibility<Where>(gramma
 {
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
         Rule.PreviousTokensMatch(previousTokens);
-
-    protected override Where BuildImpl(Range range) => new(range);
 }

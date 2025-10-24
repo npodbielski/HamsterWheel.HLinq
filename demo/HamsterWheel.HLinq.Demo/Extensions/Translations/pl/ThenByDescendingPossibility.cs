@@ -7,6 +7,4 @@ public class ThenByDescendingPossibility(IGrammar grammar) : TokenPossibility<Th
 {
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
         Rule.PreviousTokensMatch(previousTokens);
-
-    protected override ThenByDescending BuildImpl(Range range) => new(range);
 }

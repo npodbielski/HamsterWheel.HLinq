@@ -1,12 +1,13 @@
 namespace HamsterWheel.HLinq.Tokens.Filtering;
 
-public sealed class RightCircleBracket(Range range) : TokenBase(range)
+public sealed class RightCircleBracket: TokenBase
 {
     public sealed class Possibility(IGrammar grammar) : TokenPossibility<RightCircleBracket>(grammar, ")")
     {
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
             Rule.PreviousTokenMatch(previousToken);
-
-        protected override RightCircleBracket BuildImpl(Range range) => new(range);
     }
+
+    public static RightCircleBracket Build(Range range) => new() { Range = range };
+    public static RightCircleBracket Empty { get; } = new() { Range = default };
 }

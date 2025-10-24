@@ -26,17 +26,14 @@ public sealed class WhereRoot(IToken[] tokens) : TreeBranch(tokens), IWhereRoot
             };
 
         public override IToken[] ExampleTokens { get; } =
-        [
-            new Where(default), new LeftSquareBracket(default), ..Condition.Parser.ConditionExampleTokens,
-            new RightSquareBracket(default)
-        ];
+            [Where.Empty, LeftSquareBracket.Empty, ..Condition.Parser.ConditionExampleTokens, RightSquareBracket.Empty];
 
         protected override void FinishImpl(IParsingContext context)
         {
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
                 throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
-                    [new RightSquareBracket(default)]);
+                    [new RightSquareBracket()]);
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);

@@ -7,6 +7,4 @@ public class OrderByPossibility(IGrammar grammar) : TokenPossibility<OrderBy>(gr
 {
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
         Rule.PreviousTokensMatch(previousTokens);
-
-    protected override OrderBy BuildImpl(Range range) => new(range);
 }

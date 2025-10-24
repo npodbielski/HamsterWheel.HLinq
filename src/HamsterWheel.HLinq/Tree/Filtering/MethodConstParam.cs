@@ -13,7 +13,7 @@ public sealed class MethodConstParam(IToken[] tokens) : TreeLeaf(tokens), IMetho
     public sealed class Parser : ElementParserBase<MethodConstParam>
     {
         protected override Type[] ValidParents { get; } = [typeof(Method)];
-        public override IToken[] ExampleTokens { get; } = [new NameOrValue(default)];
+        public override IToken[] ExampleTokens { get; } = [NameOrValue.Empty];
 
         protected override MethodConstParam? BuildBranch(IParsingContext context) =>
             context.Tokens switch

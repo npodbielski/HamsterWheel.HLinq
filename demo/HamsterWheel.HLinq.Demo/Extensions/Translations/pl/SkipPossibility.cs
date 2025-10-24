@@ -7,6 +7,4 @@ public class SkipPossibility(IGrammar grammar) : TokenPossibility<Skip>(grammar,
 {
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
         Rule.PreviousTokensMatch(previousTokens);
-
-    protected override Skip BuildImpl(Range range) => new(range);
 }

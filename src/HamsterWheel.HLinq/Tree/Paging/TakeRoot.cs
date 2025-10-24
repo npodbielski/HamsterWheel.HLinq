@@ -65,7 +65,7 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
                 throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
-                    [new RightSquareBracket(default)]);
+                    [new RightSquareBracket()]);
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);
@@ -77,10 +77,7 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
                 context.Tokens.Take(3).ToArray(), TakeRootExampleTokens);
 
         private static IToken[] TakeRootExampleTokens { get; } =
-        [
-            new Take(default), new LeftSquareBracket(default), new TokenExample("10"),
-            new RightSquareBracket(default)
-        ];
+            [Take.Empty, LeftSquareBracket.Empty, new TokenExample("10"), RightSquareBracket.Empty];
     }
 
     public sealed class Applier(IValueConverterFactory factory, IMethodsCache methodsCache) : RootApplierBase<TakeRoot>

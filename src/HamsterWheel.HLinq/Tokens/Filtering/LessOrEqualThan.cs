@@ -1,12 +1,13 @@
 namespace HamsterWheel.HLinq.Tokens.Filtering;
 
-public sealed class LessOrEqualThan(Range range) : TokenBase(range), IComparisonToken
+public sealed class LessOrEqualThan : TokenBase, IComparisonToken
 {
     public sealed class Possibility(IGrammar grammar) : TokenPossibility<LessOrEqualThan>(grammar, "<=")
     {
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
             Rule.PreviousTokenMatch(previousToken);
-
-        protected override LessOrEqualThan BuildImpl(Range range) => new(range);
     }
+
+    public static LessOrEqualThan Build(Range range) => new() { Range = range };
+    public static LessOrEqualThan Empty { get; } = new() { Range = default };
 }

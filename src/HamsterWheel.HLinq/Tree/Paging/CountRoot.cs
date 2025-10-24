@@ -13,7 +13,7 @@ public sealed class CountRoot(IToken[] tokens) : TreeBranch(tokens)
     public sealed class Parser : ElementParserBase<CountRoot>
     {
         public override IToken[] ExampleTokens { get; } =
-            [new Count(default), new LeftSquareBracket(default), new RightSquareBracket(default)];
+            [Count.Empty, LeftSquareBracket.Empty, RightSquareBracket.Empty];
 
         protected override CountRoot? BuildBranch(IParsingContext context) =>
             context.Tokens switch

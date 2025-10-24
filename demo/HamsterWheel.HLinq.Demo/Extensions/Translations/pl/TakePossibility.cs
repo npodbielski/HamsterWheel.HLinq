@@ -7,6 +7,4 @@ public class TakePossibility(IGrammar grammar) : TokenPossibility<Take>(grammar,
 {
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
         Rule.PreviousTokensMatch(previousTokens);
-
-    protected override Take BuildImpl(Range range) => new(range);
 }

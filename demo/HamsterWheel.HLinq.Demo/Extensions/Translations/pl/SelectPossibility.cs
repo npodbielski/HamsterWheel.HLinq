@@ -7,6 +7,4 @@ public class SelectPossibility(IGrammar grammar) : TokenPossibility<Select>(gram
 {
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
         Rule.PreviousTokensMatch(previousTokens);
-
-    protected override Select BuildImpl(Range range) => new(range);
 }

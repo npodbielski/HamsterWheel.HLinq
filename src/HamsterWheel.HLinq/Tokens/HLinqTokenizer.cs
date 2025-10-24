@@ -67,16 +67,13 @@ public sealed class HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPoss
 
             if (currentPossibleTokens.Length == 0)
             {
-                tokens.Add(new Unknown(range));
+                tokens.Add(new Unknown());
             }
 
             if (tokens.Count != 0 && tokens[^1] is Unknown)
             {
                 throw new UnknownTokenException(hLinqQuery,
-                [
-                    new Where(default), new Select(default), new Skip(default), new Take(default), new OrderBy(default),
-                    new OrderByDescending(default)
-                ]);
+                    [new Where(), new Select(), new Skip(), new Take(), new OrderBy(), new OrderByDescending()]);
             }
         }
 
@@ -96,7 +93,7 @@ public sealed class HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPoss
         {
             return allTokens.Where(t => t.token.CanBeFirst).ToArray();
         }
-        
+
         return nextPossibleTokens.Count > 0 ? [..nextPossibleTokens] : allTokens;
     }
 

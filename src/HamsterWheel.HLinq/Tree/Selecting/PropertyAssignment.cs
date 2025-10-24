@@ -32,8 +32,7 @@ public sealed class PropertyAssignment(IToken[] tokens) : TreeBranch(tokens)
     {
         protected override Type[] ValidParents { get; } = [typeof(SelectRoot)];
 
-        public override IToken[] ExampleTokens { get; } =
-            [new Entity(default), new Dot(default), new PropertyAccess(default)];
+        public override IToken[] ExampleTokens { get; } = [Entity.Empty, Dot.Empty, PropertyAccess.Empty];
 
         protected override PropertyAssignment? BuildBranch(IParsingContext context)
         {

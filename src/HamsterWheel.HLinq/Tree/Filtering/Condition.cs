@@ -54,16 +54,13 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
             throw new InvalidTokenCollectionException(context.SourceQueryString,
                 context.Tokens.Take(3).ToArray(),
                 ConditionExampleTokens,
-                [new And(default)],
-                [new Or(default)],
-                [new MethodCall(default)]
+                [And.Empty],
+                [Or.Empty],
+                [MethodCall.Empty]
             );
 
         public static IToken[] ConditionExampleTokens { get; } =
-        [
-            new Entity(default), new Dot(default), new PropertyAccess(default), new Equality(default),
-            new NameOrValue(default)
-        ];
+            [Entity.Empty, Dot.Empty, PropertyAccess.Empty, Equality.Empty, NameOrValue.Empty];
     }
 
     public sealed class Converter(IConverterFactory converterFactory) : ElementToExpressionConverter<Condition>

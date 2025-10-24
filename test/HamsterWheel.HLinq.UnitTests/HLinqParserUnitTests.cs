@@ -19,12 +19,12 @@ public class HLinqParserUnitTests
         const string query = "select[x.name]";
         IToken[] tokens =
         [
-            new Select(default),
-            new LeftSquareBracket(default),
-            new Entity(default),
-            new Dot(default),
-            new PropertyAccess(default),
-            new RightSquareBracket(default)
+            new Select(),
+            new LeftSquareBracket(),
+            new Entity(),
+            new Dot(),
+            new PropertyAccess(),
+            new RightSquareBracket()
         ];
 
         var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
@@ -44,12 +44,12 @@ public class HLinqParserUnitTests
         const string query = "select[Directory=Core]";
         IToken[] tokens =
         [
-            new Select(default),
-            new LeftSquareBracket(default),
-            new NameOrValue(default),
-            new Assignment(default),
-            new NameOrValue(default),
-            new RightSquareBracket(default)
+            new Select(),
+            new LeftSquareBracket(),
+            new NameOrValue(),
+            new Assignment(),
+            new NameOrValue(),
+            new RightSquareBracket()
         ];
 
         var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
@@ -70,16 +70,16 @@ public class HLinqParserUnitTests
         const string query = "select[x.Id,Directory=Core]";
         IToken[] tokens =
         [
-            new Select(default),
-            new LeftSquareBracket(default),
-            new Entity(default),
-            new Dot(default),
-            new PropertyAccess(default),
-            new Comma(default),
-            new NameOrValue(default),
-            new Assignment(default),
-            new NameOrValue(default),
-            new RightSquareBracket(default)
+            new Select(),
+            new LeftSquareBracket(),
+            new Entity(),
+            new Dot(),
+            new PropertyAccess(),
+            new Comma(),
+            new NameOrValue(),
+            new Assignment(),
+            new NameOrValue(),
+            new RightSquareBracket()
         ];
 
         var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
@@ -106,10 +106,10 @@ public class HLinqParserUnitTests
         const string query = "where[x.Name.Contains(test)]";
         IToken[] tokens =
         [
-            new Where(default), new LeftSquareBracket(default), new Entity(default),
-            new Dot(default), new PropertyAccess(default), new Dot(default), new MethodCall(default),
-            new LeftCircleBracket(default), new NameOrValue(default), new RightCircleBracket(default),
-            new RightSquareBracket(default)
+            new Where(), new LeftSquareBracket(), new Entity(),
+            new Dot(), new PropertyAccess(), new Dot(), new MethodCall(),
+            new LeftCircleBracket(), new NameOrValue(), new RightCircleBracket(),
+            new RightSquareBracket()
         ];
         var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
 
@@ -133,17 +133,17 @@ public class HLinqParserUnitTests
         const string query = "where[ilike(x.Name, test)]";
         IToken[] tokens =
         [
-            new Where(default),
-            new LeftSquareBracket(default),
-            new MethodCall(default),
-            new LeftCircleBracket(default),
-            new Entity(default),
-            new Dot(default),
-            new PropertyAccess(default),
-            new Comma(default),
-            new NameOrValue(default),
-            new RightCircleBracket(default),
-            new RightSquareBracket(default)
+            new Where(),
+            new LeftSquareBracket(),
+            new MethodCall(),
+            new LeftCircleBracket(),
+            new Entity(),
+            new Dot(),
+            new PropertyAccess(),
+            new Comma(),
+            new NameOrValue(),
+            new RightCircleBracket(),
+            new RightSquareBracket()
         ];
         var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
         tree.Should().HaveStructureOf(query, [

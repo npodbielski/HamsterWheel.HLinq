@@ -14,7 +14,7 @@ public sealed class InitializerConstantValue(IToken[] tokens) : TreeLeaf(tokens)
 
     public sealed class Parser : ElementParserBase<InitializerConstantValue>
     {
-        public override IToken[] ExampleTokens { get; } = [new NameOrValue(default)];
+        public override IToken[] ExampleTokens { get; } = [NameOrValue.Empty];
         protected override Type[] ValidParents { get; } = [typeof(PropertyAssignment)];
 
         protected override InitializerConstantValue? BuildBranch(IParsingContext context) =>

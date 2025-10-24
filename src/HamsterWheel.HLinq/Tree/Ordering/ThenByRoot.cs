@@ -15,7 +15,7 @@ public sealed class ThenByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
     public sealed class Parser : ElementParserBase<ThenByRoot>
     {
         public override IToken[] ExampleTokens { get; } = ThenByRootExampleTokens;
-        
+
         protected override ThenByRoot? BuildBranch(IParsingContext context)
         {
             return context.Tokens switch
@@ -31,8 +31,8 @@ public sealed class ThenByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
         {
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
-                throw new InvalidTokenCollectionException(context.SourceQueryString,context.Tokens.Take(5).ToArray(),
-                    [new RightSquareBracket(default)]);
+                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
+                    [new RightSquareBracket()]);
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);
@@ -45,14 +45,15 @@ public sealed class ThenByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 
         private static IToken[] ThenByRootExampleTokens =>
         [
-            new ThenBy(default), new LeftSquareBracket(default),
-            new Entity(default), new Dot(default), new PropertyAccess(default), new RightSquareBracket(default)
+            ThenBy.Empty, LeftSquareBracket.Empty, Entity.Empty, Dot.Empty, PropertyAccess.Empty,
+            RightSquareBracket.Empty
         ];
     }
 
     public sealed class Converter : ElementToExpressionConverter<ThenByRoot>
     {
-        protected override Expression Build(IBuilderContext context, ThenByRoot element) => context.ToExpression(element.Children[0]);
+        protected override Expression Build(IBuilderContext context, ThenByRoot element) =>
+            context.ToExpression(element.Children[0]);
     }
 
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache) : RootApplierBase<ThenByRoot>

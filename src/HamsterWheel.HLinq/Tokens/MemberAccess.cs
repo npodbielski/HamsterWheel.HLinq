@@ -1,3 +1,3 @@
 namespace HamsterWheel.HLinq.Tokens;
 
-public abstract class MemberAccess(Range range) : TokenBase(range);
+public abstract class MemberAccess: TokenBase;

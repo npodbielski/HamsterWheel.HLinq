@@ -1,6 +1,6 @@
 namespace HamsterWheel.HLinq.Tokens.Ordering;
 
-public sealed class OrderBy(Range range) : TokenBase(range)
+public sealed class OrderBy : TokenBase
 {
     public sealed class Possibility(IGrammar grammar) : TokenPossibility<OrderBy>(grammar, "orderBy")
     {
@@ -9,7 +9,8 @@ public sealed class OrderBy(Range range) : TokenBase(range)
 
         protected override bool NextIsAllowedWhenKeywordMatch(char? next) =>
             Rule.NextCharMatch(next);
-
-        protected override OrderBy BuildImpl(Range range) => new(range);
     }
+
+    public static OrderBy Build(Range range) => new() { Range = range };
+    public static OrderBy Empty { get; } = new() { Range = default };
 }

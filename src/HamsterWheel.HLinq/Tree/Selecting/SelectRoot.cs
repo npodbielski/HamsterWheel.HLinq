@@ -39,7 +39,7 @@ public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoo
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
                 throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
-                    [new RightSquareBracket(default)]);
+                    [new RightSquareBracket()]);
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);
@@ -52,8 +52,8 @@ public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoo
 
         private static IToken[] SelectRootExampleTokens =>
         [
-            new SelectToken(default), new LeftSquareBracket(default),
-            new Entity(default), new Dot(default), new PropertyAccess(default), new RightSquareBracket(default)
+            SelectToken.Empty, LeftSquareBracket.Empty, Entity.Empty, Dot.Empty, PropertyAccess.Empty,
+            RightSquareBracket.Empty
         ];
     }
 

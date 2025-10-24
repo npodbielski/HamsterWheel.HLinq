@@ -631,12 +631,10 @@ It is worth to mention that HLinq does not require Ascii characters only. You ca
 
 Then `orderBy` token possibility can look like this:
 ```csharp
-public class OrderByDescendingPossibility() : TokenPossibility<OrderByDescending>(TokenValue)
+public class OrderByDescendingPossibility(IGrammar grammar) : TokenPossibility<OrderByDescending>(grammar, "↓")
 {
-    public const string TokenValue = "↓";
-
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-        GrammarRules.SelectPreviousTokensMatch<OrderByDescending>(previousTokens);
+        Rule.PreviousTokensMatch(previousTokens);
 
     protected override OrderByDescending BuildImpl(Range range) => new(range);
 }

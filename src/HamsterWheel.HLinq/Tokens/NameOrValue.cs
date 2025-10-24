@@ -1,6 +1,6 @@
 namespace HamsterWheel.HLinq.Tokens;
 
-public sealed class NameOrValue(Range range) : TokenBase(range)
+public sealed class NameOrValue : TokenBase
 {
     public sealed class Possibility(IGrammar grammar)
         : TokenPossibility<NameOrValue>(grammar, haveDelimiters: true)
@@ -23,7 +23,8 @@ public sealed class NameOrValue(Range range) : TokenBase(range)
 
             return possibility;
         }
-
-        protected override NameOrValue BuildImpl(Range range) => new(range);
     }
+
+    public static NameOrValue Build(Range range) => new() { Range = range };
+    public static NameOrValue Empty { get; } = new() { Range = default };
 }

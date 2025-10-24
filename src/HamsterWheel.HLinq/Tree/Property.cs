@@ -19,8 +19,7 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
 
     public sealed class Parser : ElementParserBase<Property>
     {
-        public override IToken[] ExampleTokens { get; } =
-            [new Entity(default), new Dot(default), new PropertyAccess(default)];
+        public override IToken[] ExampleTokens { get; } = [Entity.Empty, Dot.Empty, PropertyAccess.Empty];
 
         protected override Type[] ValidParents { get; } =
         [

@@ -19,7 +19,7 @@ public class InvalidTokenCollectionExceptionUnitTests
 
         //act
         var e = new InvalidTokenCollectionException(hlinqQueryString, [
-            new Select(..6), new RightSquareBracket(6..7), new LeftSquareBracket(7..8)
+            Select.Build(..6), RightSquareBracket.Build(6..7), LeftSquareBracket.Build(7..8)
         ], []);
 
         //assert
@@ -36,11 +36,11 @@ public class InvalidTokenCollectionExceptionUnitTests
 
         //act
         var e = new InvalidTokenCollectionException(hlinqQueryString, [
-                new Select(..6), new LeftSquareBracket(6..7), new RightSquareBracket(7..8)
+                Select.Build(..6), LeftSquareBracket.Build(6..7), RightSquareBracket.Build(7..8)
             ],
             [
-                new Select(default), new LeftSquareBracket(default), new Entity(default), new Dot(default),
-                new PropertyAccess(default), new RightSquareBracket(default)
+                new Select(), new LeftSquareBracket(), new Entity(), new Dot(),
+                new PropertyAccess(), new RightSquareBracket()
             ]);
 
         //assert
@@ -62,15 +62,15 @@ public class InvalidTokenCollectionExceptionUnitTests
 
         //act
         var e = new InvalidTokenCollectionException(hlinqQueryString, [
-                new NameOrValue(6..7), new Assignment(7..8), new LeftSquareBracket(8..13)
+                NameOrValue.Build(6..7), Assignment.Build(7..8), LeftSquareBracket.Build(8..13)
             ],
             [
-                new Entity(default), new Dot(default), new PropertyAccess(default), new Equality(default),
-                new NameOrValue(default)
+                new Entity(), new Dot(), new PropertyAccess(), new Equality(),
+                new NameOrValue()
             ],
-            [new And(default)],
-            [new Or(default)],
-            [new MethodCall(default)]);
+            [new And()],
+            [new Or()],
+            [new MethodCall()]);
 
         //assert
         e.Message.Should().Be(expected);
@@ -85,8 +85,8 @@ public class InvalidTokenCollectionExceptionUnitTests
             $"HLinq query '{hlinqQueryString}' is invalid at character 13: ']'. Was expecting for example: ')'.";
 
         //act
-        var e = new InvalidTokenCollectionException(hlinqQueryString, [new RightSquareBracket(13..14)],
-            [new RightCircleBracket(default)]);
+        var e = new InvalidTokenCollectionException(hlinqQueryString, [ RightSquareBracket.Build(13..14)],
+            [new RightCircleBracket()]);
 
         //assert
         e.Message.Should().Be(expected);
@@ -101,7 +101,7 @@ public class InvalidTokenCollectionExceptionUnitTests
             $"HLinq query '{hlinqQueryString}' is invalid and not finished properly. Was expecting for example: ']'.";
 
         //act
-        var e = new InvalidTokenCollectionException(hlinqQueryString, [], [new RightSquareBracket(default)]);
+        var e = new InvalidTokenCollectionException(hlinqQueryString, [], [new RightSquareBracket()]);
 
         //assert
         e.Message.Should().Be(expected);
@@ -117,10 +117,10 @@ public class InvalidTokenCollectionExceptionUnitTests
 
         //act
         var e = new InvalidTokenCollectionException(hlinqQueryString, [], [
-            new Take(default),
-            new LeftSquareBracket(default),
+            new Take(),
+            new LeftSquareBracket(),
             new TokenExample("10"),
-            new RightSquareBracket(default),
+            new RightSquareBracket(),
         ]);
 
         //assert
@@ -145,8 +145,8 @@ public class InvalidTokenCollectionExceptionUnitTests
 
         //act
         var e = new HLinqTokenizer.UnknownTokenException(hlinqQueryString, [
-            new Where(default), new Select(default), new Skip(default), new Take(default), new OrderBy(default),
-            new OrderByDescending(default)
+            new Where(), new Select(), new Skip(), new Take(), new OrderBy(),
+            new OrderByDescending()
         ]);
 
         //assert

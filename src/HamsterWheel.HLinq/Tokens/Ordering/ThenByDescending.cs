@@ -1,12 +1,13 @@
 namespace HamsterWheel.HLinq.Tokens.Ordering;
 
-public sealed class ThenByDescending(Range range) : TokenBase(range)
+public sealed class ThenByDescending : TokenBase
 {
     public sealed class Possibility(IGrammar grammar) : TokenPossibility<ThenByDescending>(grammar, "thenByDescending")
     {
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
             Rule.PreviousTokensMatch(previousTokens);
-
-        protected override ThenByDescending BuildImpl(Range range) => new(range);
     }
+
+    public static ThenByDescending Build(Range range) => new() { Range = range };
+    public static ThenByDescending Empty { get; } = new() { Range = default };
 }

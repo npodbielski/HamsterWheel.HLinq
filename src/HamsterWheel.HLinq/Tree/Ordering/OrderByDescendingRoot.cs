@@ -32,7 +32,7 @@ public sealed class OrderByDescendingRoot(IToken[] tokens) : TreeBranch(tokens),
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
                 throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
-                    [new RightSquareBracket(default)]);
+                    [RightSquareBracket.Empty]);
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);
@@ -45,8 +45,8 @@ public sealed class OrderByDescendingRoot(IToken[] tokens) : TreeBranch(tokens),
 
         private static IToken[] OrderRootExampleTokens =>
         [
-            new OrderByDescending(default), new LeftSquareBracket(default),
-            new Entity(default), new Dot(default), new PropertyAccess(default), new RightSquareBracket(default)
+            OrderByDescending.Empty, LeftSquareBracket.Empty,
+            Entity.Empty, Dot.Empty, PropertyAccess.Empty, RightSquareBracket.Empty
         ];
     }
 
