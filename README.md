@@ -588,14 +588,10 @@ If you want to change how `select` token is represented in the query, you can pr
 Or even better use `TokenPossibility<T>` class. 
 In Polish, you would write `wybierz` instead of `select`, so new implementation would look like this:
 ```csharp
-public class SelectPossibility() : TokenPossibility<Select>(TokenValue)
+public class SelectPossibility(IGrammar grammar) : TokenPossibility<Select>(grammar, "wybierz")
 {
-    public const string TokenValue = "wybierz";
-
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-        GrammarRules.SelectPreviousTokensMatch<Select>(previousTokens);
-
-    protected override Select BuildImpl(Range range) => new(range);
+        Rule.PreviousTokensMatch(previousTokens);
 }
 ```
 
