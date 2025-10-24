@@ -707,8 +707,28 @@ and API will return one record:
 ```
 
 # Dynamic object transformation
+Main HLinq package also exposes one helpful extension method of an `object` type: `ExecuteHLinq`. This method allows you to execute HLinq queries on any object, for example, to query for a specific property or just some subset of properties.
+Consider the following line of code:
+```csharp
+var name = obj.ExecuteHLinq("select[x.Name]");
+```
+This returns the value of the `Name` property of the object. 
 
-TODO: write about obj.ExecuteHLinq("select[x.Name]")
+This can be also achieved with shorter query syntax that implies select and is equivalent to above:
+```csharp
+var name = obj.ExecuteHLinq("x.Name");
+```
+
+`ExecuteHLinq` method is also available on collection types.
+```csharp
+int[] collection = [1,2,3,4,5,6,7,8,9];
+var result = collection.ExecuteHLinq("where[x>5]")
+```
+
+Collection item can be complex type too:
+```csharp
+var filteredPersons = collection.ExecuteHLinq("select[x.FirstName, x.LastName]");
+```
 
 # Roadmap
 - [ ] Add support for grouping

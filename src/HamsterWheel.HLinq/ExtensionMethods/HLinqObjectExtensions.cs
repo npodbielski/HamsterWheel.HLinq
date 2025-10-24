@@ -21,20 +21,36 @@ public static class HLinqObjectExtensions
             return null;
         }
 
-        if (!query.StartsWith("select["))
+        if (!query.StartsWith("select[") && query.StartsWith("x."))
         {
             query = $"select[{query}]";
         }
 
-        var hLinqQuery = Binder.BindQuery(query, typeof(HLinqQuery<T>));
+        IHLinqQuery hLinqQuery;
 
-        var method = MethodsCache.GetStaticGeneric(typeof(HLinqObjectExtensions), nameof(CreateList),
-            typeParams: obj.GetType());
-        var list = method.Invoke(null, [obj]) as IEnumerable ??
+        IEnumerable list;
+        Type itemType;
+        var isCollection = false;
+        if (obj is not IEnumerable enumerable)
+        {
+            hLinqQuery = Binder.BindQuery(query, typeof(HLinqQuery<T>));
+            var method = MethodsCache.GetStaticGeneric(typeof(HLinqObjectExtensions), nameof(CreateList),
+                typeParams: obj.GetType());
+            list = method.Invoke(null, [obj]) as IEnumerable ??
                    throw new ExpectedImplementationOfIEnumerableException();
+            itemType = obj.GetType();
+        }
+        else
+        {
+            isCollection = true;
+            list = enumerable;
+            itemType = enumerable.GetType().GetInterface(typeof(IEnumerable<>).FullName!)?.GenericTypeArguments[0]!;
+            hLinqQuery = Binder.BindQuery(query, typeof(HLinqQuery<>).MakeGenericType(itemType));
+        }
 
-        var result = EntryPoint.DependenciesBag.QueryApplier.ApplyGetType(list.AsQueryable(), hLinqQuery, obj.GetType());
-        return result.Data?.FirstOrDefault() ?? result.Count;
+        var result =
+            EntryPoint.DependenciesBag.QueryApplier.ApplyGetType(list.AsQueryable(), hLinqQuery, itemType);
+        return isCollection ? result.Data : (result.Data?.FirstOrDefault() ?? result.Count);
     }
 
     private static List<T> CreateList<T>(this T obj) => [obj];
@@ -44,7 +60,8 @@ public static class HLinqObjectExtensions
 
     internal class HLinqObjectExtensionsStaticEntryPoint
     {
-        public HLinqBinderDependenciesBag DependenciesBag { get; } = CreateDefaultProvider().GetRequiredService<HLinqBinderDependenciesBag>();
+        public HLinqBinderDependenciesBag DependenciesBag { get; } =
+            CreateDefaultProvider().GetRequiredService<HLinqBinderDependenciesBag>();
 
         private static ServiceProvider CreateDefaultProvider()
         {

@@ -46,6 +46,7 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
                 [ILogicalOperatorToken conditionalLogicalOp, not LeftCircleBracket, ..] => new Condition(
                     conditionalLogicalOp),
                 [Entity, Dot, PropertyAccess, ..] => new Condition(),
+                [Entity, ..] => new Condition(),
                 [MethodCall, ..] => new Condition(),
                 _ => null
             };
@@ -90,6 +91,15 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
                     var conditionBuilderContext = new ArithmeticComparisonConditionBuilderContext(context);
                     left = converterFactory.GetToExpressionConverterFor<Property>()
                         .Build(conditionBuilderContext, property);
+                    right = conditionBuilderContext.ToExpression(condition.Right);
+                }
+                else if (condition.Left is EntityLeaf)
+                {
+                    var conditionBuilderContext = new ArithmeticComparisonConditionBuilderContext(context)
+                    {
+                        ComparisonType = context.Type
+                    };
+                    left = context.Param;
                     right = conditionBuilderContext.ToExpression(condition.Right);
                 }
 

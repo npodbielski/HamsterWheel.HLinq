@@ -36,6 +36,11 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
                 index += 1;
             }
 
+            if (context.Tokens[index..] is [Entity, IComparisonToken, ..])
+            {
+                return new Property(context.Tokens[..1]);
+            }
+
             if (context.Tokens[index..] is not [Entity, Dot, PropertyAccess, .. var r1])
             {
                 return null;
@@ -64,7 +69,7 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
             switch (context)
             {
                 case IArithmeticComparisonConditionBuilderContext conditionBuilderContext:
-                    conditionBuilderContext.ComparisonPropertyType = memberExpression.Type;
+                    conditionBuilderContext.ComparisonType = memberExpression.Type;
                     break;
                 case IMethodCallConditionBuilderContext methodCallConditionBuilderContext:
                     methodCallConditionBuilderContext.MethodSource = memberExpression;

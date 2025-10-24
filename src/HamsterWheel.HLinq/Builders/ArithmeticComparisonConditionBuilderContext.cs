@@ -10,7 +10,7 @@ public sealed record ArithmeticComparisonConditionBuilderContext(IBuilderContext
     public IExpressionBuilder Builder { get; } = BuilderContext.Builder;
     public string HLinqQuery { get; } = BuilderContext.HLinqQuery;
 
-    public Type? ComparisonPropertyType { get; set; }
+    public Type? ComparisonType { get; set; }
 
     public Expression ToExpression(ITreeElement element) => BuilderContext.Builder.ToExpression(this, element);
 

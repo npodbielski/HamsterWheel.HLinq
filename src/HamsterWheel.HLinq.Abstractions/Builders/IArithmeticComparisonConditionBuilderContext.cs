@@ -2,5 +2,5 @@ namespace HamsterWheel.HLinq.Builders;
 
 public interface IArithmeticComparisonConditionBuilderContext : IBuilderContext
 {
-    Type? ComparisonPropertyType { get; set; }
+    Type? ComparisonType { get; set; }
 }

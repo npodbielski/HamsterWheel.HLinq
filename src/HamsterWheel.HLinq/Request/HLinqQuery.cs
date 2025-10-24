@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HamsterWheel.HLinq.Request;
 
-public partial class HLinqQuery<T> : IHLinqQuery where T : class
+public partial class HLinqQuery<T> : IHLinqQuery
 {
     public ITreeElement[] Children { get; private set; } = [];
     public Type ItemType { get; } = typeof(T);
@@ -106,7 +106,7 @@ public partial class HLinqQuery<T> : IHLinqQuery where T : class
     public class HLinqQueryApplier(IApplierFactory applierFactory, IMethodsCache methodsCache) : IHLinqQueryApplier
     {
         public object Apply<T1>(IQueryable<T1> queryable, IHLinqQuery hLinqQuery,
-            CancellationToken cancellationToken = default) where T1 : class =>
+            CancellationToken cancellationToken = default) =>
             Apply(queryable, typeof(T1), hLinqQuery, cancellationToken);
 
         public object Apply(IQueryable queryable, Type itemType, IHLinqQuery hLinqQuery,
@@ -123,7 +123,7 @@ public partial class HLinqQuery<T> : IHLinqQuery where T : class
         }
 
         public IResult ApplyGetType<T1>(IQueryable<T1> queryable, IHLinqQuery hLinqQuery,
-            CancellationToken cancellationToken = default) where T1 : class =>
+            CancellationToken cancellationToken = default) =>
             ApplyGetType(queryable, hLinqQuery, typeof(T1), cancellationToken);
 
         public IResult ApplyGetType(IQueryable queryable, IHLinqQuery hLinqQuery, Type itemType,
