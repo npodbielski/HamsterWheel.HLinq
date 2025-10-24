@@ -3,12 +3,10 @@ using HamsterWheel.HLinq.Tokens.Selecting;
 
 namespace HamsterWheel.HLinq.Demo.Extensions.Translations.pl;
 
-public class SelectPossibility(IGrammar grammar) : TokenPossibility<Select>(grammar, TokenValue)
+public class SelectPossibility(IGrammar grammar) : TokenPossibility<Select>(grammar, "wybierz")
 {
-    private const string TokenValue = "wybierz";
-
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-        Grammar.PreviousTokensMatch<Select>(previousTokens);
+        Rule.PreviousTokensMatch(previousTokens);
 
     protected override Select BuildImpl(Range range) => new(range);
 }

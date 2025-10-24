@@ -95,8 +95,10 @@ public abstract class TokenPossibility(IGrammar grammar, string? keyword = null,
 public abstract class TokenPossibility<T>(IGrammar grammar, string? tokenString = null, bool haveDelimiters = false)
     : TokenPossibility(grammar, tokenString, haveDelimiters) where T : TokenBase
 {
+    private IGrammarRule? _rule;
     public override Type ForType => typeof(T);
-    public sealed override bool CanBeFirst => Grammar.CanBeFirst<T>();
-    protected abstract T BuildImpl(Range range);
+    public sealed override bool CanBeFirst => Rule.CanBeFirst;
     public sealed override TokenBase Build(Range range) => BuildImpl(range);
+    protected IGrammarRule Rule => _rule ??= Grammar.GetRuleFor<T>();
+    protected abstract T BuildImpl(Range range);
 }

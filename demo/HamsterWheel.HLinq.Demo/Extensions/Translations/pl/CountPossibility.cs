@@ -3,12 +3,10 @@ using HamsterWheel.HLinq.Tokens.Paging;
 
 namespace HamsterWheel.HLinq.Demo.Extensions.Translations.pl;
 
-public class CountPossibility(IGrammar grammar) : TokenPossibility<Count>(grammar, TokenValue)
+public class CountPossibility(IGrammar grammar) : TokenPossibility<Count>(grammar, "zlicz")
 {
-    private const string TokenValue = "zlicz";
-
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-        Grammar.PreviousTokensMatch<Count>(previousTokens);
+        Rule.PreviousTokensMatch(previousTokens);
 
     protected override Count BuildImpl(Range range) => new(range);
 }

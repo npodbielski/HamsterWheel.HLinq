@@ -3,12 +3,10 @@ using HamsterWheel.HLinq.Tokens.Filtering;
 
 namespace HamsterWheel.HLinq.Demo.Extensions.Translations.pl;
 
-public class WherePossibility(IGrammar grammar) : TokenPossibility<Where>(grammar, TokenValue)
+public class WherePossibility(IGrammar grammar) : TokenPossibility<Where>(grammar, "gdzie")
 {
-    private const string TokenValue = "gdzie";
-
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-        Grammar.PreviousTokensMatch<Where>(previousTokens);
+        Rule.PreviousTokensMatch(previousTokens);
 
     protected override Where BuildImpl(Range range) => new(range);
 }

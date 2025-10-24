@@ -6,7 +6,7 @@ public sealed class NameOrValue(Range range) : TokenBase(range)
         : TokenPossibility<NameOrValue>(grammar, haveDelimiters: true)
     {
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            Grammar.PreviousTokensMatch<NameOrValue>(previousTokens);
+            Rule.PreviousTokensMatch(previousTokens);
 
         public override int CanBeAt(int index, ReadOnlySpan<char> subset, char? next, List<IToken> previousToken)
         {

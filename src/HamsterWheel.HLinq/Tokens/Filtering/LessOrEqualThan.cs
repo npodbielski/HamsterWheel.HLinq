@@ -5,7 +5,7 @@ public sealed class LessOrEqualThan(Range range) : TokenBase(range), IComparison
     public sealed class Possibility(IGrammar grammar) : TokenPossibility<LessOrEqualThan>(grammar, "<=")
     {
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            Grammar.PreviousTokenMatch<LessOrEqualThan>(previousToken);
+            Rule.PreviousTokenMatch(previousToken);
 
         protected override LessOrEqualThan BuildImpl(Range range) => new(range);
     }

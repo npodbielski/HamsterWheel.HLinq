@@ -5,7 +5,7 @@ public sealed class Select(Range range) : TokenBase(range)
     public sealed class Possibility(IGrammar grammar) : TokenPossibility<Select>(grammar, "select")
     {
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            Grammar.PreviousTokensMatch<Select>(previousTokens);
+            Rule.PreviousTokensMatch(previousTokens);
 
         protected override Select BuildImpl(Range range) => new(range);
     }

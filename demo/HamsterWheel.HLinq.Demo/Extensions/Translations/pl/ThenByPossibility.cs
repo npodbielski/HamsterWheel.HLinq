@@ -3,12 +3,10 @@ using HamsterWheel.HLinq.Tokens.Ordering;
 
 namespace HamsterWheel.HLinq.Demo.Extensions.Translations.pl;
 
-public class ThenByPossibility(IGrammar grammar) : TokenPossibility<ThenBy>(grammar, TokenValue)
+public class ThenByPossibility(IGrammar grammar) : TokenPossibility<ThenBy>(grammar, "potemPo")
 {
-    private const string TokenValue = "potemPo";
-
     protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-        Grammar.PreviousTokensMatch<ThenBy>(previousTokens);
+        Rule.PreviousTokensMatch(previousTokens);
 
     protected override ThenBy BuildImpl(Range range) => new(range);
 }
