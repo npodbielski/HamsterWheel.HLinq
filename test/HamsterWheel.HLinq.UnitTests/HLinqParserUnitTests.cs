@@ -23,7 +23,7 @@ public class HLinqParserUnitTests
             new LeftSquareBracket(),
             new Entity(),
             new Dot(),
-            new PropertyAccess(),
+            new PropertyName(),
             new RightSquareBracket()
         ];
 
@@ -74,7 +74,7 @@ public class HLinqParserUnitTests
             new LeftSquareBracket(),
             new Entity(),
             new Dot(),
-            new PropertyAccess(),
+            new PropertyName(),
             new Comma(),
             new NameOrValue(),
             new Assignment(),
@@ -107,7 +107,7 @@ public class HLinqParserUnitTests
         IToken[] tokens =
         [
             new Where(), new LeftSquareBracket(), new Entity(),
-            new Dot(), new PropertyAccess(), new Dot(), new MethodCall(),
+            new Dot(), new PropertyName(), new Dot(), new MethodName(),
             new LeftCircleBracket(), new NameOrValue(), new RightCircleBracket(),
             new RightSquareBracket()
         ];
@@ -135,11 +135,11 @@ public class HLinqParserUnitTests
         [
             new Where(),
             new LeftSquareBracket(),
-            new MethodCall(),
+            new MethodName(),
             new LeftCircleBracket(),
             new Entity(),
             new Dot(),
-            new PropertyAccess(),
+            new PropertyName(),
             new Comma(),
             new NameOrValue(),
             new RightCircleBracket(),

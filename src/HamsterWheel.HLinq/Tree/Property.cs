@@ -15,11 +15,11 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
     public string GetValue(string hLinqQuery) => string.Join('.', GetPath(hLinqQuery));
 
     public string[] GetPath(string hLinqQuery) =>
-        Tokens.OfType<PropertyAccess>().Select(t => t.GetValue(hLinqQuery)).ToArray();
+        Tokens.OfType<PropertyName>().Select(t => t.GetValue(hLinqQuery)).ToArray();
 
     public sealed class Parser : ElementParserBase<Property>
     {
-        public override IToken[] ExampleTokens { get; } = [Entity.Empty, Dot.Empty, PropertyAccess.Empty];
+        public override IToken[] ExampleTokens { get; } = [Entity.Empty, Dot.Empty, PropertyName.Empty];
 
         protected override Type[] ValidParents { get; } =
         [
@@ -41,7 +41,7 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
                 return new Property(context.Tokens[..1]);
             }
 
-            if (context.Tokens[index..] is not [Entity, Dot, PropertyAccess, .. var r1])
+            if (context.Tokens[index..] is not [Entity, Dot, PropertyName, .. var r1])
             {
                 return null;
             }
@@ -50,7 +50,7 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
 
             index += 3;
 
-            while (rest is [Dot, PropertyAccess, .. var r2])
+            while (rest is [Dot, PropertyName, .. var r2])
             {
                 rest = r2;
                 index += 2;

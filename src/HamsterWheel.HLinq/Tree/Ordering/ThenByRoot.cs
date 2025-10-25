@@ -45,7 +45,7 @@ public sealed class ThenByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 
         private static IToken[] ThenByRootExampleTokens =>
         [
-            ThenBy.Empty, LeftSquareBracket.Empty, Entity.Empty, Dot.Empty, PropertyAccess.Empty,
+            ThenBy.Empty, LeftSquareBracket.Empty, Entity.Empty, Dot.Empty, PropertyName.Empty,
             RightSquareBracket.Empty
         ];
     }

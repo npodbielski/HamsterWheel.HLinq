@@ -148,14 +148,14 @@ public class InvalidTokenCollectionExceptionUnitTests_NetStandard
             { new DummyTokens.RightSquareBracket(), "]" },
             { new DummyTokens.Entity(), "x" },
             { new DummyTokens.Dot(), "." },
-            { new DummyTokens.PropertyAccess(), "Name" },
+            { new DummyTokens.PropertyName(), "Name" },
             { new DummyTokens.Skip(), "skip" },
             { new DummyTokens.Take(), "take" },
             { new DummyTokens.Equality(), "==" },
             { new DummyTokens.NameOrValue(), "Jan" },
             { new DummyTokens.And(), "&&" },
             { new DummyTokens.Or(), "||" },
-            { new DummyTokens.MethodCall(), "MethodCall" },
+            { new DummyTokens.MethodName(), "Method" },
             { new DummyTokens.LeftCircleBracket(), "(" },
             { new DummyTokens.RightCircleBracket(), ")" }
         };
@@ -252,13 +252,13 @@ public class InvalidTokenCollectionExceptionUnitTests_NetStandard
             public override string ToString() => nameof(Dot);
         }
 
-        public record PropertyAccess : IToken
+        public record PropertyName : IToken
         {
             public Range Range => default;
 
             public string GetValue(string str) => str;
 
-            public override string ToString() => nameof(PropertyAccess);
+            public override string ToString() => nameof(PropertyName);
         }
 
         public record Skip : IToken
@@ -315,13 +315,13 @@ public class InvalidTokenCollectionExceptionUnitTests_NetStandard
             public override string ToString() => nameof(Or);
         }
 
-        public record MethodCall : IToken
+        public record MethodName : IToken
         {
             public Range Range => default;
 
             public string GetValue(string str) => str;
 
-            public override string ToString() => nameof(MethodCall);
+            public override string ToString() => nameof(MethodName);
         }
 
         public record RightCircleBracket : IToken

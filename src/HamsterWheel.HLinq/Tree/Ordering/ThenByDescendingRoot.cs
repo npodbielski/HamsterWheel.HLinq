@@ -43,7 +43,7 @@ public sealed class ThenByDescendingRoot(IToken[] tokens) : TreeBranch(tokens), 
 
         private static IToken[] ThenByDescendingRootExampleTokens =>
         [
-            ThenByDescending.Empty, LeftSquareBracket.Empty, Entity.Empty, Dot.Empty, PropertyAccess.Empty,
+            ThenByDescending.Empty, LeftSquareBracket.Empty, Entity.Empty, Dot.Empty, PropertyName.Empty,
             RightSquareBracket.Empty
         ];
     }

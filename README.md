@@ -722,13 +722,29 @@ var name = obj.ExecuteHLinq("x.Name");
 `ExecuteHLinq` method is also available on collection types.
 ```csharp
 int[] collection = [1,2,3,4,5,6,7,8,9];
-var result = collection.ExecuteHLinq("where[x>5]")
+var result = collection.ExecuteHLinq("where[x>5]");//6,7,8,9
 ```
 
 Collection item can be complex type too:
 ```csharp
 var filteredPersons = collection.ExecuteHLinq("select[x.FirstName, x.LastName]");
 ```
+
+This would be equivalent to:
+```csharp
+collection.Select(c => new { c.Name, c.Enum });
+```
+
+You are able to use more than one operation in the query:
+```csharp
+var filteredPersons = collection.Select(c => new { c.Name, c.Enum });
+```
+
+This, in turn, would be equivalent to:
+```csharp
+collection.Where(x => x.Enum == RandomEnum.One).Select(c => new { c.Name, c.Enum });
+```
+
 
 # Roadmap
 - [ ] Add support for grouping

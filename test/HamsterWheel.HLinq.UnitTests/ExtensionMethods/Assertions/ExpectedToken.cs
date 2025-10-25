@@ -18,7 +18,7 @@ public class ExpectedToken(Type type, string value)
     public static ExpectedToken LeftCircleBracket => new(typeof(LeftCircleBracket), "(");
     public static ExpectedToken RightCircleBracket => new(typeof(RightCircleBracket), ")");
     public static ExpectedToken Dot => new(typeof(Dot), ".");
-    public static ExpectedToken Prop(string prop) => new(typeof(PropertyAccess), prop);
+    public static ExpectedToken Prop(string prop) => new(typeof(PropertyName), prop);
     public static ExpectedToken Equality => new(typeof(Equality), "==");
     public static ExpectedToken GreaterOrEqualThan => new(typeof(GreaterOrEqualThan), ">=");
     public static ExpectedToken LessOrEqualThan => new(typeof(LessOrEqualThan), "<=");
@@ -30,7 +30,7 @@ public class ExpectedToken(Type type, string value)
     public static ExpectedToken And => new(typeof(And), "&&");
     public static ExpectedToken Comma => new(typeof(Comma), ",");
     public static ExpectedToken Entity(string name = "x") => new(typeof(Entity), name);
-    public static ExpectedToken MethodCall(string name) => new(typeof(MethodCall), name);
+    public static ExpectedToken MethodName(string name) => new(typeof(MethodName), name);
     public static ExpectedToken Take => new(typeof(Take), "take");
     public static ExpectedToken Skip => new(typeof(Skip), "skip");
     public static ExpectedToken OrderBy => new(typeof(OrderBy), "orderBy");

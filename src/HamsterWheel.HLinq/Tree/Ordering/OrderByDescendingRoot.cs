@@ -46,7 +46,7 @@ public sealed class OrderByDescendingRoot(IToken[] tokens) : TreeBranch(tokens),
         private static IToken[] OrderRootExampleTokens =>
         [
             OrderByDescending.Empty, LeftSquareBracket.Empty,
-            Entity.Empty, Dot.Empty, PropertyAccess.Empty, RightSquareBracket.Empty
+            Entity.Empty, Dot.Empty, PropertyName.Empty, RightSquareBracket.Empty
         ];
     }
 

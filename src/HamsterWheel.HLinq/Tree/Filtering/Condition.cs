@@ -45,9 +45,9 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
                 [NameOrValue, Assignment, NameOrValue, ..] => ThrowOnReverseComparison(context),
                 [ILogicalOperatorToken conditionalLogicalOp, not LeftCircleBracket, ..] => new Condition(
                     conditionalLogicalOp),
-                [Entity, Dot, PropertyAccess, ..] => new Condition(),
+                [Entity, Dot, PropertyName, ..] => new Condition(),
                 [Entity, ..] => new Condition(),
-                [MethodCall, ..] => new Condition(),
+                [MethodName, ..] => new Condition(),
                 _ => null
             };
 
@@ -57,11 +57,11 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
                 ConditionExampleTokens,
                 [And.Empty],
                 [Or.Empty],
-                [MethodCall.Empty]
+                [MethodName.Empty]
             );
 
         public static IToken[] ConditionExampleTokens { get; } =
-            [Entity.Empty, Dot.Empty, PropertyAccess.Empty, Equality.Empty, NameOrValue.Empty];
+            [Entity.Empty, Dot.Empty, PropertyName.Empty, Equality.Empty, NameOrValue.Empty];
     }
 
     public sealed class Converter(IConverterFactory converterFactory) : ElementToExpressionConverter<Condition>

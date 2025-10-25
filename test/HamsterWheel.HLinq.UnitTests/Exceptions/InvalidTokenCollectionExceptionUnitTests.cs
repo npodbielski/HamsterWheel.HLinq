@@ -39,8 +39,8 @@ public class InvalidTokenCollectionExceptionUnitTests
                 Select.Build(..6), LeftSquareBracket.Build(6..7), RightSquareBracket.Build(7..8)
             ],
             [
-                new Select(), new LeftSquareBracket(), new Entity(), new Dot(),
-                new PropertyAccess(), new RightSquareBracket()
+                Select.Empty, LeftSquareBracket.Empty, Entity.Empty, Dot.Empty,
+                PropertyName.Empty, RightSquareBracket.Empty
             ]);
 
         //assert
@@ -57,7 +57,7 @@ public class InvalidTokenCollectionExceptionUnitTests
                                  You can also try:
                                   - &&
                                   - ||
-                                  - MethodCall
+                                  - Method
                                  """;
 
         //act
@@ -65,12 +65,12 @@ public class InvalidTokenCollectionExceptionUnitTests
                 NameOrValue.Build(6..7), Assignment.Build(7..8), LeftSquareBracket.Build(8..13)
             ],
             [
-                new Entity(), new Dot(), new PropertyAccess(), new Equality(),
-                new NameOrValue()
+                Entity.Empty, Dot.Empty, PropertyName.Empty, Equality.Empty,
+                NameOrValue.Empty
             ],
-            [new And()],
-            [new Or()],
-            [new MethodCall()]);
+            [And.Empty],
+            [Or.Empty],
+            [MethodName.Empty]);
 
         //assert
         e.Message.Should().Be(expected);
@@ -117,10 +117,10 @@ public class InvalidTokenCollectionExceptionUnitTests
 
         //act
         var e = new InvalidTokenCollectionException(hlinqQueryString, [], [
-            new Take(),
-            new LeftSquareBracket(),
+            Take.Empty,
+            LeftSquareBracket.Empty,
             new TokenExample("10"),
-            new RightSquareBracket(),
+            RightSquareBracket.Empty,
         ]);
 
         //assert
@@ -145,8 +145,8 @@ public class InvalidTokenCollectionExceptionUnitTests
 
         //act
         var e = new HLinqTokenizer.UnknownTokenException(hlinqQueryString, [
-            new Where(), new Select(), new Skip(), new Take(), new OrderBy(),
-            new OrderByDescending()
+            Where.Empty, Select.Empty, Skip.Empty, Take.Empty, OrderBy.Empty,
+            OrderByDescending.Empty
         ]);
 
         //assert

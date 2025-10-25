@@ -44,7 +44,7 @@ public sealed class OrderByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
                 context.Tokens.Take(3).ToArray(), OrderByRootExampleTokens);
 
         private static IToken[] OrderByRootExampleTokens =>
-            [new OrderBy(), new LeftSquareBracket(), new Entity(), new Dot(), new PropertyAccess(), new RightSquareBracket()];
+            [OrderBy.Empty, LeftSquareBracket.Empty, Entity.Empty, Dot.Empty, PropertyName.Empty, RightSquareBracket.Empty];
     }
 
     public sealed class Converter : ElementToExpressionConverter<OrderByRoot>

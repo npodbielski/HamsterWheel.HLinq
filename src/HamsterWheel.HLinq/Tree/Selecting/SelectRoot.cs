@@ -52,7 +52,7 @@ public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoo
 
         private static IToken[] SelectRootExampleTokens =>
         [
-            SelectToken.Empty, LeftSquareBracket.Empty, Entity.Empty, Dot.Empty, PropertyAccess.Empty,
+            SelectToken.Empty, LeftSquareBracket.Empty, Entity.Empty, Dot.Empty, PropertyName.Empty,
             RightSquareBracket.Empty
         ];
     }

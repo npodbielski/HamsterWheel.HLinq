@@ -10,7 +10,7 @@ namespace HamsterWheel.HLinq.Tree.Filtering;
 public sealed class Method(IToken[] tokens) : TreeBranch(tokens), IMethod
 {
     private MethodSource? _source;
-    private MethodCall? _method;
+    private MethodName? _method;
 
     private MethodSource SourceType => _source ?? Tokens.First() switch
     {
@@ -19,16 +19,16 @@ public sealed class Method(IToken[] tokens) : TreeBranch(tokens), IMethod
         _ => _source ??= MethodSource.Static
     };
 
-    private MethodCall MethodCall => _method ??= Tokens.OfType<MethodCall>().First();
+    private MethodName MethodName => _method ??= Tokens.OfType<MethodName>().First();
 
-    public string GetName(string hLinqQuery) => MethodCall.GetValue(hLinqQuery);
+    public string GetName(string hLinqQuery) => MethodName.GetValue(hLinqQuery);
 
     public sealed class Parser : ElementParserBase<Method>
     {
         protected override Type[] ValidParents { get; } = [typeof(Condition)];
 
         public override IToken[] ExampleTokens { get; } =
-            [MethodCall.Empty, LeftCircleBracket.Empty, RightCircleBracket.Empty];
+            [MethodName.Empty, LeftCircleBracket.Empty, RightCircleBracket.Empty];
 
         protected override void FinishImpl(IParsingContext context)
         {
@@ -45,8 +45,8 @@ public sealed class Method(IToken[] tokens) : TreeBranch(tokens), IMethod
         protected override Method? BuildBranch(IParsingContext context) =>
             context.Tokens switch
             {
-                [Dot, MethodCall _, LeftCircleBracket, ..] => new Method(context.Tokens[..3]),
-                [MethodCall _, LeftCircleBracket, ..] => new Method(context.Tokens[..2]),
+                [Dot, MethodName _, LeftCircleBracket, ..] => new Method(context.Tokens[..3]),
+                [MethodName _, LeftCircleBracket, ..] => new Method(context.Tokens[..2]),
                 _ => null
             };
     }
