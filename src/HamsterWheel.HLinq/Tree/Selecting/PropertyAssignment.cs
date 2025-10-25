@@ -1,9 +1,8 @@
 using System.Linq.Expressions;
 using System.Reflection;
-using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;

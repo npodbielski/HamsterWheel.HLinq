@@ -1,3 +1,5 @@
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
+
 namespace HamsterWheel.HLinq.Tokens.Selecting;
 
 public sealed class Select : TokenBase

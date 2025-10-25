@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Request;
 
 namespace HamsterWheel.HLinq;

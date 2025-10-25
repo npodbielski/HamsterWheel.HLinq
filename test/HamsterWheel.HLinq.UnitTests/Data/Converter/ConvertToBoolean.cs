@@ -1,5 +1,5 @@
 using FluentAssertions;
-using HamsterWheel.HLinq.UnitTests.Dummies;
+using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
 
 namespace HamsterWheel.HLinq.UnitTests.Data.Converter;
 

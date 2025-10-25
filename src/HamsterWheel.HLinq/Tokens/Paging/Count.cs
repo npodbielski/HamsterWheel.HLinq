@@ -1,3 +1,5 @@
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
+
 namespace HamsterWheel.HLinq.Tokens.Paging;
 
 public sealed class Count : TokenBase

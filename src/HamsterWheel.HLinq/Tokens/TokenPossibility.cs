@@ -1,7 +1,8 @@
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
+
 namespace HamsterWheel.HLinq.Tokens;
 
-public abstract class TokenPossibility(IGrammar grammar, string? keyword = null)
-    : IHLinqTokenPossibility
+public abstract class TokenPossibility(IGrammar grammar, string? keyword = null) : IHLinqTokenPossibility
 {
     private bool _delimitersFetched;
     private char[]? _delimiters;

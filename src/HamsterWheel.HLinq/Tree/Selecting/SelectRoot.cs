@@ -1,9 +1,8 @@
 using System.Linq.Expressions;
 using DynamicAnonymousType;
-using HamsterWheel.HLinq.Appliers;
-using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Applier;
+using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;

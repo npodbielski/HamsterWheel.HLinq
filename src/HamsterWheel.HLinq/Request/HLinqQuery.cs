@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Reflection;
 using System.Web;
-using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Applier;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tree.Paging;
@@ -103,7 +103,7 @@ public partial class HLinqQuery<T> : IHLinqQuery
         return hlinqQuery;
     }
 
-    public class HLinqQueryApplier(IApplierFactory applierFactory, IMethodsCache methodsCache) : IHLinqQueryApplier
+    public class HLinqQueryApplier(IElementApplierFactory applierFactory, IMethodsCache methodsCache) : IHLinqQueryApplier
     {
         public object Apply<T1>(IQueryable<T1> queryable, IHLinqQuery hLinqQuery,
             CancellationToken cancellationToken = default) =>

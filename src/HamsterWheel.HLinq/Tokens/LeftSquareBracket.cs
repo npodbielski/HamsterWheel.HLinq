@@ -1,3 +1,5 @@
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
+
 namespace HamsterWheel.HLinq.Tokens;
 
 public sealed class LeftSquareBracket : TokenBase

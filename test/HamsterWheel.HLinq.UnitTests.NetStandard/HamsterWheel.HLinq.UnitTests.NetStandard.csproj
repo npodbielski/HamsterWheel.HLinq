@@ -11,11 +11,16 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Include="..\HamsterWheel.HLinq.UnitTests\ValueConverters\BaseConfigurableValueConverterUnitTests.cs">
-        <Link>ValueConverters\BaseConfigurableValueConverterUnitTests.cs</Link>
+      <Folder Include="Data\" />
+      <Folder Include="Pipeline\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Include="..\HamsterWheel.HLinq.UnitTests\Data\ValueConverters\BaseConfigurableValueConverterUnitTests.cs">
+        <Link>Data\ValueConverters\BaseConfigurableValueConverterUnitTests.cs</Link>
       </Compile>
-      <Compile Include="..\HamsterWheel.HLinq.UnitTests\ValueConverters\BaseValueConverterUnitTests.cs">
-        <Link>ValueConverters\BaseValueConverterUnitTests.cs</Link>
+      <Compile Include="..\HamsterWheel.HLinq.UnitTests\Data\ValueConverters\BaseValueConverterUnitTests.cs">
+        <Link>Data\ValueConverters\BaseValueConverterUnitTests.cs</Link>
       </Compile>
     </ItemGroup>
 

@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using HamsterWheel.HLinq.Builders;
+using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tree.Filtering;
 
@@ -23,8 +23,8 @@ public class CustomFilterConverter(IPropertiesCache propertiesCache) : IStaticMe
 
         var stringConcatMethod = typeof(string).GetMethod("Concat", [typeof(string), typeof(string)]);
         
-        var firstNamePlusSpace = Expression.Add(Expression.Property(context.Param, propertiesCache.Single(context.Type, "FirstName")), Expression.Constant(" "), stringConcatMethod);
-        var firstNameSpaceAndLastName = Expression.Add(firstNamePlusSpace, Expression.Property(context.Param, propertiesCache.Single(context.Type, "LastName")), stringConcatMethod);
+        var firstNamePlusSpace = Expression.Add(Expression.Property(context.Param, propertiesCache.Single(context.Type, "FirstName")!), Expression.Constant(" "), stringConcatMethod);
+        var firstNameSpaceAndLastName = Expression.Add(firstNamePlusSpace, Expression.Property(context.Param, propertiesCache.Single(context.Type, "LastName")!), stringConcatMethod);
         return Expression.Equal(firstNameSpaceAndLastName, Expression.Constant(fullNameSearchConstant));
     }
 }

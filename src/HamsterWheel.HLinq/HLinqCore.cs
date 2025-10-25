@@ -1,17 +1,13 @@
 using System.Reflection;
-using HamsterWheel.HLinq.Appliers;
-using HamsterWheel.HLinq.Builders;
-using HamsterWheel.HLinq.Data;
 using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Data.ValueConverters;
-using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Applier;
+using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Pipeline.Tokenizer;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Request;
-using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tree.Filtering;
-using HamsterWheel.HLinq.ValueConverters;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HamsterWheel.HLinq;
@@ -72,12 +68,12 @@ internal static class HLinqCore
         services.AddSingleton<IValueConverterFactory, ValueConverterFactory>();
         services.AddSingleton<IConverterFactory, ConverterFactory>();
 
-        foreach (var c in GetTypesFromAssemblyWithStatic<IApplier>())
+        foreach (var c in GetTypesFromAssemblyWithStatic<IElementApplier>())
         {
-            services.AddSingleton(typeof(IApplier), c);
+            services.AddSingleton(typeof(IElementApplier), c);
         }
 
-        services.AddSingleton<IApplierFactory, ApplierFactory>();
+        services.AddSingleton<IElementApplierFactory, ApplierFactory>();
         services.AddSingleton<IHLinqQueryApplier, HLinqQuery<object>.HLinqQueryApplier>();
 
         //builders

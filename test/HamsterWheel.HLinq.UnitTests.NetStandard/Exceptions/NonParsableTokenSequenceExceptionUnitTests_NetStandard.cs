@@ -1,6 +1,6 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 using NSubstitute;
 
