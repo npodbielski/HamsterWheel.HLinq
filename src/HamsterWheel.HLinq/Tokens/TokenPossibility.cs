@@ -73,9 +73,18 @@ public abstract class TokenPossibility(IGrammar grammar, string? keyword = null)
         }
         else
         {
-            if (next is not null && Delimiters?.Contains(next.Value) == true)
+            if (next is null)
+            {
+                return possibility;
+            }
+
+            if (Delimiters?.Contains(next.Value) == true)
             {
                 possibility += 50;
+            }
+            else if (!char.IsLetterOrDigit(next.Value) && next.Value != '_')
+            {
+                possibility = 0;
             }
         }
 
@@ -100,6 +109,7 @@ public abstract class TokenPossibility<T>(IGrammar grammar, string? tokenString 
     public sealed override bool CanBeFirst => Rule.CanBeFirst;
     public sealed override TokenBase Build(Range range) => BuildImpl(range);
     protected IGrammarRule Rule => _rule ??= Grammar.GetRuleFor<T>();
+
     protected virtual T BuildImpl(Range range)
     {
         var token = new T
