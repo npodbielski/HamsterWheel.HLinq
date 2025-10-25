@@ -1,4 +1,5 @@
 using System.Text.Json;
+using HamsterWheel.HLinq.Data;
 using HamsterWheel.HLinq.Data.Converters;
 
 namespace HamsterWheel.HLinq.UnitTests.Data.Converter;

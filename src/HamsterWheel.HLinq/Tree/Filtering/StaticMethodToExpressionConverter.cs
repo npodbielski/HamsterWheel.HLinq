@@ -30,7 +30,6 @@ public class StaticMethodToExpressionConverter : IStaticMethodToExpressionConver
         }
 
         return methodCallExpression ??
-               throw new Method.Converter.InvalidStaticMethodException(name,
-                   methods.Select(m => m.method.Name).ToArray());
+               throw new Method.InvalidStaticMethodException(name, methods.Select(m => m.method.Name).ToArray());
     }
 }

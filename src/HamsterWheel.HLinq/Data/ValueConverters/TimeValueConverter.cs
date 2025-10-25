@@ -1,6 +1,7 @@
 using System.Globalization;
+using HamsterWheel.HLinq.ValueConverters;
 
-namespace HamsterWheel.HLinq.ValueConverters;
+namespace HamsterWheel.HLinq.Data.ValueConverters;
 
 public sealed class TimeValueConverter : BaseValueConverter<TimeOnly>
 {

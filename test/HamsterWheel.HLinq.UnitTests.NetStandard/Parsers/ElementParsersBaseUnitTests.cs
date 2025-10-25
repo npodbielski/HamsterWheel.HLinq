@@ -87,8 +87,8 @@ public class ElementParserBaseUnitTests
         //assert
         context.Received(1).Push(Arg.Any<ITreeElement>());
         context.Received(1).Push(Arg.Is(root));
-        context.Received(1).RemoveTokensFromStart(Arg.Any<int>());
-        context.Received(1).RemoveTokensFromStart(0);
+        context.Received(1).RemoveStartTokens(Arg.Any<int>());
+        context.Received(1).RemoveStartTokens(0);
     }
 }
 

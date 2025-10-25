@@ -1,8 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.Json;
+using HamsterWheel.HLinq.Data.Converters;
 
-namespace HamsterWheel.HLinq.Data.Converters;
+namespace HamsterWheel.HLinq.Data;
 
 public class DefaultConverter(IFallbackConverter? fallbackSerializer = null) : IDefaultConverter
 {

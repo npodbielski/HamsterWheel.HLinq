@@ -1,6 +1,7 @@
+using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tokens;
 
-namespace HamsterWheel.HLinq.Parsers;
+namespace HamsterWheel.HLinq.Pipeline.Parser;
 
 public sealed class ParsingContext(IHLinqQuery root) : IParsingContext
 {
@@ -19,7 +20,7 @@ public sealed class ParsingContext(IHLinqQuery root) : IParsingContext
         Current = new GrowingElementContext(newElement, []);
     }
 
-    public void GoBackInTheTree() => Current = Parents.Pop();
+    public void GoToParent() => Current = Parents.Pop();
 
-    public void RemoveTokensFromStart(int number) => Tokens = Tokens[number..];
+    public void RemoveStartTokens(int number) => Tokens = Tokens[number..];
 }

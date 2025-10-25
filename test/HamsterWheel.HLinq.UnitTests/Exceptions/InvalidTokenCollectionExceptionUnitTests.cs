@@ -1,5 +1,6 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.Exceptions;
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Ordering;
@@ -85,8 +86,8 @@ public class InvalidTokenCollectionExceptionUnitTests
             $"HLinq query '{hlinqQueryString}' is invalid at character 13: ']'. Was expecting for example: ')'.";
 
         //act
-        var e = new InvalidTokenCollectionException(hlinqQueryString, [ RightSquareBracket.Build(13..14)],
-            [new RightCircleBracket()]);
+        var e = new InvalidTokenCollectionException(hlinqQueryString, [RightSquareBracket.Build(13..14)],
+            [RightCircleBracket.Empty]);
 
         //assert
         e.Message.Should().Be(expected);
@@ -101,7 +102,7 @@ public class InvalidTokenCollectionExceptionUnitTests
             $"HLinq query '{hlinqQueryString}' is invalid and not finished properly. Was expecting for example: ']'.";
 
         //act
-        var e = new InvalidTokenCollectionException(hlinqQueryString, [], [new RightSquareBracket()]);
+        var e = new InvalidTokenCollectionException(hlinqQueryString, [], [RightSquareBracket.Empty]);
 
         //assert
         e.Message.Should().Be(expected);

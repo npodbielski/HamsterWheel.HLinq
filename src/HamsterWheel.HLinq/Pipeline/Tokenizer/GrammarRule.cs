@@ -1,4 +1,6 @@
-namespace HamsterWheel.HLinq.Tokens;
+using HamsterWheel.HLinq.Tokens;
+
+namespace HamsterWheel.HLinq.Pipeline.Tokenizer;
 
 public class GrammarRule<T>(
     bool canBeFirst,

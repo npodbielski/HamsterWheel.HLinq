@@ -1,6 +1,7 @@
 using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 
@@ -8,17 +9,16 @@ namespace HamsterWheel.HLinq.Tree.Filtering;
 
 public sealed class ConditionGroup : TreeBranch, ILogicalOperationGroupBranch
 {
-    public ConditionGroup(LeftCircleBracket bracket) : base([bracket])
+    private ConditionGroup(LeftCircleBracket bracket) : base([bracket])
     {
     }
 
-    public ConditionGroup(ILogicalOperatorToken logical, LeftCircleBracket bracket) :
+    private ConditionGroup(ILogicalOperatorToken logical, LeftCircleBracket bracket) :
         base([(TokenBase)logical, bracket])
     {
     }
 
-    public ILogicalOperatorToken? LogicalOpToken =>
-        Tokens.OfType<ILogicalOperatorToken>().SingleOrDefault();
+    public ILogicalOperatorToken? LogicalOpToken => Tokens.OfType<ILogicalOperatorToken>().SingleOrDefault();
 
     public sealed class Parser : ElementParserBase<ConditionGroup>
     {
@@ -45,7 +45,7 @@ public sealed class ConditionGroup : TreeBranch, ILogicalOperationGroupBranch
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);
-            context.RemoveTokensFromStart(1);
+            context.RemoveStartTokens(1);
         }
     }
 

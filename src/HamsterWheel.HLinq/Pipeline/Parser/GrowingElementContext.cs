@@ -1,3 +1,5 @@
-namespace HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Parsers;
+
+namespace HamsterWheel.HLinq.Pipeline.Parser;
 
 public sealed record GrowingElementContext(ITreeElement Element, List<ITreeElement> Children) : IGrowingElementContext;

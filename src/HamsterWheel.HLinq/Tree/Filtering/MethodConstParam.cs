@@ -1,4 +1,5 @@
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 
@@ -6,14 +7,14 @@ namespace HamsterWheel.HLinq.Tree.Filtering;
 
 public sealed class MethodConstParam(IToken[] tokens) : TreeLeaf(tokens), IMethodParamElement
 {
-    public NameOrValue Value => Tokens.OfType<NameOrValue>().Single();
+    private NameOrValue Value => Tokens.OfType<NameOrValue>().Single();
 
     public string GetValue(string hLinqQuery) => Value.GetValue(hLinqQuery);
 
     public sealed class Parser : ElementParserBase<MethodConstParam>
     {
-        protected override Type[] ValidParents { get; } = [typeof(Method)];
         public override IToken[] ExampleTokens { get; } = [NameOrValue.Empty];
+        protected override Type[] ValidParents { get; } = [typeof(Method)];
 
         protected override MethodConstParam? BuildBranch(IParsingContext context) =>
             context.Tokens switch

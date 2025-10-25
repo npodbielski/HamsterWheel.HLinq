@@ -1,4 +1,5 @@
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Selecting;
 

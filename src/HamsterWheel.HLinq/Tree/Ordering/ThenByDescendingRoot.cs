@@ -3,6 +3,7 @@ using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
@@ -15,6 +16,12 @@ public sealed class ThenByDescendingRoot(IToken[] tokens) : TreeBranch(tokens), 
     public sealed class Parser : ElementParserBase<ThenByDescendingRoot>
     {
         public override IToken[] ExampleTokens { get; } = ThenByDescendingRootExampleTokens;
+
+        private static IToken[] ThenByDescendingRootExampleTokens =>
+        [
+            ThenByDescending.Empty, LeftSquareBracket.Empty, Entity.Empty, Dot.Empty, PropertyName.Empty,
+            RightSquareBracket.Empty
+        ];
 
         protected override ThenByDescendingRoot? BuildBranch(IParsingContext context) =>
             context.Tokens switch
@@ -30,28 +37,16 @@ public sealed class ThenByDescendingRoot(IToken[] tokens) : TreeBranch(tokens), 
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
                 throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
-                    [new RightSquareBracket()]);
+                    [RightSquareBracket.Empty]);
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);
-            context.RemoveTokensFromStart(1);
+            context.RemoveStartTokens(1);
         }
 
         private static ThenByDescendingRoot ThrowOnEmptySelect(IParsingContext context) =>
             throw new InvalidTokenCollectionException(context.SourceQueryString,
                 context.Tokens.Take(3).ToArray(), ThenByDescendingRootExampleTokens);
-
-        private static IToken[] ThenByDescendingRootExampleTokens =>
-        [
-            ThenByDescending.Empty, LeftSquareBracket.Empty, Entity.Empty, Dot.Empty, PropertyName.Empty,
-            RightSquareBracket.Empty
-        ];
-    }
-
-    public sealed class Converter : ElementToExpressionConverter<ThenByDescendingRoot>
-    {
-        protected override Expression Build(IBuilderContext context, ThenByDescendingRoot element) =>
-            context.ToExpression(element.Children[0]);
     }
 
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache)
@@ -68,5 +63,11 @@ public sealed class ThenByDescendingRoot(IToken[] tokens) : TreeBranch(tokens), 
                 (IOrderedQueryable)method.Invoke(null, [context.Queryable, selector.Expression])!,
                 context.CurrentResultType, context.Count);
         }
+    }
+
+    public sealed class Converter : ElementToExpressionConverter<ThenByDescendingRoot>
+    {
+        protected override Expression Build(IBuilderContext context, ThenByDescendingRoot element) =>
+            context.ToExpression(element.Children[0]);
     }
 }

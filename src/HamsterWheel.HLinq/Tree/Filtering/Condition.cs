@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Selecting;
@@ -17,27 +18,30 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
     {
     }
 
+    public ILogicalOperatorToken? LogicalOpToken { get; }
+
     private Condition(ILogicalOperatorToken logicalOpToken) :
         base([(TokenBase)logicalOpToken]) => LogicalOpToken = logicalOpToken;
 
-    public ITreeElement Left => Children[0];
-    public ITreeElement Right => Children[2];
+    private ITreeElement Left => Children[0];
+    private ITreeElement Right => Children[2];
 
-    public ComparisonOperation? Comparison => GetChildOfType<ComparisonOperation>();
+    private ComparisonOperation? Comparison => GetChildOfType<ComparisonOperation>();
 
-    public bool IsComparisonOrEqualityOp => _isComparison ??= Comparison is not null;
-    public bool IsFlagCheck => Children.Length == 1;
+    private bool IsComparisonOrEqualityOp => _isComparison ??= Comparison is not null;
+    private bool IsFlagCheck => Children.Length == 1;
 
-    public bool IsMethod => _isMethod ??= GetMethod() is not null;
+    private bool IsMethod => _isMethod ??= GetMethod() is not null;
 
-    public ILogicalOperatorToken? LogicalOpToken { get; }
-
-    public Method? GetMethod() => GetChildOfType<Method>();
+    private Method? GetMethod() => GetChildOfType<Method>();
 
     public sealed class Parser : ElementParserBase<Condition>
     {
         protected override Type[] ValidParents { get; } = [typeof(WhereRoot), typeof(ConditionGroup)];
         public override IToken[] ExampleTokens => ConditionExampleTokens;
+
+        public static IToken[] ConditionExampleTokens { get; } =
+            [Entity.Empty, Dot.Empty, PropertyName.Empty, Equality.Empty, NameOrValue.Empty];
 
         protected override Condition? BuildBranch(IParsingContext context) =>
             context.Tokens switch
@@ -59,9 +63,6 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
                 [Or.Empty],
                 [MethodName.Empty]
             );
-
-        public static IToken[] ConditionExampleTokens { get; } =
-            [Entity.Empty, Dot.Empty, PropertyName.Empty, Equality.Empty, NameOrValue.Empty];
     }
 
     public sealed class Converter(IConverterFactory converterFactory) : ElementToExpressionConverter<Condition>

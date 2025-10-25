@@ -1,4 +1,6 @@
-namespace HamsterWheel.HLinq.ValueConverters;
+using HamsterWheel.HLinq.ValueConverters;
+
+namespace HamsterWheel.HLinq.Data.ValueConverters;
 
 public sealed class DecimalValueConverter : BaseValueConverter<decimal>
 {

@@ -1,6 +1,7 @@
 using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Paging;
@@ -35,7 +36,7 @@ public sealed partial class SkipRoot(IToken[] tokens) : TreeBranch(tokens), ITre
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);
-            context.RemoveTokensFromStart(1);
+            context.RemoveStartTokens(1);
         }
 
         private static SkipRoot ThrowOnEmpty(IParsingContext context) =>

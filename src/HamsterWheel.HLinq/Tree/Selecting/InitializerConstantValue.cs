@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Selecting;
 using HamsterWheel.HLinq.ValueConverters;
@@ -34,7 +35,7 @@ public sealed class InitializerConstantValue(IToken[] tokens) : TreeLeaf(tokens)
             return Expression.Constant(converter.Convert(element.ValueToken.GetValue(context.HLinqQuery)));
         }
 
-        public class InitializerPropertyTypeNotInitializedException()
+        private class InitializerPropertyTypeNotInitializedException()
             : HLinqQueryException(
                 $"When building expression for {nameof(InitializerConstantValue)} property type of final object must be known. Make sure that expression is built from inside {nameof(PropertyAssignment)}");
     }

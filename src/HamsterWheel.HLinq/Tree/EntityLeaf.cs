@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tree.Filtering;

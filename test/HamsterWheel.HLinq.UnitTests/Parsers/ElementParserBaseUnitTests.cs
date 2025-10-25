@@ -1,5 +1,6 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tree.Ordering;
 using HamsterWheel.HLinq.Tree.Selecting;
@@ -104,8 +105,8 @@ public class ElementParserBaseUnitTests
         sut.TryBuildElement(context);
 
         //assert
-        context.Received(1).RemoveTokensFromStart(Arg.Any<int>());
-        context.Received(1).RemoveTokensFromStart(Arg.Is(2));
+        context.Received(1).RemoveStartTokens(Arg.Any<int>());
+        context.Received(1).RemoveStartTokens(Arg.Is(2));
     }
 }
 

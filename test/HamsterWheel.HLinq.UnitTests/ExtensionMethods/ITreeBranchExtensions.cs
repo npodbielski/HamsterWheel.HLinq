@@ -1,4 +1,5 @@
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
 
 namespace HamsterWheel.HLinq.UnitTests;
 

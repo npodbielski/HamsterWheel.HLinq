@@ -26,7 +26,7 @@ public abstract class ElementParserBase<T> : IElementParser where T : ITreeEleme
         }
 
         context.Push(newElement);
-        context.RemoveTokensFromStart(newElement.Tokens.Length);
+        context.RemoveStartTokens(newElement.Tokens.Length);
 
         return true;
     }

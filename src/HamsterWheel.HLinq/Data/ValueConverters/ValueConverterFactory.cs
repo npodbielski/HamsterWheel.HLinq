@@ -1,6 +1,7 @@
 using HamsterWheel.HLinq.Builders;
+using HamsterWheel.HLinq.ValueConverters;
 
-namespace HamsterWheel.HLinq.ValueConverters;
+namespace HamsterWheel.HLinq.Data.ValueConverters;
 
 public sealed class ValueConverterFactory : IValueConverterFactory
 {

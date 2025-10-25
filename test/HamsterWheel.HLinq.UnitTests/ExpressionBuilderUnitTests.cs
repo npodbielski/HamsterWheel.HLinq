@@ -2,6 +2,8 @@ using System.Globalization;
 using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.PgSql;
+using HamsterWheel.HLinq.Pipeline.Parser;
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
 using HamsterWheel.HLinq.Tokens;
 
 namespace HamsterWheel.HLinq.UnitTests;

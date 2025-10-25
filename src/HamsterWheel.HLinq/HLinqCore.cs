@@ -1,8 +1,12 @@
 using System.Reflection;
 using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.Builders;
+using HamsterWheel.HLinq.Data;
 using HamsterWheel.HLinq.Data.Converters;
+using HamsterWheel.HLinq.Data.ValueConverters;
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.Tokens;

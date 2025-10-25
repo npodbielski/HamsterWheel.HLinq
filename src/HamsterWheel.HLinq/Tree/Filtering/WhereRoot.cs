@@ -2,6 +2,7 @@ using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
@@ -32,12 +33,11 @@ public sealed class WhereRoot(IToken[] tokens) : TreeBranch(tokens), IWhereRoot
         {
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
-                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
-                    [new RightSquareBracket()]);
+                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(), [RightSquareBracket.Empty]);
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);
-            context.RemoveTokensFromStart(1);
+            context.RemoveStartTokens(1);
         }
     }
 

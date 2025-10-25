@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.ValueConverters;
@@ -10,7 +11,7 @@ namespace HamsterWheel.HLinq.Tree.Filtering;
 
 public sealed class ComparisonConstant(NameOrValue value) : TreeLeaf([value])
 {
-    public NameOrValue Value { get; } = value;
+    private NameOrValue Value { get; } = value;
 
     public sealed class Parser : ElementParserBase<ComparisonConstant>
     {

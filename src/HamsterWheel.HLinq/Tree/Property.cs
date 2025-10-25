@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Selecting;
@@ -12,10 +13,10 @@ namespace HamsterWheel.HLinq.Tree;
 
 public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamElement
 {
-    public string GetValue(string hLinqQuery) => string.Join('.', GetPath(hLinqQuery));
-
     public string[] GetPath(string hLinqQuery) =>
         Tokens.OfType<PropertyName>().Select(t => t.GetValue(hLinqQuery)).ToArray();
+
+    public string GetValue(string hLinqQuery) => string.Join('.', GetPath(hLinqQuery));
 
     public sealed class Parser : ElementParserBase<Property>
     {

@@ -1,6 +1,7 @@
 using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Paging;
@@ -8,7 +9,7 @@ using HamsterWheel.HLinq.ValueConverters;
 
 namespace HamsterWheel.HLinq.Tree.Paging;
 
-public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
+public sealed partial class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 {
     public TakeRoot(int maxTakeValueFromSettings) : this([]) => _maxTakeValueFromSettings = maxTakeValueFromSettings;
 
@@ -34,20 +35,15 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
                                   throw new SkipOrTakeConstantTokenMissingException()).Value.GetValue(query);
 
         var takeNumber = (int)converter.Convert(takeNumberAsString)!;
-        if (MaxTake > 0 && takeNumber > MaxTake)
-        {
-            return MaxTake;
-        }
-
-        return takeNumber;
+        return (MaxTake > 0 && takeNumber > MaxTake) ? MaxTake : takeNumber;
     }
-
-    private sealed class SkipOrTakeConstantTokenMissingException()
-        : HLinqQueryException("Take query method needs to have number parameter");
 
     public sealed class Parser : ElementParserBase<TakeRoot>
     {
         public override IToken[] ExampleTokens => TakeRootExampleTokens;
+
+        private static IToken[] TakeRootExampleTokens { get; } =
+            [Take.Empty, LeftSquareBracket.Empty, new TokenExample("10"), RightSquareBracket.Empty];
 
         protected override TakeRoot? BuildBranch(IParsingContext context)
         {
@@ -65,19 +61,16 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
                 throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
-                    [new RightSquareBracket()]);
+                    [RightSquareBracket.Empty]);
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);
-            context.RemoveTokensFromStart(1);
+            context.RemoveStartTokens(1);
         }
 
         private static TakeRoot ThrowOnEmpty(IParsingContext context) =>
             throw new InvalidTokenCollectionException(context.SourceQueryString,
                 context.Tokens.Take(3).ToArray(), TakeRootExampleTokens);
-
-        private static IToken[] TakeRootExampleTokens { get; } =
-            [Take.Empty, LeftSquareBracket.Empty, new TokenExample("10"), RightSquareBracket.Empty];
     }
 
     public sealed class Applier(IValueConverterFactory factory, IMethodsCache methodsCache) : RootApplierBase<TakeRoot>

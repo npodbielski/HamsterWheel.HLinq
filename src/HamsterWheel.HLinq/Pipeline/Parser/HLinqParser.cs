@@ -1,7 +1,8 @@
 using HamsterWheel.HLinq.Exceptions;
+using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tokens;
 
-namespace HamsterWheel.HLinq.Parsers;
+namespace HamsterWheel.HLinq.Pipeline.Parser;
 
 public sealed class HLinqParser(IEnumerable<IElementParser> allParsers) : IHLinqParser
 {
@@ -44,7 +45,7 @@ public sealed class HLinqParser(IEnumerable<IElementParser> allParsers) : IHLinq
                     }
 
                     parser.Finish(context);
-                    context.GoBackInTheTree();
+                    context.GoToParent();
                 }
                 else
                 {

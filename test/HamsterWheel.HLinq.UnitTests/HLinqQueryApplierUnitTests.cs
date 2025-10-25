@@ -1,5 +1,7 @@
 using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.Tokens;

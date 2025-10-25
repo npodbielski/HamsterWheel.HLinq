@@ -1,6 +1,7 @@
+using HamsterWheel.HLinq.Parsers;
 using HamsterWheel.HLinq.Tokens;
 
-namespace HamsterWheel.HLinq.Parsers;
+namespace HamsterWheel.HLinq.Pipeline.Parser;
 
 public class TreeLeaf(IToken[] tokens) : ITreeElement
 {

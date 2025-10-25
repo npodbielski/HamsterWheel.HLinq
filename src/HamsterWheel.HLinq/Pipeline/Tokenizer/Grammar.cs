@@ -1,11 +1,12 @@
 using HamsterWheel.HLinq.Exceptions;
+using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Ordering;
 using HamsterWheel.HLinq.Tokens.Paging;
 using HamsterWheel.HLinq.Tokens.Selecting;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace HamsterWheel.HLinq.Tokens;
+namespace HamsterWheel.HLinq.Pipeline.Tokenizer;
 
 public class Grammar(IServiceProvider serviceProvider) : IGrammar
 {

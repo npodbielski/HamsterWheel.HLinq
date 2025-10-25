@@ -1,4 +1,6 @@
 using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Selecting;
@@ -19,12 +21,12 @@ public class HLinqParserUnitTests
         const string query = "select[x.name]";
         IToken[] tokens =
         [
-            new Select(),
-            new LeftSquareBracket(),
-            new Entity(),
-            new Dot(),
-            new PropertyName(),
-            new RightSquareBracket()
+            Select.Empty,
+            LeftSquareBracket.Empty,
+            Entity.Empty,
+            Dot.Empty,
+            PropertyName.Empty,
+            RightSquareBracket.Empty
         ];
 
         var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
@@ -44,12 +46,12 @@ public class HLinqParserUnitTests
         const string query = "select[Directory=Core]";
         IToken[] tokens =
         [
-            new Select(),
-            new LeftSquareBracket(),
-            new NameOrValue(),
-            new Assignment(),
-            new NameOrValue(),
-            new RightSquareBracket()
+            Select.Empty,
+            LeftSquareBracket.Empty,
+            NameOrValue.Empty,
+            Assignment.Empty,
+            NameOrValue.Empty,
+            RightSquareBracket.Empty
         ];
 
         var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
@@ -70,16 +72,16 @@ public class HLinqParserUnitTests
         const string query = "select[x.Id,Directory=Core]";
         IToken[] tokens =
         [
-            new Select(),
-            new LeftSquareBracket(),
-            new Entity(),
-            new Dot(),
-            new PropertyName(),
-            new Comma(),
-            new NameOrValue(),
-            new Assignment(),
-            new NameOrValue(),
-            new RightSquareBracket()
+            Select.Empty,
+            LeftSquareBracket.Empty,
+            Entity.Empty,
+            Dot.Empty,
+            PropertyName.Empty,
+            Comma.Empty,
+            NameOrValue.Empty,
+            Assignment.Empty,
+            NameOrValue.Empty,
+            RightSquareBracket.Empty
         ];
 
         var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
@@ -106,10 +108,10 @@ public class HLinqParserUnitTests
         const string query = "where[x.Name.Contains(test)]";
         IToken[] tokens =
         [
-            new Where(), new LeftSquareBracket(), new Entity(),
-            new Dot(), new PropertyName(), new Dot(), new MethodName(),
-            new LeftCircleBracket(), new NameOrValue(), new RightCircleBracket(),
-            new RightSquareBracket()
+            Where.Empty, LeftSquareBracket.Empty, Entity.Empty,
+            Dot.Empty, PropertyName.Empty, Dot.Empty, MethodName.Empty,
+            LeftCircleBracket.Empty, NameOrValue.Empty, RightCircleBracket.Empty,
+            RightSquareBracket.Empty
         ];
         var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
 
@@ -133,17 +135,17 @@ public class HLinqParserUnitTests
         const string query = "where[ilike(x.Name, test)]";
         IToken[] tokens =
         [
-            new Where(),
-            new LeftSquareBracket(),
-            new MethodName(),
-            new LeftCircleBracket(),
-            new Entity(),
-            new Dot(),
-            new PropertyName(),
-            new Comma(),
-            new NameOrValue(),
-            new RightCircleBracket(),
-            new RightSquareBracket()
+            Where.Empty,
+            LeftSquareBracket.Empty,
+            MethodName.Empty,
+            LeftCircleBracket.Empty,
+            Entity.Empty,
+            Dot.Empty,
+            PropertyName.Empty,
+            Comma.Empty,
+            NameOrValue.Empty,
+            RightCircleBracket.Empty,
+            RightSquareBracket.Empty
         ];
         var tree =_sut.TestParseEntryPoint<DummyEntity>(query, tokens);
         tree.Should().HaveStructureOf(query, [

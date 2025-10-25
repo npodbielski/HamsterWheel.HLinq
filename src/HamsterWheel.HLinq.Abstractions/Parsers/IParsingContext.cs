@@ -12,6 +12,6 @@ public interface IParsingContext
     List<ITreeElement> Children { get; }
     string SourceQueryString { get; }
     public void Push(ITreeElement newElement);
-    void GoBackInTheTree();
-    public void RemoveTokensFromStart(int number);
+    void GoToParent();
+    public void RemoveStartTokens(int number);
 }

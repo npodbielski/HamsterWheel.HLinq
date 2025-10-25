@@ -1,10 +1,11 @@
 using HamsterWheel.HLinq.Exceptions;
+using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Ordering;
 using HamsterWheel.HLinq.Tokens.Paging;
 using HamsterWheel.HLinq.Tokens.Selecting;
 
-namespace HamsterWheel.HLinq.Tokens;
+namespace HamsterWheel.HLinq.Pipeline.Tokenizer;
 
 using CurrentTokenPossibility = (IHLinqTokenPossibility token, int possibility);
 
@@ -67,13 +68,13 @@ public sealed class HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPoss
 
             if (currentPossibleTokens.Length == 0)
             {
-                tokens.Add(new Unknown());
+                tokens.Add(Unknown.Empty);
             }
 
             if (tokens.Count != 0 && tokens[^1] is Unknown)
             {
                 throw new UnknownTokenException(hLinqQuery,
-                    [new Where(), new Select(), new Skip(), new Take(), new OrderBy(), new OrderByDescending()]);
+                    [Where.Empty, Select.Empty, Skip.Empty, Take.Empty, OrderBy.Empty, OrderByDescending.Empty]);
             }
         }
 

@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using HamsterWheel.HLinq.Data;
 using HamsterWheel.HLinq.Data.Converters;
 
 namespace HamsterWheel.HLinq.Client.RootBuilders;

@@ -10,7 +10,8 @@ public class PropertyMethodToExpressionConverter : IPropertyMethodToExpressionCo
     public Expression BuildInstance(IBuilderContext context, IMethod method,
         IParametersConverter parametersConverter)
     {
-        var methodCallContext = context as IMethodCallConditionBuilderContext ?? throw new PropertyMethodCallNeedsToHaveSourceExpressionException();
+        var methodCallContext = context as IMethodCallConditionBuilderContext ??
+                                throw new PropertyMethodCallNeedsToHaveSourceExpressionException();
         var expression = methodCallContext.MethodSource;
         var propType = methodCallContext.MethodSource!.Type;
         var name = method.GetName(context.HLinqQuery);
@@ -37,9 +38,9 @@ public class PropertyMethodToExpressionConverter : IPropertyMethodToExpressionCo
             }
         }
 
-        return methodCallExpression ??
-               throw new Method.Converter.InvalidMethodException(propType, methodCallContext.MethodSource.Member.Name, name,
-                   methods.Select(m => m.Name).ToArray());
+        return methodCallExpression ?? throw new Method.InvalidMethodException(propType,
+            methodCallContext.MethodSource.Member.Name, name,
+            methods.Select(m => m.Name).ToArray());
     }
 
     private sealed class PropertyMethodCallNeedsToHaveSourceExpressionException()
