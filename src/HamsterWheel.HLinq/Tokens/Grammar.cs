@@ -73,7 +73,7 @@ public class Grammar(IServiceProvider serviceProvider) : IGrammar
     ];
 
     public char[] GetDelimiters(Type type) =>
-        Rules.Where(r => r.CanBeAfter.Length > 0 && r.CanBeAfter.Contains(type))
+        Rules.Where(r => r.AllowedPreviousTokens.Length > 0 && r.AllowedPreviousTokens.Contains(type))
             .Select(r => TokenPossibilities.First(tp => tp.ForType == r.ForType).Keyword).Where(k => k is not null)
             .Cast<string>()
             .Select(k => k[0]).ToArray();

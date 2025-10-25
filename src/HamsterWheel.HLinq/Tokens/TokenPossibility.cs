@@ -1,6 +1,6 @@
 namespace HamsterWheel.HLinq.Tokens;
 
-public abstract class TokenPossibility(IGrammar grammar, string? keyword = null, bool haveDelimiters = false)
+public abstract class TokenPossibility(IGrammar grammar, string? keyword = null)
     : IHLinqTokenPossibility
 {
     private bool _delimitersFetched;
@@ -10,7 +10,7 @@ public abstract class TokenPossibility(IGrammar grammar, string? keyword = null,
     {
         get
         {
-            if (!haveDelimiters)
+            if (Keyword is not null)
             {
                 return null;
             }
@@ -92,8 +92,8 @@ public abstract class TokenPossibility(IGrammar grammar, string? keyword = null,
     protected virtual bool NextIsAllowedWhenKeywordMatch(char? next) => true;
 }
 
-public abstract class TokenPossibility<T>(IGrammar grammar, string? tokenString = null, bool haveDelimiters = false)
-    : TokenPossibility(grammar, tokenString, haveDelimiters) where T : TokenBase, new()
+public abstract class TokenPossibility<T>(IGrammar grammar, string? tokenString = null)
+    : TokenPossibility(grammar, tokenString) where T : TokenBase, new()
 {
     private IGrammarRule? _rule;
     public override Type ForType => typeof(T);

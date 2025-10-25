@@ -2,8 +2,7 @@ namespace HamsterWheel.HLinq.Tokens;
 
 public sealed class NameOrValue : TokenBase
 {
-    public sealed class Possibility(IGrammar grammar)
-        : TokenPossibility<NameOrValue>(grammar, haveDelimiters: true)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<NameOrValue>(grammar)
     {
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
             Rule.PreviousTokensMatch(previousTokens);
