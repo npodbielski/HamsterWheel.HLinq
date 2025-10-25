@@ -13,7 +13,7 @@ public class InvalidTokenCollectionException(
 {
     private static string ShowInvalidPart(IToken[] actual, string queryString) =>
         actual.Length > 0
-            ? $"at character {actual.First().Range.Start}: '{string.Join("", actual.Select(a => a.GetValue(queryString)))}'"
+            ? $"at character {actual.First().Range.Start}: '{string.Join("", actual.Take(5).Select(a => a.GetValue(queryString)))}'"
             : "and not finished properly";
 
     private static string ShowAlternatives(IToken[] expected, params IToken[][] orExpected)

@@ -44,7 +44,7 @@ public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoo
         {
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
-                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
+                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
                     [RightSquareBracket.Empty]);
             }
 
@@ -53,8 +53,8 @@ public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoo
         }
 
         private static SelectRoot ThrowOnEmptySelect(IParsingContext context) =>
-            throw new InvalidTokenCollectionException(context.SourceQueryString,
-                context.Tokens.Take(3).ToArray(), SelectRootExampleTokens);
+            throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
+                SelectRootExampleTokens);
     }
 
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache) : RootApplierBase<ISelectRoot>

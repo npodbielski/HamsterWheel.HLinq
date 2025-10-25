@@ -59,7 +59,7 @@ public sealed partial class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITre
         {
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
-                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
+                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
                     [RightSquareBracket.Empty]);
             }
 
@@ -68,8 +68,7 @@ public sealed partial class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITre
         }
 
         private static TakeRoot ThrowOnEmpty(IParsingContext context) =>
-            throw new InvalidTokenCollectionException(context.SourceQueryString,
-                context.Tokens.Take(3).ToArray(), TakeRootExampleTokens);
+            throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens, TakeRootExampleTokens);
     }
 
     public sealed class Applier(IValueConverterFactory factory, IMethodsCache methodsCache) : RootApplierBase<TakeRoot>

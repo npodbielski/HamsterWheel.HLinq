@@ -35,7 +35,7 @@ public sealed class ThenByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
         {
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
-                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
+                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
                     [RightSquareBracket.Empty]);
             }
 
@@ -44,8 +44,8 @@ public sealed class ThenByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
         }
 
         private static ThenByRoot ThrowOnEmptySelect(IParsingContext context) =>
-            throw new InvalidTokenCollectionException(context.SourceQueryString,
-                context.Tokens.Take(3).ToArray(), ThenByRootExampleTokens);
+            throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
+                ThenByRootExampleTokens);
     }
 
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache) : RootApplierBase<ThenByRoot>

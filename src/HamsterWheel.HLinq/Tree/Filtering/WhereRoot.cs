@@ -32,7 +32,7 @@ public sealed class WhereRoot(IToken[] tokens) : TreeBranch(tokens), IWhereRoot
         {
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
-                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(), [RightSquareBracket.Empty]);
+                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens, [RightSquareBracket.Empty]);
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);

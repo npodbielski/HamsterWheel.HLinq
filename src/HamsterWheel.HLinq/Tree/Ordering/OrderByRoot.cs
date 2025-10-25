@@ -35,7 +35,7 @@ public sealed class OrderByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
         {
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
-                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
+                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
                     [RightSquareBracket.Empty]);
             }
 
@@ -44,8 +44,8 @@ public sealed class OrderByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
         }
 
         private static OrderByRoot ThrowOnEmpty(IParsingContext context) =>
-            throw new InvalidTokenCollectionException(context.SourceQueryString,
-                context.Tokens.Take(3).ToArray(), OrderByRootExampleTokens);
+            throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
+                OrderByRootExampleTokens);
     }
 
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache) : RootApplierBase<OrderByRoot>

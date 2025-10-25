@@ -56,7 +56,7 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
 
         private static Condition ThrowOnReverseComparison(IParsingContext context) =>
             throw new InvalidTokenCollectionException(context.SourceQueryString,
-                context.Tokens.Take(3).ToArray(),
+                context.Tokens,
                 ConditionExampleTokens,
                 [And.Empty],
                 [Or.Empty],

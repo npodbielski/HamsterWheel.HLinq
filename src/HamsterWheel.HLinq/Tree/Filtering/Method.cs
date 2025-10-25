@@ -34,7 +34,7 @@ public sealed partial class Method(IToken[] tokens) : TreeBranch(tokens), IMetho
         {
             if (context.Tokens is not [RightCircleBracket bracket, ..])
             {
-                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
+                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
                     [RightCircleBracket.Empty]);
             }
 

@@ -35,7 +35,7 @@ public sealed class ThenByDescendingRoot(IToken[] tokens) : TreeBranch(tokens), 
         {
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
-                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
+                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
                     [RightSquareBracket.Empty]);
             }
 
@@ -44,8 +44,8 @@ public sealed class ThenByDescendingRoot(IToken[] tokens) : TreeBranch(tokens), 
         }
 
         private static ThenByDescendingRoot ThrowOnEmptySelect(IParsingContext context) =>
-            throw new InvalidTokenCollectionException(context.SourceQueryString,
-                context.Tokens.Take(3).ToArray(), ThenByDescendingRootExampleTokens);
+            throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
+                ThenByDescendingRootExampleTokens);
     }
 
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache)
