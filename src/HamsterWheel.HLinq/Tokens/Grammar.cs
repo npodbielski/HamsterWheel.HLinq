@@ -76,7 +76,9 @@ public class Grammar(IServiceProvider serviceProvider) : IGrammar
         Rules.Where(r => r.AllowedPreviousTokens.Length > 0 && r.AllowedPreviousTokens.Contains(type))
             .Select(r => TokenPossibilities.First(tp => tp.ForType == r.ForType).Keyword).Where(k => k is not null)
             .Cast<string>()
-            .Select(k => k[0]).ToArray();
+            .Select(k => k[0])
+            .Distinct()
+            .ToArray();
 
     public IGrammarRule GetRuleFor<TToken>() => Rules.FirstOrDefault(t => t.IsFor<TToken>()) ??
                                                 throw new UnknownTokenTypeException<TToken>();
