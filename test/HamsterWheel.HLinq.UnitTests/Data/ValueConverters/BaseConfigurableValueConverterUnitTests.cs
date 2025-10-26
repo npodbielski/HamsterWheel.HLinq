@@ -2,7 +2,7 @@ using FluentAssertions;
 using HamsterWheel.HLinq.Data.ValueConverters;
 using HamsterWheel.HLinq.Exceptions;
 
-namespace HamsterWheel.HLinq.UnitTests.Data.ValueConverters;
+namespace HamsterWheel.HLinq.UnitTests.Data;
 
 public class BaseConfigurableValueConverterUnitTests
 {

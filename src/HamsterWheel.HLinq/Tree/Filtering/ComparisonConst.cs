@@ -8,30 +8,30 @@ using HamsterWheel.HLinq.Tokens.Filtering;
 
 namespace HamsterWheel.HLinq.Tree.Filtering;
 
-public sealed class ComparisonConstant(NameOrValue value) : TreeLeaf([value])
+public sealed class ComparisonConst(NameOrValue value) : TreeLeaf([value])
 {
     private NameOrValue Value { get; } = value;
 
-    public sealed class Parser : ElementParserBase<ComparisonConstant>
+    public sealed class Parser : ElementParserBase<ComparisonConst>
     {
         protected override Type[] ValidParents { get; } = [typeof(Condition)];
         public override IToken[] ExampleTokens { get; } = [NameOrValue.Empty];
 
-        protected override ComparisonConstant? BuildBranch(IParsingContext context)
+        protected override ComparisonConst? BuildBranch(IParsingContext context)
         {
             return context.Tokens switch
             {
-                [NameOrValue value, IComparisonToken, ..] => new ComparisonConstant(value),
+                [NameOrValue value, IComparisonToken, ..] => new ComparisonConst(value),
                 [NameOrValue value, ILogicalOperatorToken or RightCircleBracket or RightSquareBracket, ..]
-                    => new ComparisonConstant(value),
+                    => new ComparisonConst(value),
                 _ => null
             };
         }
     }
 
-    public sealed class Converter(IValueConverterFactory factory) : ElementToExpressionConverter<ComparisonConstant>
+    public sealed class Converter(IValueConverterFactory factory) : ElementToExpressionConverter<ComparisonConst>
     {
-        protected override Expression Build(IBuilderContext context, ComparisonConstant element)
+        protected override Expression Build(IBuilderContext context, ComparisonConst element)
         {
             var propType = (context as IArithmeticComparisonConditionBuilderContext)?.ComparisonType ??
                            throw new ElementToExpressionConverterPropertyTypeNullException();

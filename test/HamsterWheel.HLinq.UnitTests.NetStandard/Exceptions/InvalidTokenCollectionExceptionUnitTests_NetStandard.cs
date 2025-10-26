@@ -4,6 +4,7 @@ using HamsterWheel.HLinq.Tokens;
 
 namespace HamsterWheel.HLinq.UnitTests.Exceptions;
 
+// ReSharper disable once InconsistentNaming
 public class InvalidTokenCollectionExceptionUnitTests_NetStandard
 {
     [Fact]

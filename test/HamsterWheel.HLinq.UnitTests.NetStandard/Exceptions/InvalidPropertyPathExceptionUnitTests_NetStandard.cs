@@ -3,6 +3,7 @@ using HamsterWheel.HLinq.Exceptions;
 
 namespace HamsterWheel.HLinq.UnitTests.Exceptions;
 
+// ReSharper disable once InconsistentNaming
 public class InvalidPropertyPathExceptionUnitTests_NetStandard
 {
     [Fact]
@@ -18,6 +19,6 @@ public class InvalidPropertyPathExceptionUnitTests_NetStandard
         //assert
         actual.Message.Should().Be(expected);
     }
-    
-    public record Person(string Name);
+
+    private record Person(string Name);
 }

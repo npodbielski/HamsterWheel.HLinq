@@ -6,7 +6,7 @@ using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tree;
 using HamsterWheel.HLinq.Tree.Selecting;
 
-namespace HamsterWheel.HLinq.UnitTests.Appliers;
+namespace HamsterWheel.HLinq.UnitTests.Pipeline.Applier;
 
 // ReSharper disable once InconsistentNaming
 public class RootApplierBaseUnitTests_NetStandard

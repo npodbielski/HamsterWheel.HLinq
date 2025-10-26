@@ -41,7 +41,7 @@ public class ExpectedTreeElement(
 
     public static ExpectedTreeElement Property(params ExpectedToken[] tokens) => new(typeof(Property), tokens: tokens);
     public static ExpectedTreeElement ComparisonOperation(ExpectedToken token) => new(typeof(ComparisonOperation), tokens: [token]);
-    public static ExpectedTreeElement ComparisonConstant(ExpectedToken token) => new(typeof(ComparisonConstant), tokens: [token]);
+    public static ExpectedTreeElement ComparisonConstant(ExpectedToken token) => new(typeof(ComparisonConst), tokens: [token]);
 
     public static ExpectedTreeElement MethodElement(params ExpectedTreeElement[] children) =>
         new(typeof(Method), children);

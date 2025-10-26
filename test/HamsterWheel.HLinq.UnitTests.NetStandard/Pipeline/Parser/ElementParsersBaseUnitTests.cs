@@ -3,9 +3,10 @@ using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 using NSubstitute;
 
-namespace HamsterWheel.HLinq.UnitTests.Parsers;
+namespace HamsterWheel.HLinq.UnitTests.Pipeline.Parser;
 
-public class ElementParserBaseUnitTests
+// ReSharper disable once InconsistentNaming
+public class ElementParserBaseUnitTests_NetStandard
 {
     [Fact]
     public void ChildOf_WhenCalled_ThenReturnsFalse()
