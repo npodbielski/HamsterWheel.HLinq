@@ -1,4 +1,4 @@
-using HamsterWheel.HLinq.Data.ValueConverters;
+using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Pipeline.Parser;
@@ -47,16 +47,14 @@ public sealed partial class SkipRoot(IToken[] tokens) : TreeBranch(tokens), ITre
         ];
     }
 
-    public sealed class Applier(IValueConverterFactory factory, IMethodsCache methodsCache) : RootApplierBase<SkipRoot>
+    public sealed class Applier(IDefaultConverter converter, IMethodsCache methodsCache) : RootApplierBase<SkipRoot>
     {
         protected override QueryableContext ApplyImpl(IQueryableContext context, SkipRoot skip,
             string hLinqQuery)
         {
-            var converter = factory.GetConverterFor(typeof(int));
-
             var numberAsString = skip.GetSkipNumber(hLinqQuery);
 
-            var skipNumber = (int)converter.Convert(numberAsString)!;
+            var skipNumber = converter.ConvertTo<int?>(numberAsString); 
 
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Skip),
                 typeParams: context.CurrentResultType);

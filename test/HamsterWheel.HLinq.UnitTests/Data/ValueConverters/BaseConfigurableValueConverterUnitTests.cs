@@ -1,8 +1,8 @@
 using FluentAssertions;
-using HamsterWheel.HLinq.Data.ValueConverters;
+using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Exceptions;
 
-namespace HamsterWheel.HLinq.UnitTests.Data;
+namespace HamsterWheel.HLinq.UnitTests.Data.ValueConverters;
 
 public class BaseConfigurableValueConverterUnitTests
 {
@@ -21,5 +21,6 @@ public class BaseConfigurableValueConverterUnitTests
 
 public class TestConfigurableValueConverter : BaseConfigurableValueConverter
 {
-    public override bool CanConvert(Type destination) => false;
+    public override int Priority => 100000;
+    public override bool CanConvert(object? value, Type destination) => false;
 }

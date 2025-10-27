@@ -1,5 +1,7 @@
 using System.Text.Json;
 using FluentAssertions;
+using HamsterWheel.HLinq.Data;
+using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Tree.Filtering;
 using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
 
@@ -13,6 +15,18 @@ partial class DefaultConverterUnitTests
     [InlineData("value", "value")]
     [InlineData("1", "1")]
     public void ConvertTo_WhenCalledWithTheSameType_ThenReturnsCorrectValue(string stringValue, string expected)
+    {
+        //act
+        var actual = _sut.ConvertTo(typeof(string), stringValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("null", null)]
+    [InlineData("\"null\"", "null")]
+    public void ConvertTo_WhenTargetIsString_ThenReturnsCorrectValue(string stringValue, string? expected)
     {
         //act
         var actual = _sut.ConvertTo(typeof(string), stringValue);
@@ -391,5 +405,44 @@ partial class DefaultConverterUnitTests
 
         //assert
         actual.Should().Be(dateTime.ToString("O"));
+    }
+
+    [Fact]
+    public void Convert_WhenDoubleQuoted_ThenCanConvert()
+    {
+        //arrange
+        var guid = Guid.NewGuid();
+
+        //act
+        var actual = _sut.ConvertTo(typeof(Guid), guid.ToString().Quote());
+
+        //assert
+        actual.Should().Be(guid);
+    }
+
+    [Fact]
+    public void Convert_WhenUnquoted_ThenCanConvert()
+    {
+        //arrange
+        var guid = Guid.NewGuid();
+
+        //act
+        var actual = _sut.ConvertTo(typeof(Guid), guid.ToString());
+
+        //assert
+        actual.Should().Be(guid);
+    }
+
+    [Fact]
+    public void ConvertTo_WhenNullAsGuid_ThenCanConvertToNull()
+    {
+        //arrange
+        Guid? guid = null;
+
+        //act
+        var actual = _sut.ConvertTo(typeof(Guid?),new NullKeyword().Null);
+
+        //assert
+        actual.Should().Be(guid);
     }
 }

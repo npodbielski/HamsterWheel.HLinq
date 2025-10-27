@@ -48,14 +48,9 @@ public partial class HLinqQuery<T> : IHLinqQuery
             throw new HLinqQueryQueryApplierNullException();
         }
 
-        if (!Children.Any(t => t is TakeRoot or CountRoot) && Options?.HttpDefaultMaxTakeRecords is not null)
+        if (Children.All(t => t is not CountRoot) && Children.LastOrDefault() is not TakeRoot)
         {
-            Children = [..Children, new TakeRoot(Options.HttpDefaultMaxTakeRecords)];
-        }
-
-        if (Children.All(t => t is not CountRoot) && Children.LastOrDefault() is TakeRoot take)
-        {
-            take.MaxTake = Options?.HttpDefaultMaxTakeRecords ?? HLinqOptions.DefaultMaxTakeRecords;
+            Children = [..Children, new TakeRoot()];
         }
 
         return QueryApplier?.Apply(queryable, this, token);
@@ -103,7 +98,8 @@ public partial class HLinqQuery<T> : IHLinqQuery
         return hlinqQuery;
     }
 
-    public class HLinqQueryApplier(IElementApplierFactory applierFactory, IMethodsCache methodsCache) : IHLinqQueryApplier
+    public class HLinqQueryApplier(IElementApplierFactory applierFactory, IMethodsCache methodsCache)
+        : IHLinqQueryApplier
     {
         public object Apply<T1>(IQueryable<T1> queryable, IHLinqQuery hLinqQuery,
             CancellationToken cancellationToken = default) =>

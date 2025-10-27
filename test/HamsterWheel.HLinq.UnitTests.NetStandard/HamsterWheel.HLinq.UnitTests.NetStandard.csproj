@@ -19,9 +19,6 @@
       <Compile Include="..\HamsterWheel.HLinq.UnitTests\Data\ValueConverters\BaseConfigurableValueConverterUnitTests.cs">
         <Link>Data\ValueConverters\BaseConfigurableValueConverterUnitTests.cs</Link>
       </Compile>
-      <Compile Include="..\HamsterWheel.HLinq.UnitTests\Data\ValueConverters\BaseValueConverterUnitTests.cs">
-        <Link>Data\ValueConverters\BaseValueConverterUnitTests.cs</Link>
-      </Compile>
     </ItemGroup>
 
 </Project>

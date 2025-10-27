@@ -1,4 +1,4 @@
-using HamsterWheel.HLinq.Data.ValueConverters;
+using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Pipeline.Parser;
@@ -10,31 +10,14 @@ namespace HamsterWheel.HLinq.Tree.Paging;
 
 public sealed partial class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 {
-    public TakeRoot(int maxTakeValueFromSettings) : this([]) => _maxTakeValueFromSettings = maxTakeValueFromSettings;
-
-    /// <summary>
-    /// If nothing in HTTP query was specified to limit number of records to fetch, it could potentially cause HLinq to query and return entire database data.
-    /// To limit this default   
-    /// </summary>
-    private readonly int? _maxTakeValueFromSettings;
-
-    /// <summary>
-    /// To make sure that silly or malicious user will not overload the system by fetching big quantities of data limit max take to this value. If user provide bigger value then <see cref="MaxTake"/> is used instead.
-    /// </summary>
-    public int MaxTake { get; set; }
-
-    private int GetTakeNumber(string query, IValueConverter converter)
+    public TakeRoot() : this([])
     {
-        if (_maxTakeValueFromSettings is not null)
-        {
-            return _maxTakeValueFromSettings.Value;
-        }
+    }
 
-        var takeNumberAsString = (GetChildOfType<SkipOrTakeConstant>() ??
-                                  throw new SkipOrTakeConstantTokenMissingException()).Value.GetValue(query);
-
-        var takeNumber = (int)converter.Convert(takeNumberAsString)!;
-        return (MaxTake > 0 && takeNumber > MaxTake) ? MaxTake : takeNumber;
+    private string GetTakeNumber(string query)
+    {
+        var takeNumberAsString = GetChildOfType<SkipOrTakeConstant>();
+        return takeNumberAsString is not null ? takeNumberAsString.Value.GetValue(query) : "";
     }
 
     public sealed class Parser : ElementParserBase<TakeRoot>
@@ -71,21 +54,25 @@ public sealed partial class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITre
             throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens, TakeRootExampleTokens);
     }
 
-    public sealed class Applier(IValueConverterFactory factory, IMethodsCache methodsCache) : RootApplierBase<TakeRoot>
+    public sealed class Applier(IDefaultConverter converter, IMethodsCache methodsCache, IHLinqOptions options)
+        : RootApplierBase<TakeRoot>
     {
+        private int MaxTake => options.HttpDefaultMaxTakeRecords;
+
         protected override QueryableContext ApplyImpl(IQueryableContext context, TakeRoot take,
             string hLinqQuery)
         {
             var type = typeof(int);
-            var converter = factory.GetConverterFor(type);
 
-            var takeNumber = take.GetTakeNumber(hLinqQuery, converter);
+            var takeString = take.GetTakeNumber(hLinqQuery);
+            var takeParam = converter.ConvertTo<int?>(takeString) ?? MaxTake;
+            takeParam = takeParam > MaxTake ? MaxTake : takeParam;
 
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Take),
                 infos => infos[1].ParameterType == type,
                 context.CurrentResultType);
 
-            return new QueryableContext((IQueryable)method.Invoke(null, [context.Queryable, takeNumber])!,
+            return new QueryableContext((IQueryable)method.Invoke(null, [context.Queryable, takeParam])!,
                 context.CurrentResultType, context.Count);
         }
     }

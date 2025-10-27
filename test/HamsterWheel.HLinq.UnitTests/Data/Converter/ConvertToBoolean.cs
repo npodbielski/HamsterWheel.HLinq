@@ -11,6 +11,7 @@ partial class DefaultConverterUnitTests
     [InlineData("2", true)]
     [InlineData("t", true)]
     [InlineData("true", true)]
+    [InlineData("True", true)]
     [InlineData("yes", true)]
     [InlineData("a", true)]
     [InlineData("b", true)]
@@ -18,6 +19,7 @@ partial class DefaultConverterUnitTests
     [InlineData("0", false)]
     [InlineData("f", false)]
     [InlineData("false", false)]
+    [InlineData("False", false)]
     [InlineData("\0", false)]
     [InlineData("no", false)]
     [InlineData(" ", false)]
@@ -29,7 +31,7 @@ partial class DefaultConverterUnitTests
     public void ConvertToBoolean_WhenCalledWithString_ThenReturnsCorrectValue(string? stringValue, bool expected)
     {
         //act
-        var actual = _sut.ConvertToBoolean(stringValue);
+        var actual = _sut.ConvertToBoolean(stringValue, false);
 
         //assert
         actual.Should().Be(expected);
@@ -41,7 +43,7 @@ partial class DefaultConverterUnitTests
     public void ConvertToBoolean_WhenCalledWithBool_ThenReturnsCorrectValue(bool value, bool expected)
     {
         //act
-        var actual = _sut.ConvertToBoolean(value);
+        var actual = _sut.ConvertToBoolean(value, false);
 
         //assert
         actual.Should().Be(expected);
@@ -63,7 +65,7 @@ partial class DefaultConverterUnitTests
     public void ConvertToBoolean_WhenCalledWithChar_ThenReturnsCorrectValue(char value, bool expected)
     {
         //act
-        var actual = _sut.ConvertToBoolean(value);
+        var actual = _sut.ConvertToBoolean(value, false);
 
         //assert
         actual.Should().Be(expected);
@@ -74,7 +76,7 @@ partial class DefaultConverterUnitTests
     public void ConvertToBoolean_WhenCalledWithDateTime_ThenReturnsCorrectValue(DateTime value, bool expected)
     {
         //act
-        var actual = _sut.ConvertToBoolean(value);
+        var actual = _sut.ConvertToBoolean(value, false);
 
         //assert
         actual.Should().Be(expected);
@@ -94,7 +96,7 @@ partial class DefaultConverterUnitTests
         bool expected)
     {
         //act
-        var actual = _sut.ConvertToBoolean(value);
+        var actual = _sut.ConvertToBoolean(value, false);
 
         //assert
         actual.Should().Be(expected);
@@ -113,7 +115,7 @@ partial class DefaultConverterUnitTests
     public void ConvertToBoolean_WhenCalledWithTimeOnly_ThenReturnsCorrectValue(TimeOnly value, bool expected)
     {
         //act
-        var actual = _sut.ConvertToBoolean(value);
+        var actual = _sut.ConvertToBoolean(value, false);
 
         //assert
         actual.Should().Be(expected);
@@ -131,7 +133,7 @@ partial class DefaultConverterUnitTests
     public void ConvertToBoolean_WhenCalledWithCustomTYpe_ThenReturnsCorrectValue()
     {
         //act
-        var actual = _sut.ConvertToBoolean(new DummyEntity("test"));
+        var actual = _sut.ConvertToBoolean(new DummyEntity("test"), false);
 
         //assert
         actual.Should().BeTrue();

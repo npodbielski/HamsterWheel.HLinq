@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using HamsterWheel.HLinq.Data.ValueConverters;
+using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
@@ -23,15 +23,15 @@ public sealed class InitializerConstantValue(IToken[] tokens) : TreeLeaf(tokens)
                 : null;
     }
 
-    public sealed class Converter(IValueConverterFactory factory)
+    public sealed class Converter(IDefaultConverter defaultConverter)
         : ElementToExpressionConverter<InitializerConstantValue>
     {
         protected override Expression Build(IBuilderContext context, InitializerConstantValue element)
         {
             var propertyType = (context as InitializerPropertyAssignmentBuilderContext)?.InitializerPropertyType ??
                                throw new InitializerPropertyTypeNotInitializedException();
-            var converter = factory.GetConverterFor(propertyType);
-            return Expression.Constant(converter.Convert(element.ValueToken.GetValue(context.HLinqQuery)));
+            var value = element.ValueToken.GetValue(context.HLinqQuery);
+            return Expression.Constant(defaultConverter.ConvertTo(propertyType, value));
         }
 
         private class InitializerPropertyTypeNotInitializedException()

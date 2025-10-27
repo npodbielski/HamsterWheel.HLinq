@@ -102,7 +102,7 @@ public class TestElementParser(DummySelectRoot? root = null) : ElementParserBase
 public class DummyOrderRoot : ITreeBranch
 {
     public IToken[] Tokens { get; } = [];
-    public bool NoChildren { get; } = true;
+    public bool NoChildren => true;
     public ITreeElement[] Children { get; } = [];
     public void Finish(IParsingContext context, IToken[] endingTokens)
     {
@@ -113,7 +113,7 @@ public class DummyOrderRoot : ITreeBranch
 public class DummySelectRoot : ITreeBranch
 {
     public IToken[] Tokens { get; } = [];
-    public bool NoChildren { get; } = true;
+    public bool NoChildren => true;
     public ITreeElement[] Children { get; } = [];
     public void Finish(IParsingContext context, IToken[] endingTokens)
     {

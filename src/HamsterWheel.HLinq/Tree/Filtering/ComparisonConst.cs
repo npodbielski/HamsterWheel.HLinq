@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using HamsterWheel.HLinq.Data.ValueConverters;
+using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
@@ -29,7 +29,7 @@ public sealed class ComparisonConst(NameOrValue value) : TreeLeaf([value])
         }
     }
 
-    public sealed class Converter(IValueConverterFactory factory) : ElementToExpressionConverter<ComparisonConst>
+    public sealed class Converter(IDefaultConverter defaultConverter) : ElementToExpressionConverter<ComparisonConst>
     {
         protected override Expression Build(IBuilderContext context, ComparisonConst element)
         {
@@ -38,19 +38,7 @@ public sealed class ComparisonConst(NameOrValue value) : TreeLeaf([value])
 
             var stringValue = element.Value.GetValue(context.HLinqQuery);
 
-            object? value;
-            if (propType == typeof(string))
-            {
-                value = stringValue;
-                if (stringValue == "null")
-                {
-                    value = null;
-                }
-            }
-            else
-            {
-                value = factory.GetConverterFor(propType).Convert(stringValue);
-            }
+            var value = defaultConverter.ConvertTo(propType,stringValue);
 
             return Expression.Constant(value, propType);
         }

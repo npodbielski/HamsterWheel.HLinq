@@ -1,6 +1,6 @@
 using System.Reflection;
+using HamsterWheel.HLinq.Data;
 using HamsterWheel.HLinq.Data.Converters;
-using HamsterWheel.HLinq.Data.ValueConverters;
 using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
@@ -30,6 +30,8 @@ internal static class HLinqCore
             services.AddSingleton(typeof(IHLinqTokenPossibility), tp);
         }
 
+        services.AddSingleton<INullKeyword, NullKeyword>();
+
         //parsers
         foreach (var ep in GetTypesFromAssemblyWithStatic<IElementParser>())
         {
@@ -51,13 +53,6 @@ internal static class HLinqCore
         services.AddSingleton<IStaticMethodToExpressionConverter, StaticMethodToExpressionConverter>();
 
         //value converters
-        var valueConverters = GetTypesFromAssemblyWithStatic<IValueConverter>();
-        foreach (var vc in valueConverters.Where(t => t != typeof(ConfigurableToPlainValueConverter)))
-        {
-            services.AddSingleton(typeof(IValueConverter), c => c.GetRequiredService(vc));
-            services.AddSingleton(vc, vc);
-        }
-
         foreach (var vc in GetTypesFromAssemblyWithStatic<IConfigurableValueConverter>())
         {
             services.AddSingleton(typeof(IConfigurableValueConverter), c => c.GetRequiredService(vc));
@@ -65,7 +60,6 @@ internal static class HLinqCore
         }
 
         //factories
-        services.AddSingleton<IValueConverterFactory, ValueConverterFactory>();
         services.AddSingleton<IConverterFactory, ConverterFactory>();
 
         foreach (var c in GetTypesFromAssemblyWithStatic<IElementApplier>())

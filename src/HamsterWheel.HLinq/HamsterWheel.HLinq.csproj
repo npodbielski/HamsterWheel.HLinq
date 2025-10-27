@@ -50,9 +50,6 @@
       <Compile Update="Tree\Filtering\StaticMethodToExpressionConverter.cs">
         <DependentUpon>Method.cs</DependentUpon>
       </Compile>
-      <Compile Update="Tree\Paging\TakeRoot.Exceptions.cs">
-        <DependentUpon>TakeRootRoot.cs</DependentUpon>
-      </Compile>
       <Compile Update="Tree\Selecting\PropertyAssigment.Exceptions.cs">
         <DependentUpon>PropertyAssignment.cs</DependentUpon>
       </Compile>
