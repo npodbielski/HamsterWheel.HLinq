@@ -464,7 +464,7 @@ GET /data?where[x.Name.EndsWith(John, StringComparison.InvariantCultureIgnoreCas
 This is very similar to `string.Contains(str, StringComparison.InvariantCultureIgnoreCase)` but instead of using .net runtime function it is translated to db function, and it is applied by DB engine.
 For example:
 ```http request
-/demo/db?where[ilike(x.NAME, John Doe)]
+GET /demo/db?where[ilike(x.NAME, John Doe)]
 ```
 This is equivalent of a Linq query:
 ```csharp
