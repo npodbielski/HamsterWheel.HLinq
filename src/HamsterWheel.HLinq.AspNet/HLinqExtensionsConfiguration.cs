@@ -6,6 +6,8 @@ namespace HamsterWheel.HLinq.AspNet;
 
 public class HLinqExtensionsConfiguration
 {
+    public List<Action<IServiceCollection>> CustomServices { get; } = [];
+    
     public void AddTokenPossibility<T>() where T : class, IHLinqTokenPossibility =>
         CustomServices.Add(s => s.AddSingleton<IHLinqTokenPossibility, T>());
 
@@ -37,8 +39,6 @@ public class HLinqExtensionsConfiguration
 
     public void AddDbFunctions<T>() where T : class, IStaticMethodSource =>
         CustomServices.Add(s => s.AddSingleton<IStaticMethodSource, T>());
-
-    public List<Action<IServiceCollection>> CustomServices { get; } = [];
 
     internal void InstallAll(IServiceCollection services)
     {
