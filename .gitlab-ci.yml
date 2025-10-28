@@ -75,4 +75,6 @@ package:
     - dotnet nuget add source "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/nuget/index.json" --name gitlab --username gitlab-ci-token --password $CI_JOB_TOKEN --store-password-in-clear-text
     # Push the package to the project's package registry
     - dotnet nuget push "src/**/bin/Release/*.nupkg" --source gitlab
+    # Push the package to the Nuget.org feed
+    - dotnet nuget push "src/**/bin/Release/*.nupkg" --source https://api.nuget.org/v3/index.json --api-key $nuget_key
   environment: production
