@@ -80,7 +80,6 @@ Accept: application/json
 
 
 ## Extensions
-
 ###translation
 GET {{HostAddress}}/demo/db?wybierz[x.firstName]
 Accept: application/json
