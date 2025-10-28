@@ -1,0 +1,76 @@
+using System.Reflection;
+using FluentAssertions;
+using HamsterWheel.HLinq.AspNet.Binder;
+using HamsterWheel.HLinq.Pipeline.Parser;
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
+using HamsterWheel.HLinq.Reflection;
+using HamsterWheel.HLinq.Request;
+using HamsterWheel.HLinq.Tokens;
+using HamsterWheel.HLinq.UnitTests.TestUtils;
+using HamsterWheel.HLinq.UnitTests.TestUtils.Assertions;
+using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
+using static HamsterWheel.HLinq.UnitTests.TestUtils.Assertions.ExpectedTreeElement;
+
+namespace HamsterWheel.HLinq.UnitTests.AspNet.Binder;
+
+public class WebHLinqQueryBinderUnitTests
+{
+    [Fact]
+    public void BindModelAsync_WhenCalledWithNull_ThenThrows()
+    {
+        //arrange
+        var parser = Substitute.For<IHLinqParser>();
+        var tokenizer = Substitute.For<IHLinqTokenizer>();
+        var methodsCache = Substitute.For<IMethodsCache>();
+        var services = new ServiceCollection();
+        services.AddSingleton(parser);
+        services.AddSingleton(methodsCache);
+        services.AddSingleton(tokenizer);
+        var sut = new WebHLinqQueryBinder(new TestServicesCollection().BinderDependenciesBag);
+        var action = () => sut.BindModelAsync(null!);
+
+        //act && assert
+        action.Should().ThrowAsync<ArgumentNullException>();
+    }
+
+    [Fact]
+    public async Task BindModelAsync_WhenCalledWithContext_ThenSetsResult()
+    {
+        //arrange
+        var servicesFactory = new DummyHLinqServiceProviderFactory();
+        var hlinqQueryMethod = typeof(HLinqQuery<DummyEntity>).GetMethods().First(m => m.Name == "Parse");
+        servicesFactory.MethodsCache
+            .GetStaticOrThrow(Arg.Any<Type>(), Arg.Any<string>(), Arg.Any<Func<ParameterInfo[], bool>>())
+            .Returns(hlinqQueryMethod);
+        var query = new HLinqQuery<DummyEntity>();
+        servicesFactory.Parser.Parse(Arg.Any<HLinqQuery<DummyEntity>>(), Arg.Any<IToken[]>()).Returns(query);
+        var sut = new WebHLinqQueryBinder(new TestServicesCollection().BinderDependenciesBag);
+        var context = Substitute.For<ModelBindingContext>();
+        var queryString = "?where[x.key==value]";
+        context.HttpContext.Request.QueryString.Returns(new QueryString(queryString));
+        context.ModelType.Returns(typeof(HLinqQuery<DummyEntity>));
+
+        //act
+        await sut.BindModelAsync(context);
+
+        //assert
+        var actual = context.Result.Model.Should().BeOfType<HLinqQuery<DummyEntity>>().Which;
+        actual.ItemType.Should().Be(typeof(DummyEntity));
+        actual.Should().HaveStructureOf(queryString, [
+            WhereRoot(
+                ConditionElement(
+                    Property(
+                        ExpectedToken.Entity(),
+                        ExpectedToken.Dot,
+                        ExpectedToken.Prop("key")),
+                    ComparisonOperation(ExpectedToken.Equality),
+                    ComparisonConstant(ExpectedToken.NameOrValue("value"))
+                ))
+        ]);
+        actual.SourceQueryString.Should().Be(queryString[1..]);
+    }
+}

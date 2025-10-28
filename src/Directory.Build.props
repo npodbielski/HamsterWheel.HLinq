@@ -1,0 +1,18 @@
+<Project>
+
+    <Import Project="../Nuget.props"/>
+
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>$([System.String]::Copy('$(AssemblyName)').Replace('.Abstractions','')).IntegrationTests</_Parameter1> <!-- For integration tests projects -->
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>$([System.String]::Copy('$(AssemblyName)').Replace('.Abstractions','')).UnitTests</_Parameter1> <!-- For Unit Tests projects -->
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>$([System.String]::Copy('$(AssemblyName)').Replace('.Abstractions',''))</_Parameter1> <!-- Remove abstractions namespace to make all internal types be visisble for implementations -->
+        </AssemblyAttribute>
+    </ItemGroup>
+
+</Project>
+
