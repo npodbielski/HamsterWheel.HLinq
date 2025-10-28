@@ -1,0 +1,94 @@
+@HostAddress = http://localhost:5087
+
+##Memory
+###memory order and take 1 
+GET {{HostAddress}}/demo/memory?orderBy[x.name].take[1]
+Accept: application/json
+
+## DB
+###constant equality
+GET {{HostAddress}}/demo/db?where[x.firstName==John Doe]
+Accept: application/json
+
+###case insensitve PGSQL search
+GET {{HostAddress}}/demo/db?where[ilike(x.firstName, billy)]
+Accept: application/json
+
+###case insensitve PGSQL search with escape character
+GET {{HostAddress}}/demo/db?where[GreaterThan(x.Id, arlan, \)]
+Accept: application/json
+
+###PGSQL string split
+GET {{HostAddress}}/demo/db?where[stringToArray(x.firstName, ' ')]
+Accept: application/json
+
+##random
+###
+GET {{HostAddress}}/demo/random
+Accept: application/json
+
+###
+GET {{HostAddress}}/demo/controller/memory?take[1]
+Accept: application/json
+
+###select const 
+GET {{HostAddress}}/demo/memory?select[Name=1]
+Accept: application/json
+
+###
+#Errors
+###
+GET {{HostAddress}}/demo/db?where[x.firstName==John Doe
+Accept: application/json
+###
+GET {{HostAddress}}/demo/db?where
+Accept: application/json
+###
+GET {{HostAddress}}/demo/db?where[(x.firstName==John Doe]
+Accept: application/json
+
+###
+GET {{HostAddress}}/demo/db?skip[]
+Accept: application/json
+
+###
+GET {{HostAddress}}/demo/db?select[x.firstName][]
+Accept: application/json
+
+###
+GET {{HostAddress}}/demo/db?select[x.firstName[
+Accept: application/json
+###
+GET {{HostAddress}}/demo/db?select()
+Accept: application/json
+###
+GET {{HostAddress}}/demo/db?.skip[0]
+Accept: application/json
+###
+GET {{HostAddress}}/demo/db?where[Name=x.Name]
+Accept: application/json
+###
+GET {{HostAddress}}/demo/db?select[Name=x.firstName + x.lastName]
+Accept: application/json
+
+### ordering 
+GET {{HostAddress}}/demo/memory?orderBy[x.Name].thenBy[x.realName]
+Accept: application/json
+###
+GET {{HostAddress}}/demo/memory?where[x.name.contains(Ant)].count[]
+Accept: application/json
+
+
+## Extensions
+###translation
+GET {{HostAddress}}/demo/db?wybierz[x.firstName]
+Accept: application/json
+
+### translation unicode
+GET {{HostAddress}}/demo/db?↓[x.firstName]
+Accept: application/json
+
+
+### custom filter
+GET {{HostAddress}}/demo/db?where[hasFullName(x, Nolan Cowle)]
+Accept: application/json
