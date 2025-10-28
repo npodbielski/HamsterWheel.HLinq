@@ -161,7 +161,7 @@ Supported roots are:
 
 Roots are chained together using `.` character. For example:
 ```http request
-GET where[x.Name==John].skip[10].take[20].select[fullName=x.Name]
+GET /data?where[x.Name==John].skip[10].take[20].select[fullName=x.Name]
 ```
 
 Casing in root names is not important. For example, `WHERE` and `where` are equivalent. Or example even `wHeRe` is valid to harder to read.
@@ -221,25 +221,25 @@ GET /data?where[ilike(x.{property name},{constant value})]
 ```
 or the same can be achieved with `string.Contains(property, StringComparison.InvariantCultureIgnoreCase)` (or similar instance of a property type) method:
 ```http request
-GET where[x.{property name}.{property type method}({constant value},{constant argument})]
+GET /data?where[x.{property name}.{property type method}({constant value},{constant argument})]
 ```
 Constant value within where parameters can be almost any value. How it is treated depends on the type of the property. I.e. `int` will be converted to `int` before comparison. String will not be converted and will be taken as is from Query String. 
 
 It is possible to use () in `where`. This effectively allows grouping of conditions. For example 
 ```http request
-GET where[(x.Id==1||x.Name.StartsWith(d))&&x.DateOfBith>=2010-08-31 00:00]
+GET /data?where[(x.Id==1||x.Name.StartsWith(d))&&x.DateOfBith>=2010-08-31 00:00]
 ```
 will return either record with Id=1 or records with Name starting with `d` when date of birth is after 2010-08-31 00:00.
 But
 ```http request
-GET where[x.Id==1||x.Name.StartsWith(d)&&x.DateOfBith>=2010-08-31 00:00]
+GET /data?where[x.Id==1||x.Name.StartsWith(d)&&x.DateOfBith>=2010-08-31 00:00]
 ```
 will return either with Id=1 OR records with Name starting with `d` AND date of birth is after 2010-08-31 00:00.
 This works the same as in Linq.
 
 Constant values do not need to be quoted. If you are looking for a person with their full name, put space in a string between first and last name:
 ```http request
-GET where[x.firstName==John Doe]
+GET /data?where[x.firstName==John Doe]
 ```
 
 ### White space management
@@ -341,24 +341,24 @@ GET /data?where[x.Name==null]
 
 To filter by floating point numeric you can use `.` delimiter for fractions. It is consistent with `CultureInfo.InvariantCulture` numerical format, which HLinq is using by default.
 ```http request
-GET where[x.Number==1.2323]
+GET /data?where[x.Number==1.2323]
 ```
 HLinq does not apply any precision for equality comparison, so due to floating point rounding errors you may get different results. To fix this you can use two values with `>` and `<` operators.
 ```http request
-GET where[x.Number>1.2322&&x.Number<1.2324]
+GET /data?where[x.Number>1.2322&&x.Number<1.2324]
 ```
 
 For Date Time and Date Time Offset types you can use ISO 8601 format:
 ```http request
-GET where[x.DateOfBirth==2025-10-05T19:43:07.3693705Z]
+GET /data?where[x.DateOfBirth==2025-10-05T19:43:07.3693705Z]
 ```
 Or with the time zone part:
 ```http request
-GET where[x.Modified==2025-10-05T19:44:10.8405723+00:00]
+GET /data?where[x.Modified==2025-10-05T19:44:10.8405723+00:00]
 ```
 Equals can be used inside a group as any other filtering condition:
 ```http request
-GET where[(x.Name==John||x.Name==Doe)]
+GET /data?where[(x.Name==John||x.Name==Doe)]
 ```
 
 #### Not equals
