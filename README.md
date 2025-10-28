@@ -6,7 +6,7 @@
 ## Reference links
 
 - [Hamster Wheel](https://internetexception.com/why-hamster-wheel/)
-- [HLinq design decisions]()
+- [HLinq design](https://internetexception.com/2025/10/28/hlinq-design/)
 
 # What's contained in this project
 
