@@ -20,9 +20,10 @@ public partial class HLinqQuery<T> : IHLinqQuery
     public bool NoChildren => Children.Length == 0;
 
     /// <summary>
-    /// Instance of current HttpContext <see cref="IHLinqQueryApplier"/> if <see cref="HLinqQuery{T}"/> was obtained from the binder. Otherwise, null.
+    /// Instance of current <see cref="HttpContext"/>
+    /// <see cref="IHLinqQueryApplier"/> if <see cref="HLinqQuery{T}"/> was obtained from the binder. Otherwise, null.
     /// </summary>
-    internal IHLinqQueryApplier? QueryApplier { get; set; }
+    private IHLinqQueryApplier? QueryApplier { get; set; }
 
     internal IHLinqOptions? Options { get; set; }
 
@@ -134,25 +135,25 @@ public partial class HLinqQuery<T> : IHLinqQuery
             }
 
             cancellationToken.ThrowIfCancellationRequested();
-            if (endResult.Queryable is not null)
+            if (endResult.Queryable is null)
             {
-                var method = methodsCache.GetStaticGeneric(typeof(Enumerable), nameof(Enumerable.ToArray),
-                    typeParams: endResult.CurrentResultType);
-
-                try
-                {
-                    var data = (ICollection)method.Invoke(null, [endResult.Queryable])!;
-                    return new Result(data.Cast<object>().ToArray(), endResult.CurrentResultType);
-                }
-                catch (TargetInvocationException e) when (e.InnerException is InvalidOperationException ioe &&
-                                                          ioe.Message.Contains(
-                                                              "is not supported because the query has switched to client-evaluation"))
-                {
-                    throw new DbFunctionsNotAvailableExceptions(method.Name);
-                }
+                return new Result(null, endResult.CurrentResultType, endResult.Count);
             }
 
-            return new Result(null, endResult.CurrentResultType, endResult.Count);
+            var method = methodsCache.GetStaticGeneric(typeof(Enumerable), nameof(Enumerable.ToArray),
+                typeParams: endResult.CurrentResultType);
+
+            try
+            {
+                var data = (ICollection)method.Invoke(null, [endResult.Queryable])!;
+                return new Result(data.Cast<object>().ToArray(), endResult.CurrentResultType);
+            }
+            catch (TargetInvocationException e) when (e.InnerException is InvalidOperationException ioe &&
+                                                      ioe.Message.Contains(
+                                                          "is not supported because the query has switched to client-evaluation"))
+            {
+                throw new DbFunctionsNotAvailableExceptions(method.Name);
+            }
         }
     }
 }

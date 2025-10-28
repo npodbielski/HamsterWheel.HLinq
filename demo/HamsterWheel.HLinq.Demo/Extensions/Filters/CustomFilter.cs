@@ -18,11 +18,11 @@ public class CustomFilterConverter(IPropertiesCache propertiesCache) : IStaticMe
 
         var fullNameSearchConstant = method.Children[1].Tokens[0].GetValue(context.HLinqQuery);
 
-        //below expression is equivalent to:
+        //the below expression is equivalent to:
         //LambdaExpression condition = (Person p) => p.FirstName + " " + p.LastName == fullNameSearchConstant;
 
         var stringConcatMethod = typeof(string).GetMethod("Concat", [typeof(string), typeof(string)]);
-        
+
         var firstNamePlusSpace = Expression.Add(Expression.Property(context.Param, propertiesCache.Single(context.Type, "FirstName")!), Expression.Constant(" "), stringConcatMethod);
         var firstNameSpaceAndLastName = Expression.Add(firstNamePlusSpace, Expression.Property(context.Param, propertiesCache.Single(context.Type, "LastName")!), stringConcatMethod);
         return Expression.Equal(firstNameSpaceAndLastName, Expression.Constant(fullNameSearchConstant));

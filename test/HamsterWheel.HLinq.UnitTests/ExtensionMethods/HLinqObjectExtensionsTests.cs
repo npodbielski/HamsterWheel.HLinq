@@ -136,6 +136,21 @@ public class HLinqObjectExtensionsTests
     }
 
     [Fact]
+    public void ExecuteHLinq_WhenOnCollectionWithSelectWith2PropsOneFromConst_ThenReturnsAllProperties()
+    {
+        //arrange
+        var collection = RandomData.Get();
+        var expected = collection.Select(c => new { c.Name, active = "true" });
+
+        //act
+        var actual = collection.ExecuteHLinq("select[x.name, active=true]");
+
+        //assert
+        actual.Should().NotBeNull();
+        actual.Should().BeEquivalentTo(expected);
+    }
+
+    [Fact]
     public void ExecuteHLinq_WhenSelectWith2PropsAfterWhereFilter_ThenReturnsAllProperties()
     {
         //arrange

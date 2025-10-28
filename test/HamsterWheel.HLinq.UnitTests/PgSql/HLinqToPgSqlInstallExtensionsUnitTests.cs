@@ -24,6 +24,6 @@ public class HLinqToPgSqlInstallExtensionsUnitTests
         var provider = services.BuildServiceProvider();
         var service = provider.GetService<IStaticMethodSource>();
         service.Should().NotBeNull();
-        service.Should().BeOfType<EntityFrameworkStaticMethodProvider>();
+        service.Should().BeOfType<PgSqlEntityFrameworkStaticMethodProvider>();
     }
 }

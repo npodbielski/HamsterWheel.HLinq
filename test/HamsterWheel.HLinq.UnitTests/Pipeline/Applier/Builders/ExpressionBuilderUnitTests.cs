@@ -19,6 +19,6 @@ public partial class ExpressionBuilderUnitTests
     {
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
         _sut = new ExpressionBuilder(HLinqServices.PropertiesCache, HLinqServices.MethodsCache, HLinqServices.ConverterFactory, _parametersConverter,
-            [new EntityFrameworkStaticMethodProvider()]);
+            [new PgSqlEntityFrameworkStaticMethodProvider()]);
     }
 }

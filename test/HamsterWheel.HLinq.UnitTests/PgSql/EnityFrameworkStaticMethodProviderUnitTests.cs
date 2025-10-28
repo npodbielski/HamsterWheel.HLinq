@@ -11,7 +11,7 @@ public class EntityFrameworkStaticMethodProviderUnitTests
     {
         //arrange
         Type[] expected = [typeof(NpgsqlDbFunctionsExtensions)];
-        var sut = new EntityFrameworkStaticMethodProvider();
+        var sut = new PgSqlEntityFrameworkStaticMethodProvider();
 
         //act
         var actual = sut.Types;

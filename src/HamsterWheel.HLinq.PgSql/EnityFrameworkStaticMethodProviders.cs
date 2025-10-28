@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HamsterWheel.HLinq.PgSql;
 
-public class EntityFrameworkStaticMethodProvider : IStaticMethodSource
+public class PgSqlEntityFrameworkStaticMethodProvider : IStaticMethodSource
 {
     public Type[] Types { get; } = [typeof(NpgsqlDbFunctionsExtensions)];
 }

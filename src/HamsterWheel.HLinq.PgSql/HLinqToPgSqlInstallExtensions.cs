@@ -6,7 +6,7 @@ public static class HLinqToPgSqlInstallExtensions
 {
     public static HLinqConfiguration AddHLingToPgSql(this HLinqConfiguration configuration)
     {
-        configuration.Extensions.AddDbFunctions<EntityFrameworkStaticMethodProvider>();
+        configuration.Extensions.AddDbFunctions<PgSqlEntityFrameworkStaticMethodProvider>();
         return configuration;
     }
 }
