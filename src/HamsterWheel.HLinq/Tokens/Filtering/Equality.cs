@@ -1,14 +1,15 @@
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
+
 namespace HamsterWheel.HLinq.Tokens.Filtering;
 
-public sealed class Equality(Range range) : TokenBase(range), IComparisonToken
+public sealed class Equality : TokenBase, IComparisonToken
 {
-    public const string TokenValue = "==";
-
-    public sealed class Possibility() : TokenPossibility<Equality>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<Equality>(grammar, "==")
     {
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            previousToken is PropertyAccess or RightSquareBracket;
-
-        protected override Equality BuildImpl(Range range) => new(range);
+            Rule.PreviousTokenMatch(previousToken);
     }
+
+    public static Equality Build(Range range) => new() { Range = range };
+    public static Equality Empty { get; } = new() { Range = default };
 }

@@ -1,16 +1,15 @@
-using HamsterWheel.HLinq.Tokens.Filtering;
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
 
 namespace HamsterWheel.HLinq.Tokens;
 
-public sealed class Dot(Range range) : TokenBase(range)
+public sealed class Dot : TokenBase
 {
-    public const string TokenValue = ".";
-
-    public sealed class Possibility() : TokenPossibility<Dot>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<Dot>(grammar, ".")
     {
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            previousToken is Entity or PropertyAccess or RightSquareBracket;
-
-        protected override Dot BuildImpl(Range range) => new(range);
+            Rule.PreviousTokenMatch(previousToken);
     }
+
+    public static Dot Build(Range range) => new() { Range = range };
+    public static Dot Empty { get; } = new() { Range = default };
 }

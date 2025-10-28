@@ -1,20 +1,15 @@
-using HamsterWheel.HLinq.Tokens.Filtering;
-using HamsterWheel.HLinq.Tokens.Ordering;
-using HamsterWheel.HLinq.Tokens.Paging;
-using HamsterWheel.HLinq.Tokens.Selecting;
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
 
 namespace HamsterWheel.HLinq.Tokens;
 
-public sealed class LeftSquareBracket(Range range) : TokenBase(range)
+public sealed class LeftSquareBracket : TokenBase
 {
-    public const string TokenValue = "[";
-
-    public sealed class Possibility() : TokenPossibility<LeftSquareBracket>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<LeftSquareBracket>(grammar, "[")
     {
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            previousToken is Where or Skip or Take or OrderBy or OrderByDescending or ThenBy or ThenByDescending
-                or Select or Count;
-
-        protected override LeftSquareBracket BuildImpl(Range range) => new(range);
+           Rule.PreviousTokenMatch(previousToken);
     }
+
+    public static LeftSquareBracket Build(Range range) => new() { Range = range };
+    public static LeftSquareBracket Empty { get; } = new() { Range = default };
 }

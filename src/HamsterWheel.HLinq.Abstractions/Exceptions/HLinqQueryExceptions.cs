@@ -1,4 +1,4 @@
-using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 
 namespace HamsterWheel.HLinq.Exceptions;

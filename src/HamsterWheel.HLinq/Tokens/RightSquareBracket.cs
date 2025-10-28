@@ -1,17 +1,15 @@
-using HamsterWheel.HLinq.Tokens.Filtering;
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
 
 namespace HamsterWheel.HLinq.Tokens;
 
-public sealed class RightSquareBracket(Range range) : TokenBase(range)
+public sealed class RightSquareBracket : TokenBase
 {
-    public const string TokenValue = "]";
-
-    public sealed class Possibility() : TokenPossibility<RightSquareBracket>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<RightSquareBracket>(grammar, "]")
     {
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            previousToken is PropertyAccess or NameOrValue or RightCircleBracket
-                or LeftSquareBracket;
-
-        protected override RightSquareBracket BuildImpl(Range range) => new(range);
+            Rule.PreviousTokenMatch(previousToken);
     }
+
+    public static RightSquareBracket Build(Range range) => new() { Range = range };
+    public static RightSquareBracket Empty { get; } = new() { Range = default };
 }

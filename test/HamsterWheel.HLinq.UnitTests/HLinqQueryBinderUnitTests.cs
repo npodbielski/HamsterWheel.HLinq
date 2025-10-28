@@ -2,7 +2,8 @@ using System.Reflection;
 using FluentAssertions;
 using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.Tokens;
-using HamsterWheel.HLinq.UnitTests.Dummies;
+using HamsterWheel.HLinq.UnitTests.TestUtils;
+using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
 using NSubstitute;
 
 namespace HamsterWheel.HLinq.UnitTests;

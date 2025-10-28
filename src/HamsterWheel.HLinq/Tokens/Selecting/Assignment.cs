@@ -1,13 +1,15 @@
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
+
 namespace HamsterWheel.HLinq.Tokens.Selecting;
 
-public sealed class Assignment(Range range) : TokenBase(range)
+public sealed class Assignment : TokenBase
 {
-    public const string TokenValue = "=";
-
-    public sealed class Possibility() : TokenPossibility<Assignment>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<Assignment>(grammar, "=")
     {
-        protected override bool PreviousTokenMatchImpl(IToken previousToken) => previousToken is NameOrValue;
-
-        protected override Assignment BuildImpl(Range range) => new(range);
+        protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
+            Rule.PreviousTokenMatch(previousToken);
     }
+
+    public static Assignment Build(Range range) => new() { Range = range };
+    public static Assignment Empty { get; } = new() { Range = default };
 }

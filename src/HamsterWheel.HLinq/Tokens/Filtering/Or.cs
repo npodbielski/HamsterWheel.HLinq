@@ -1,14 +1,15 @@
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
+
 namespace HamsterWheel.HLinq.Tokens.Filtering;
 
-public sealed class Or(Range range) : TokenBase(range), ILogicalOperatorToken
+public sealed class Or : TokenBase, ILogicalOperatorToken
 {
-    public const string TokenValue = "||";
-
-    public sealed class Possibility() : TokenPossibility<Or>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<Or>(grammar, "||")
     {
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            previousToken is NameOrValue or PropertyAccess or RightCircleBracket;
-
-        protected override Or BuildImpl(Range range) => new(range);
+            Rule.PreviousTokenMatch(previousToken);
     }
+
+    public static Or Build(Range range) => new() { Range = range };
+    public static Or Empty { get; } = new() { Range = default };
 }

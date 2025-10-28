@@ -1,5 +1,5 @@
-using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.Exceptions;
+using HamsterWheel.HLinq.Pipeline.Applier;
 
 namespace HamsterWheel.HLinq.Request;
 

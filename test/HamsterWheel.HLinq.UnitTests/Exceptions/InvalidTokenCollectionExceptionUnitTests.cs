@@ -1,5 +1,6 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.Exceptions;
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Ordering;
@@ -19,7 +20,7 @@ public class InvalidTokenCollectionExceptionUnitTests
 
         //act
         var e = new InvalidTokenCollectionException(hlinqQueryString, [
-            new Select(..6), new RightSquareBracket(6..7), new LeftSquareBracket(7..8)
+            Select.Build(..6), RightSquareBracket.Build(6..7), LeftSquareBracket.Build(7..8)
         ], []);
 
         //assert
@@ -36,11 +37,11 @@ public class InvalidTokenCollectionExceptionUnitTests
 
         //act
         var e = new InvalidTokenCollectionException(hlinqQueryString, [
-                new Select(..6), new LeftSquareBracket(6..7), new RightSquareBracket(7..8)
+                Select.Build(..6), LeftSquareBracket.Build(6..7), RightSquareBracket.Build(7..8)
             ],
             [
-                new Select(default), new LeftSquareBracket(default), new Entity(default), new Dot(default),
-                new PropertyAccess(default), new RightSquareBracket(default)
+                Select.Empty, LeftSquareBracket.Empty, Entity.Empty, Dot.Empty,
+                PropertyName.Empty, RightSquareBracket.Empty
             ]);
 
         //assert
@@ -57,20 +58,20 @@ public class InvalidTokenCollectionExceptionUnitTests
                                  You can also try:
                                   - &&
                                   - ||
-                                  - MethodCall
+                                  - Method
                                  """;
 
         //act
         var e = new InvalidTokenCollectionException(hlinqQueryString, [
-                new NameOrValue(6..7), new Assignment(7..8), new LeftSquareBracket(8..13)
+                NameOrValue.Build(6..7), Assignment.Build(7..8), LeftSquareBracket.Build(8..13)
             ],
             [
-                new Entity(default), new Dot(default), new PropertyAccess(default), new Equality(default),
-                new NameOrValue(default)
+                Entity.Empty, Dot.Empty, PropertyName.Empty, Equality.Empty,
+                NameOrValue.Empty
             ],
-            [new And(default)],
-            [new Or(default)],
-            [new MethodCall(default)]);
+            [And.Empty],
+            [Or.Empty],
+            [MethodName.Empty]);
 
         //assert
         e.Message.Should().Be(expected);
@@ -85,8 +86,8 @@ public class InvalidTokenCollectionExceptionUnitTests
             $"HLinq query '{hlinqQueryString}' is invalid at character 13: ']'. Was expecting for example: ')'.";
 
         //act
-        var e = new InvalidTokenCollectionException(hlinqQueryString, [new RightSquareBracket(13..14)],
-            [new RightCircleBracket(default)]);
+        var e = new InvalidTokenCollectionException(hlinqQueryString, [RightSquareBracket.Build(13..14)],
+            [RightCircleBracket.Empty]);
 
         //assert
         e.Message.Should().Be(expected);
@@ -101,7 +102,7 @@ public class InvalidTokenCollectionExceptionUnitTests
             $"HLinq query '{hlinqQueryString}' is invalid and not finished properly. Was expecting for example: ']'.";
 
         //act
-        var e = new InvalidTokenCollectionException(hlinqQueryString, [], [new RightSquareBracket(default)]);
+        var e = new InvalidTokenCollectionException(hlinqQueryString, [], [RightSquareBracket.Empty]);
 
         //assert
         e.Message.Should().Be(expected);
@@ -117,10 +118,10 @@ public class InvalidTokenCollectionExceptionUnitTests
 
         //act
         var e = new InvalidTokenCollectionException(hlinqQueryString, [], [
-            new Take(default),
-            new LeftSquareBracket(default),
+            Take.Empty,
+            LeftSquareBracket.Empty,
             new TokenExample("10"),
-            new RightSquareBracket(default),
+            RightSquareBracket.Empty,
         ]);
 
         //assert
@@ -145,8 +146,8 @@ public class InvalidTokenCollectionExceptionUnitTests
 
         //act
         var e = new HLinqTokenizer.UnknownTokenException(hlinqQueryString, [
-            new Where(default), new Select(default), new Skip(default), new Take(default), new OrderBy(default),
-            new OrderByDescending(default)
+            Where.Empty, Select.Empty, Skip.Empty, Take.Empty, OrderBy.Empty,
+            OrderByDescending.Empty
         ]);
 
         //assert

@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
-using HamsterWheel.HLinq.Builders;
-using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Applier.Builders;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Selecting;
@@ -12,15 +12,14 @@ namespace HamsterWheel.HLinq.Tree;
 
 public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamElement
 {
-    public string GetValue(string hLinqQuery) => string.Join('.', GetPath(hLinqQuery));
-
     public string[] GetPath(string hLinqQuery) =>
-        Tokens.OfType<PropertyAccess>().Select(t => t.GetValue(hLinqQuery)).ToArray();
+        Tokens.OfType<PropertyName>().Select(t => t.GetValue(hLinqQuery)).ToArray();
+
+    public string GetValue(string hLinqQuery) => string.Join('.', GetPath(hLinqQuery));
 
     public sealed class Parser : ElementParserBase<Property>
     {
-        public override IToken[] ExampleTokens { get; } =
-            [new Entity(default), new Dot(default), new PropertyAccess(default)];
+        public override IToken[] ExampleTokens { get; } = [Entity.Empty, Dot.Empty, PropertyName.Empty];
 
         protected override Type[] ValidParents { get; } =
         [
@@ -37,7 +36,12 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
                 index += 1;
             }
 
-            if (context.Tokens[index..] is not [Entity, Dot, PropertyAccess, .. var r1])
+            if (context.Tokens[index..] is [Entity, IComparisonToken, ..])
+            {
+                return new Property(context.Tokens[..1]);
+            }
+
+            if (context.Tokens[index..] is not [Entity, Dot, PropertyName, .. var r1])
             {
                 return null;
             }
@@ -46,7 +50,7 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
 
             index += 3;
 
-            while (rest is [Dot, PropertyAccess, .. var r2])
+            while (rest is [Dot, PropertyName, .. var r2])
             {
                 rest = r2;
                 index += 2;
@@ -65,7 +69,7 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
             switch (context)
             {
                 case IArithmeticComparisonConditionBuilderContext conditionBuilderContext:
-                    conditionBuilderContext.ComparisonPropertyType = memberExpression.Type;
+                    conditionBuilderContext.ComparisonType = memberExpression.Type;
                     break;
                 case IMethodCallConditionBuilderContext methodCallConditionBuilderContext:
                     methodCallConditionBuilderContext.MethodSource = memberExpression;

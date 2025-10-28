@@ -6,9 +6,9 @@ namespace HamsterWheel.HLinq.AspNet;
 public static class AspNetInstaller
 {
     public static IServiceCollection ConfigureHLinq(this IServiceCollection serviceCollection,
-        Action<HLinqServicesConfiguration>? configure = null)
+        Action<HLinqConfiguration>? configure = null)
     {
-        var configuration = new HLinqServicesConfiguration();
+        var configuration = new HLinqConfiguration();
         configure?.Invoke(configuration);
 
         serviceCollection.AddExceptionHandler<HLinqQueryExceptionHandler>();
@@ -26,10 +26,7 @@ public static class AspNetInstaller
             HttpDefaultMaxTakeRecords = configuration.HLinqOptions.HttpDefaultMaxTakeRecords
         });
 
-        foreach (var extension in configuration.Extensions)
-        {
-            extension(serviceCollection);
-        }
+        configuration.Extensions.InstallAll(serviceCollection);
 
         return serviceCollection;
     }

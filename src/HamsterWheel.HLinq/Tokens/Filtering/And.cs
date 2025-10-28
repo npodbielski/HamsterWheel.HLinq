@@ -1,14 +1,15 @@
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
+
 namespace HamsterWheel.HLinq.Tokens.Filtering;
 
-public sealed class And(Range range) : TokenBase(range), ILogicalOperatorToken
+public sealed class And : TokenBase, ILogicalOperatorToken
 {
-    public const string TokenValue = "&&";
-
-    public sealed class Possibility() : TokenPossibility<And>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<And>(grammar, "&&")
     {
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            previousToken is NameOrValue or PropertyAccess or RightCircleBracket;
-
-        protected override And BuildImpl(Range range) => new(range);
+            Rule.PreviousTokenMatch(previousToken);
     }
+
+    public static And Build(Range range) => new() { Range = range };
+    public static And Empty { get; } = new() { Range = default };
 }

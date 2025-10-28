@@ -1,9 +1,9 @@
 using System.Linq.Expressions;
 using System.Reflection;
-using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Applier.Builders;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
@@ -11,7 +11,7 @@ using HamsterWheel.HLinq.Tokens.Selecting;
 
 namespace HamsterWheel.HLinq.Tree.Selecting;
 
-public sealed class PropertyAssignment(IToken[] tokens) : TreeBranch(tokens)
+public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tokens)
 {
     private Property? _property;
     private InitializerPropertyName? _name;
@@ -32,8 +32,7 @@ public sealed class PropertyAssignment(IToken[] tokens) : TreeBranch(tokens)
     {
         protected override Type[] ValidParents { get; } = [typeof(SelectRoot)];
 
-        public override IToken[] ExampleTokens { get; } =
-            [new Entity(default), new Dot(default), new PropertyAccess(default)];
+        public override IToken[] ExampleTokens { get; } = [Entity.Empty, Dot.Empty, PropertyName.Empty];
 
         protected override PropertyAssignment? BuildBranch(IParsingContext context)
         {
@@ -44,8 +43,8 @@ public sealed class PropertyAssignment(IToken[] tokens) : TreeBranch(tokens)
                 index = 1;
             }
 
-            if (context.Tokens[index..] is [NameOrValue, Assignment, ..] ||
-                context.Tokens[index..] is [Entity, Dot, ..])
+            if (context.Tokens[index..] is [NameOrValue, Assignment, ..]
+                || context.Tokens[index..] is [Entity, Dot, ..])
             {
                 return new PropertyAssignment(context.Tokens[..index]);
             }
@@ -150,9 +149,4 @@ public sealed class PropertyAssignment(IToken[] tokens) : TreeBranch(tokens)
             : HLinqQueryException(
                 $"{nameof(PropertyAssignment)} cannot be translated to Expression if it does not contain source '{nameof(Property)}' information.");
     }
-
-    public class PropertyAssignmentValueCannotBeResolvedException()
-        : HLinqQueryException(
-            $"{nameof(PropertyAssignment)} provide value of '{nameof(NameOrValue)}' token if it was not part of the parsed tree. " +
-            $"Make sure that your code is trying to translate query into expression correctly");
 }

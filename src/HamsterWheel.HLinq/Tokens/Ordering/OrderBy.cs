@@ -1,18 +1,18 @@
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
+
 namespace HamsterWheel.HLinq.Tokens.Ordering;
 
-public sealed class OrderBy(Range range) : TokenBase(range)
+public sealed class OrderBy : TokenBase
 {
-    public const string TokenValue = "orderBy";
-
-    public sealed class Possibility() : TokenPossibility<OrderBy>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<OrderBy>(grammar, "orderBy")
     {
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            previousTokens.Count == 0 || previousTokens is [.., RightSquareBracket, Dot];
+            Rule.PreviousTokensMatch(previousTokens);
 
         protected override bool NextIsAllowedWhenKeywordMatch(char? next) =>
-            next is not null &&
-            char.ToLower(next.Value).Equals(char.ToLower(LeftSquareBracket.TokenValue.AsSpan()[0]));
-
-        protected override OrderBy BuildImpl(Range range) => new(range);
+            Rule.NextCharMatch(next);
     }
+
+    public static OrderBy Build(Range range) => new() { Range = range };
+    public static OrderBy Empty { get; } = new() { Range = default };
 }

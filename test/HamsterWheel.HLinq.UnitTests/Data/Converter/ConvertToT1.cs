@@ -1,7 +1,9 @@
 using System.Text.Json;
 using FluentAssertions;
+using HamsterWheel.HLinq.Data;
+using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Tree.Filtering;
-using HamsterWheel.HLinq.UnitTests.Dummies;
+using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
 
 namespace HamsterWheel.HLinq.UnitTests.Data.Converter;
 
@@ -364,5 +366,44 @@ partial class DefaultConverterUnitTests
         {
             Name = entity.Name
         });
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenDoubleQuotedGuid_ThenCanConvert()
+    {
+        //arrange
+        var guid = Guid.NewGuid();
+
+        //act
+        var actual = _sut.ConvertTo<Guid>(guid.ToString().Quote());
+
+        //assert
+        actual.Should().Be(guid);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenUnquotedGuid_ThenCanConvert()
+    {
+        //arrange
+        var guid = Guid.NewGuid();
+
+        //act
+        var actual = _sut.ConvertTo<Guid>(guid.ToString());
+
+        //assert
+        actual.Should().Be(guid);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenNullAsGuid_ThenCanConvertToNull()
+    {
+        //arrange
+        Guid? guid = null;
+
+        //act
+        var actual = _sut.ConvertTo<Guid?>(new NullKeyword().Null);
+
+        //assert
+        actual.Should().Be(guid);
     }
 }

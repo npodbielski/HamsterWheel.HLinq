@@ -1,14 +1,15 @@
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
+
 namespace HamsterWheel.HLinq.Tokens.Paging;
 
-public sealed class Skip(Range range) : TokenBase(range)
+public sealed class Skip : TokenBase
 {
-    public const string TokenValue = "skip";
-
-    public sealed class Possibility() : TokenPossibility<Skip>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<Skip>(grammar, "skip")
     {
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            previousTokens.Count == 0 || previousTokens is [.., RightSquareBracket, Dot];
-
-        protected override Skip BuildImpl(Range range) => new(range);
+            Rule.PreviousTokensMatch(previousTokens);
     }
+
+    public static Skip Build(Range range) => new() { Range = range };
+    public static Skip Empty { get; } = new() { Range = default };
 }

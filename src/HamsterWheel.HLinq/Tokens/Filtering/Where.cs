@@ -1,14 +1,15 @@
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
+
 namespace HamsterWheel.HLinq.Tokens.Filtering;
 
-public sealed class Where(Range range) : TokenBase(range)
+public sealed class Where : TokenBase
 {
-    public const string TokenValue = "where";
-
-    public sealed class Possibility() : TokenPossibility<Where>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<Where>(grammar, "where")
     {
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            previousTokens.Count == 0 || previousTokens is [.., RightSquareBracket, Dot];
-
-        protected override Where BuildImpl(Range range) => new(range);
+            Rule.PreviousTokensMatch(previousTokens);
     }
+
+    public static Where Build(Range range) => new() { Range = range };
+    public static Where Empty { get; } = new() { Range = default };
 }

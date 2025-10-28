@@ -1,14 +1,15 @@
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
+
 namespace HamsterWheel.HLinq.Tokens.Paging;
 
-public sealed class Count(Range range) : TokenBase(range)
+public sealed class Count : TokenBase
 {
-    public const string TokenValue = "count";
-
-    public sealed class Possibility() : TokenPossibility<Count>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<Count>(grammar, "count")
     {
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            previousTokens.Count == 0 || previousTokens is [.., RightSquareBracket, Dot];
-
-        protected override Count BuildImpl(Range range) => new(range);
+            Rule.PreviousTokensMatch(previousTokens);
     }
+
+    public static Count Build(Range range) => new() { Range = range };
+    public static Count Empty { get; } = new() { Range = default };
 }

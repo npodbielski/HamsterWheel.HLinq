@@ -1,34 +1,15 @@
-using HamsterWheel.HLinq.Tokens.Filtering;
-using HamsterWheel.HLinq.Tokens.Selecting;
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
 
 namespace HamsterWheel.HLinq.Tokens;
 
-public sealed class Entity(Range range) : TokenBase(range)
+public sealed class Entity : TokenBase
 {
-    public sealed class Possibility() : TokenPossibility<Entity>(delimiters: [Dot.TokenValue.AsSpan()[0]])
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<Entity>(grammar, "x")
     {
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            previousToken is LeftSquareBracket or And or Or or Comma or LeftCircleBracket or Assignment;
-
-        public override int CanBeAt(int index, ReadOnlySpan<char> subset, char? next, List<IToken> previousToken)
-        {
-            if (!PreviousTokensMatch(previousToken)) return 0;
-
-            var possibility = 0;
-            if (subset.Length != 1)
-            {
-                return 100 / subset.Length;
-            }
-
-            possibility += 50;
-            if (subset.Length == 1 && char.IsLetter(subset[0]) && next is '.')
-            {
-                possibility += 50;
-            }
-
-            return possibility;
-        }
-
-        protected override Entity BuildImpl(Range range) => new(range);
+            Rule.PreviousTokenMatch(previousToken);
     }
+
+    public static Entity Build(Range range) => new() { Range = range };
+    public static Entity Empty { get; } = new() { Range = default };
 }

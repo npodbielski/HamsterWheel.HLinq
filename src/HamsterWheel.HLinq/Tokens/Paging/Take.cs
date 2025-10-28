@@ -1,14 +1,15 @@
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
+
 namespace HamsterWheel.HLinq.Tokens.Paging;
 
-public sealed class Take(Range range) : TokenBase(range)
+public sealed class Take : TokenBase
 {
-    public const string TokenValue = "take";
-
-    public sealed class Possibility() : TokenPossibility<Take>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<Take>(grammar, "take")
     {
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            previousTokens.Count == 0 || previousTokens is [.., RightSquareBracket, Dot];
-
-        protected override Take BuildImpl(Range range) => new(range);
+            Rule.PreviousTokensMatch(previousTokens);
     }
+
+    public static Take Build(Range range) => new() { Range = range };
+    public static Take Empty { get; } = new() { Range = default };
 }

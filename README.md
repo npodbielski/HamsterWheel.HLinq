@@ -6,7 +6,7 @@
 ## Reference links
 
 - [Hamster Wheel](https://internetexception.com/why-hamster-wheel/)
-- [HLinq design decisions]()
+- [HLinq design](https://internetexception.com/2025/10/28/hlinq-design/)
 
 # What's contained in this project
 
@@ -20,6 +20,38 @@ This project contains of two main parts:
 
 Navigation:
  - [How to use on server](#how-to-use-on-server)
+   - [Usage within minimal API](#usage-within-minimal-api)
+   - [Usage inside Controller](#usage-inside-controller)
+   - [Configuring HLinq inside API](#configuring-hlinq-inside-api)
+     - [Default limit of records returned](#default-limit-of-records-returned)
+     - [Overriding user requested number of records](#overriding-user-requested-number-of-records)
+     - [Adding EF DB Functions](#adding-ef-db-functions)
+ - [How to use on the client](#how-to-use-on-the-client)
+   - [Syntax](#syntax)
+     - [White space management](#white-space-management)
+   - [HTTP Queries](#http-queries)
+     - [Paging](#paging)
+     - [Filtering](#filtering)
+       - [Equals](#equals)
+       - [Not equals](#not-equals)
+       - [Greater](#greater)
+       - [Greater or equal](#greater-or-equal)
+       - [Lesser](#lesser)
+       - [Lesser or equal](#lesser-or-equal)
+       - [String contains](#string-contains)
+       - [String contains with case-insensitive](#string-contains-with-case-insensitive)
+       - [String StartsWith](#string-startswith)
+       - [String EndsWith](#string-endswith)
+       - [EF DbFunctions](#ef-dbfunctions)
+         - [PgSql](#pgsql)
+     - [Selecting](#selecting)
+     - [Ordering](#ordering)
+   - [Using the C# client](#using-the-c--client)
+ - [Extensions](#extensions)
+   - [Translations](#translations)
+   - [Custom filters](#custom-filters)
+ - [Dynamic object transformation]
+ - [Roadmap](#roadmap)
 
 # How to use on server
 
@@ -427,7 +459,7 @@ GET /data?where[x.Name.EndsWith(John, StringComparison.InvariantCultureIgnoreCas
 > [!WARNING]  
 > This is supported by HLinq and Linq and EF but cannot be used on memory collections. Use it for DB collections only.
 
-##### PGSQL 
+##### PGSQL
 ###### ILike
 This is very similar to `string.Contains(str, StringComparison.InvariantCultureIgnoreCase)` but instead of using .net runtime function it is translated to db function, and it is applied by DB engine.
 For example:
@@ -499,8 +531,227 @@ To do this use any number of `thanBy` or `thanByDescending` roots after `orderBy
 GET /demo/memory?orderBy[x.Name].thenBy[x.realName]
 ```
 
+## Using the C # client
+
+HLinq have dedicated C# client built on top of `HttpClient` class. It is available in the `HLinq.Client` package.
+To use it, you need to create an instance of this `HttpClient` with all the necessary configurations: your API url, authentication, retry policies, etc.
+In case of the demo project it can be done as follows:
+```csharp
+var client = new HttpClient();
+client.BaseAddress = new Uri("http://localhost:5000");
+```
+Then you can call an extension method that allows you to build HLinq GET query with Linq syntax:
+```csharp
+var result = client.GetWithHLinq("/demo/db", q => q.For<Person>().Count());
+```
+The first argument is the path to the endpoint you want to call.
+The Second argument is the Linq expression that will be translated to HLinq query.
+
+In the above example it will be translated into:
+```http request
+GET http://localhost:5000/demo/db?count[]
+```
+Noticed that value of the `result` variable is an `int`. This is because the builder expression returns an int type. If a builder query returns a collection or any other type, `GetWithHLinq` will automatically deserialize server JSON response into that type.
+
+If you change the type by doing a custom select operation, the return type will be changed accordingly.
+```csharp
+var response = await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>().Select(x => x.FirstName).Take(100));
+```
+The above query will return an array of strings.
+On the other hand, if you will ask for custom select which require anonymous type:
+```csharp
+var response = await fixture.Client.GetWithHLinq("/demo/db", 
+    q => q.For<Person>().Select(x => new { N = x.FirstName }).Take(100));
+```
+JSON response will be deserialized into an array of those objects with single `N` property of a type of string.
+
+![anonymous_type.png](readme_files/anonymous_types.png)
+
+The serialization is done by `System.Text.Json` library with default settings of `JsonSerializerDefaults.Web`.
+If you do not like default serialization rules, you can change them by providing your own `JsonSerializerOptions` instance to the builder factory `For` method.
+```csharp
+var response = await fixture.Client.GetWithHLinq("/demo/db", q => q
+    .For<Person>(new JsonSerializerOptions())
+    .Where(x => EF.Functions.ILike(x.FirstName, "Bill")));
+```
+
+# Extensions
+
+HLinq architecture allows for easy extension of many aspects of the library.
+HLinq is designed around interfaces retrieved from DI container. If you do not like default behavior, you can provide your own implementations of those interfaces. Just be careful! You might break something :)
+
+## Translations
+
+For example, HLinq queries can be translated to different languages. Linq syntax is pseudo english. You can translate it to you own language by providing different implementations of `ITokenPossibility` interfaces.
+Almost each `ITokenPossibility` implementation poses `TokenValue` constant that represent this token in the query.
+If you want to change how `select` token is represented in the query, you can provide different implementation of `ITokenPossibility` interface. 
+Or even better use `TokenPossibility<T>` class. 
+In Polish, you would write `wybierz` instead of `select`, so new implementation would look like this:
+```csharp
+public class SelectPossibility(IGrammar grammar) : TokenPossibility<Select>(grammar, "wybierz")
+{
+    protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
+        Rule.PreviousTokensMatch(previousTokens);
+}
+```
+
+Then add it to the DI container:
+```csharp
+services.ConfigureHLinq(c => c.Extensions.AddTokenPossibility<SelectPossibility>());
+```
+
+This adds new `select` token characters in new language, `wybierz`. This works along the old syntax, so both are valid:
+```http request
+GET /demo/db?wybierz[x.Name]
+```
+```http request
+GET /demo/db?select[x.Name]
+```
+
+If you want to replace the token instead, use:
+```csharp
+services.ConfigureHLinq(c => c.Extensions.OverWriteTokenPossibility<SelectPossibility, Select>());
+```
+
+This will cause `select[x.Name]` to be invalid and an attempt to use it will result in HTTP 400 error with the following response:
+```json
+{
+  "title": "HLinq query 'select[x.Name]' is invalid and not finished properly.",
+  "status": 400
+}
+```
+
+It is worth to mention that HLinq does not require Ascii characters only. You can use any characters you want. Translation does not have to be only letters. For example, for sorting/ordering you may choose more expressive Unicode characters:
+- ↓ for orderByDescending
+- ↑ for oderBy
+
+Then `orderBy` token possibility can look like this:
+```csharp
+public class OrderByDescendingPossibility(IGrammar grammar) : TokenPossibility<OrderByDescending>(grammar, "↓")
+{
+    protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
+        Rule.PreviousTokensMatch(previousTokens);
+
+    protected override OrderByDescending BuildImpl(Range range) => new(range);
+}
+```
+And to order you call your API with:
+```http request
+GET /demo/db?↓[x.firstName]
+```
+
+## Custom filters
+
+It is also possible to extend HLinq by writing custom expression converters. For example, if you need very complex filtering rules that require one or two simple parameters, you can write a custom converter.
+Let's say you want to find a person by their full name and your model (like in /demo/db endpoint) does not have a `FullName` property.
+You can write a custom converter that will take one parameter and will use them to build a custom expression.
+```csharp
+public class CustomFilterConverter(IPropertiesCache propertiesCache) : IStaticMethodToExpressionConverter
+{
+    private readonly StaticMethodToExpressionConverter _converter = new();
+
+    public Expression BuildStatic(IBuilderContext context, IMethod method, IParametersConverter parametersConverter)
+    {
+        if (method.GetName(context.HLinqQuery) != "hasFullName")
+        {
+            return _converter.BuildStatic(context, method, parametersConverter);
+        }
+
+        var fullNameSearchConstant = method.Children[1].Tokens[0].GetValue(context.HLinqQuery);
+
+        var stringConcatMethod = typeof(string).GetMethod("Concat", [typeof(string), typeof(string)]);
+        
+        var firstNamePlusSpace = Expression.Add(Expression.Property(context.Param, propertiesCache.Single(context.Type, "FirstName")), Expression.Constant(" "), stringConcatMethod);
+        var firstNameSpaceAndLastName = Expression.Add(firstNamePlusSpace, Expression.Property(context.Param, propertiesCache.Single(context.Type, "LastName")), stringConcatMethod);
+        return Expression.Equal(firstNameSpaceAndLastName, Expression.Constant(fullNameSearchConstant));
+    }
+}
+```
+Expression returned when name of the method is `hasFullName` is equivalent to:
+```csharp
+(Person p) => p.FirstName + " " + p.LastName == fullNameSearchConstant;
+```
+If you will replace default implementation of `IStaticMethodToExpressionConverter` and register yours:
+```csharp
+services.ConfigureHLinq(c =>
+    {
+        c.Extensions.CustomServices.Add(s =>
+        {
+            c.Extensions.RemoveService<IStaticMethodToExpressionConverter>(s);
+            s.AddSingleton<IStaticMethodToExpressionConverter, CustomFilterConverter>();
+        });
+    })
+```
+then you can call your endpoint with:
+```http request
+GET /demo/db?where[hasFullName(x, Nolan Cowle)]
+```
+For the PgSql it will result in SQL
+```sql
+SELECT p."Id", p."Email", p."FirstName", p."IpAddress", p."LastName"
+      FROM "Persons" AS p
+      WHERE p."FirstName" || ' ' || p."LastName" = 'Nolan Cowle'
+      LIMIT @__p_0
+```
+and API will return one record:
+```json
+[
+  {
+    "id": 1,
+    "firstName": "Nolan",
+    "lastName": "Cowle",
+    "email": "ncowle0@netvibes.com",
+    "ipAddress": "115.65.156.48"
+  }
+]
+```
+
+# Dynamic object transformation
+Main HLinq package also exposes one helpful extension method of an `object` type: `ExecuteHLinq`. This method allows you to execute HLinq queries on any object, for example, to query for a specific property or just some subset of properties.
+Consider the following line of code:
+```csharp
+var name = obj.ExecuteHLinq("select[x.Name]");
+```
+This returns the value of the `Name` property of the object. 
+
+This can be also achieved with shorter query syntax that implies select and is equivalent to above:
+```csharp
+var name = obj.ExecuteHLinq("x.Name");
+```
+
+`ExecuteHLinq` method is also available on collection types.
+```csharp
+int[] collection = [1,2,3,4,5,6,7,8,9];
+var result = collection.ExecuteHLinq("where[x>5]");//6,7,8,9
+```
+
+Collection item can be complex type too:
+```csharp
+var filteredPersons = collection.ExecuteHLinq("select[x.FirstName, x.LastName]");
+```
+
+This would be equivalent to:
+```csharp
+collection.Select(c => new { c.Name, c.Enum });
+```
+
+You are able to use more than one operation in the query:
+```csharp
+var filteredPersons = collection.Select(c => new { c.Name, c.Enum });
+```
+
+This, in turn, would be equivalent to:
+```csharp
+collection.Where(x => x.Enum == RandomEnum.One).Select(c => new { c.Name, c.Enum });
+```
 
 
-
-
-# Using 
+# Roadmap
+- [ ] Add support for grouping
+- [ ] Add support for nested counts `[NumberOfAddresses=x.Addresses.Count[]]`
+- [ ] Add support for nested type selects: `select[Addresses=select[a.Street,a.City]]`
+- [ ] Add support for methods in select: `select[reverse(x.Name)]`
+- [ ] Add support for other than bool methods in filters: `where[Distance(x.DateOfBirth, 2025-10-05)<=10]`
+- [ ] Add support for property operation in select: `select[FullName=x.Name+' '+x.Surname]`
+- [ ] Add support for other DBs
+- [ ] Add support for changing grammar rules 

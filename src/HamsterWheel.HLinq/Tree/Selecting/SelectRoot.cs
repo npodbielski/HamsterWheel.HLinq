@@ -1,9 +1,9 @@
 using System.Linq.Expressions;
 using DynamicAnonymousType;
-using HamsterWheel.HLinq.Appliers;
-using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Applier;
+using HamsterWheel.HLinq.Pipeline.Applier.Builders;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
@@ -23,6 +23,14 @@ public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoo
 
     public sealed class Parser : ElementParserBase<SelectRoot>
     {
+        public override IToken[] ExampleTokens => SelectRootExampleTokens;
+
+        private static IToken[] SelectRootExampleTokens =>
+        [
+            SelectToken.Empty, LeftSquareBracket.Empty, Entity.Empty, Dot.Empty, PropertyName.Empty,
+            RightSquareBracket.Empty
+        ];
+
         protected override SelectRoot? BuildBranch(IParsingContext context) =>
             context.Tokens switch
             {
@@ -32,29 +40,21 @@ public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoo
                 _ => null
             };
 
-        public override IToken[] ExampleTokens => SelectRootExampleTokens;
-
         protected override void FinishImpl(IParsingContext context)
         {
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
-                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
-                    [new RightSquareBracket(default)]);
+                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
+                    [RightSquareBracket.Empty]);
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);
-            context.RemoveTokensFromStart(1);
+            context.RemoveStartTokens(1);
         }
 
         private static SelectRoot ThrowOnEmptySelect(IParsingContext context) =>
-            throw new InvalidTokenCollectionException(context.SourceQueryString,
-                context.Tokens.Take(3).ToArray(), SelectRootExampleTokens);
-
-        private static IToken[] SelectRootExampleTokens =>
-        [
-            new SelectToken(default), new LeftSquareBracket(default),
-            new Entity(default), new Dot(default), new PropertyAccess(default), new RightSquareBracket(default)
-        ];
+            throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
+                SelectRootExampleTokens);
     }
 
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache) : RootApplierBase<ISelectRoot>
@@ -79,7 +79,7 @@ public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoo
     {
         protected override Expression Build(IBuilderContext context, SelectRoot element)
         {
-            //select[x.Id,x.Name] or select[UserName=x.Name]
+            //select[x.id,x.Name] or select[UserName=x.Name]
             if (element.NeedsObjectInitializer)
             {
                 var properties = element.MembersBindSources.Select(context.ToPropInfo).ToArray();
@@ -90,8 +90,8 @@ public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoo
                 return Expression.MemberInit(Expression.New(type), memberBindings.Cast<MemberBinding>());
             }
 
-            //select[x.Id]
-            //if user wants to select with new object initializer (and json list of objects response) than it is possible to just rewrite the query to: `select[Id=x.Id]` 
+            //select[x.id]
+            //if the user wants to select with a new object initializer (and JSON list of objects response) than it is possible to just rewrite the query to: `select[id=x.id]` 
             return element.MembersBindSources.Select(context.ToExpression).OfType<MemberExpression>().First();
         }
     }

@@ -1,10 +1,10 @@
-using HamsterWheel.HLinq.Appliers;
+using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Applier;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Paging;
-using HamsterWheel.HLinq.ValueConverters;
 
 namespace HamsterWheel.HLinq.Tree.Paging;
 
@@ -30,35 +30,31 @@ public sealed partial class SkipRoot(IToken[] tokens) : TreeBranch(tokens), ITre
         {
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
-                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
-                    [new RightSquareBracket(default)]);
+                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
+                    [RightSquareBracket.Empty]);
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);
-            context.RemoveTokensFromStart(1);
+            context.RemoveStartTokens(1);
         }
 
         private static SkipRoot ThrowOnEmpty(IParsingContext context) =>
-            throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(3).ToArray(),
-                SkipRootExampleTokens);
+            throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens, SkipRootExampleTokens);
 
         private static IToken[] SkipRootExampleTokens =>
         [
-            new Skip(default), new LeftSquareBracket(default), new TokenExample("10"),
-            new RightSquareBracket(default)
+            Skip.Empty, LeftSquareBracket.Empty, new TokenExample("10"), RightSquareBracket.Empty
         ];
     }
 
-    public sealed class Applier(IValueConverterFactory factory, IMethodsCache methodsCache) : RootApplierBase<SkipRoot>
+    public sealed class Applier(IDefaultConverter converter, IMethodsCache methodsCache) : RootApplierBase<SkipRoot>
     {
         protected override QueryableContext ApplyImpl(IQueryableContext context, SkipRoot skip,
             string hLinqQuery)
         {
-            var converter = factory.GetConverterFor(typeof(int));
-
             var numberAsString = skip.GetSkipNumber(hLinqQuery);
 
-            var skipNumber = (int)converter.Convert(numberAsString)!;
+            var skipNumber = converter.ConvertTo<int?>(numberAsString); 
 
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Skip),
                 typeParams: context.CurrentResultType);

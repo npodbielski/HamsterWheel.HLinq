@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Reflection;
 using System.Web;
-using HamsterWheel.HLinq.Appliers;
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Applier;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tree.Paging;
@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HamsterWheel.HLinq.Request;
 
-public partial class HLinqQuery<T> : IHLinqQuery where T : class
+public partial class HLinqQuery<T> : IHLinqQuery
 {
     public ITreeElement[] Children { get; private set; } = [];
     public Type ItemType { get; } = typeof(T);
@@ -20,9 +20,10 @@ public partial class HLinqQuery<T> : IHLinqQuery where T : class
     public bool NoChildren => Children.Length == 0;
 
     /// <summary>
-    /// Instance of current HttpContext <see cref="IHLinqQueryApplier"/> if <see cref="HLinqQuery{T}"/> was obtained from the binder. Otherwise, null.
+    /// Instance of current <see cref="HttpContext"/>
+    /// <see cref="IHLinqQueryApplier"/> if <see cref="HLinqQuery{T}"/> was obtained from the binder. Otherwise, null.
     /// </summary>
-    internal IHLinqQueryApplier? QueryApplier { get; set; }
+    private IHLinqQueryApplier? QueryApplier { get; set; }
 
     internal IHLinqOptions? Options { get; set; }
 
@@ -48,14 +49,9 @@ public partial class HLinqQuery<T> : IHLinqQuery where T : class
             throw new HLinqQueryQueryApplierNullException();
         }
 
-        if (!Children.Any(t => t is TakeRoot or CountRoot) && Options?.HttpDefaultMaxTakeRecords is not null)
+        if (Children.All(t => t is not CountRoot) && Children.LastOrDefault() is not TakeRoot)
         {
-            Children = [..Children, new TakeRoot(Options.HttpDefaultMaxTakeRecords)];
-        }
-
-        if (Children.All(t => t is not CountRoot) && Children.LastOrDefault() is TakeRoot take)
-        {
-            take.MaxTake = Options?.HttpDefaultMaxTakeRecords ?? HLinqOptions.DefaultMaxTakeRecords;
+            Children = [..Children, new TakeRoot()];
         }
 
         return QueryApplier?.Apply(queryable, this, token);
@@ -103,10 +99,11 @@ public partial class HLinqQuery<T> : IHLinqQuery where T : class
         return hlinqQuery;
     }
 
-    public class HLinqQueryApplier(IApplierFactory applierFactory, IMethodsCache methodsCache) : IHLinqQueryApplier
+    public class HLinqQueryApplier(IElementApplierFactory applierFactory, IMethodsCache methodsCache)
+        : IHLinqQueryApplier
     {
         public object Apply<T1>(IQueryable<T1> queryable, IHLinqQuery hLinqQuery,
-            CancellationToken cancellationToken = default) where T1 : class =>
+            CancellationToken cancellationToken = default) =>
             Apply(queryable, typeof(T1), hLinqQuery, cancellationToken);
 
         public object Apply(IQueryable queryable, Type itemType, IHLinqQuery hLinqQuery,
@@ -123,7 +120,7 @@ public partial class HLinqQuery<T> : IHLinqQuery where T : class
         }
 
         public IResult ApplyGetType<T1>(IQueryable<T1> queryable, IHLinqQuery hLinqQuery,
-            CancellationToken cancellationToken = default) where T1 : class =>
+            CancellationToken cancellationToken = default) =>
             ApplyGetType(queryable, hLinqQuery, typeof(T1), cancellationToken);
 
         public IResult ApplyGetType(IQueryable queryable, IHLinqQuery hLinqQuery, Type itemType,
@@ -138,25 +135,25 @@ public partial class HLinqQuery<T> : IHLinqQuery where T : class
             }
 
             cancellationToken.ThrowIfCancellationRequested();
-            if (endResult.Queryable is not null)
+            if (endResult.Queryable is null)
             {
-                var method = methodsCache.GetStaticGeneric(typeof(Enumerable), nameof(Enumerable.ToArray),
-                    typeParams: endResult.CurrentResultType);
-
-                try
-                {
-                    var data = (ICollection)method.Invoke(null, [endResult.Queryable])!;
-                    return new Result(data.Cast<object>().ToArray(), endResult.CurrentResultType);
-                }
-                catch (TargetInvocationException e) when (e.InnerException is InvalidOperationException ioe &&
-                                                          ioe.Message.Contains(
-                                                              "is not supported because the query has switched to client-evaluation"))
-                {
-                    throw new DbFunctionsNotAvailableExceptions(method.Name);
-                }
+                return new Result(null, endResult.CurrentResultType, endResult.Count);
             }
 
-            return new Result(null, endResult.CurrentResultType, endResult.Count);
+            var method = methodsCache.GetStaticGeneric(typeof(Enumerable), nameof(Enumerable.ToArray),
+                typeParams: endResult.CurrentResultType);
+
+            try
+            {
+                var data = (ICollection)method.Invoke(null, [endResult.Queryable])!;
+                return new Result(data.Cast<object>().ToArray(), endResult.CurrentResultType);
+            }
+            catch (TargetInvocationException e) when (e.InnerException is InvalidOperationException ioe &&
+                                                      ioe.Message.Contains(
+                                                          "is not supported because the query has switched to client-evaluation"))
+            {
+                throw new DbFunctionsNotAvailableExceptions(method.Name);
+            }
         }
     }
 }

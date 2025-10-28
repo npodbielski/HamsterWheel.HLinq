@@ -12,33 +12,6 @@
     </ItemGroup>
   
     <ItemGroup>
-        <Compile Update="Filter.cs">
-            <DependentUpon>ExpressionBuilderUnitTests.cs</DependentUpon>
-        </Compile>
-        <Compile Update="Order.cs">
-            <DependentUpon>ExpressionBuilderUnitTests.cs</DependentUpon>
-        </Compile>
-        <Compile Update="QueryCount.cs">
-            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
-        </Compile>
-        <Compile Update="QueryOrderBy.cs">
-            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
-        </Compile>
-        <Compile Update="QuerySelect.cs">
-            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
-        </Compile>
-        <Compile Update="QueryWhere.cs">
-            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
-        </Compile>
-        <Compile Update="Select.cs">
-            <DependentUpon>ExpressionBuilderUnitTests.cs</DependentUpon>
-        </Compile>
-        <Compile Update="TokenizerWhiteSpaceTests.cs">
-            <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
-        </Compile>
-        <Compile Update="TokenizerDifferentCaseTests.cs">
-            <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
-        </Compile>
         <Compile Update="Data\Converter\ConvertToT1.cs">
           <DependentUpon>DefaultConverterUnitTests.cs</DependentUpon>
         </Compile>
@@ -48,10 +21,10 @@
         <Compile Update="Data\Converter\ConvertToBoolean.cs">
           <DependentUpon>DefaultConverterUnitTests.cs</DependentUpon>
         </Compile>
-        <Compile Update="TokenizerWhereTests.cs">
+        <Compile Update="Pipeline\Tokenizer\TokenizerOrderingTests.cs">
           <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
         </Compile>
-        <Compile Update="TokenizerSelectTests.cs">
+        <Compile Update="Pipeline\Tokenizer\TokenizerPagingTests.cs">
           <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
         </Compile>
     </ItemGroup>

@@ -1,17 +1,18 @@
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
+
 namespace HamsterWheel.HLinq.Tokens.Ordering;
 
-public sealed class ThenBy(Range range) : TokenBase(range)
+public sealed class ThenBy : TokenBase
 {
-    public const string TokenValue = "thenBy";
-
-    public sealed class Possibility() : TokenPossibility<ThenBy>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<ThenBy>(grammar, "thenBy")
     {
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            previousTokens.Count == 0 || previousTokens is [.., RightSquareBracket, Dot];
+            Rule.PreviousTokensMatch(previousTokens);
 
         protected override bool NextIsAllowedWhenKeywordMatch(char? next) =>
-            next == LeftSquareBracket.TokenValue.AsSpan()[0];
-
-        protected override ThenBy BuildImpl(Range range) => new(range);
+            Rule.NextCharMatch(next);
     }
+
+    public static ThenBy Build(Range range) => new() { Range = range };
+    public static ThenBy Empty { get; } = new() { Range = default };
 }

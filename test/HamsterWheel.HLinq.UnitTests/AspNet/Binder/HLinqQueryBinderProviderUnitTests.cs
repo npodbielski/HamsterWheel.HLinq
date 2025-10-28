@@ -1,7 +1,7 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.AspNet.Binder;
 using HamsterWheel.HLinq.Request;
-using HamsterWheel.HLinq.UnitTests.Dummies;
+using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;

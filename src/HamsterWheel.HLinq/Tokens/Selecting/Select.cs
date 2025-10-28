@@ -1,13 +1,15 @@
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
+
 namespace HamsterWheel.HLinq.Tokens.Selecting;
 
-public sealed class Select(Range range) : TokenBase(range)
+public sealed class Select : TokenBase
 {
-    public const string TokenValue = "select";
-
-    public sealed class Possibility() : TokenPossibility<Select>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<Select>(grammar, "select")
     {
-        protected override bool PreviousTokensMatch(List<IToken> previousTokens) => previousTokens.Count == 0 || previousTokens is [.., RightSquareBracket, Dot];
-
-        protected override Select BuildImpl(Range range) => new(range);
+        protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
+            Rule.PreviousTokensMatch(previousTokens);
     }
+
+    public static Select Build(Range range) => new() { Range = range };
+    public static Select Empty { get; } = new() { Range = default };
 }

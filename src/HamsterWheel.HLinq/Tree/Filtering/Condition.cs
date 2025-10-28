@@ -1,8 +1,7 @@
 using System.Linq.Expressions;
-using System.Reflection;
-using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Applier.Builders;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Selecting;
@@ -18,27 +17,30 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
     {
     }
 
+    public ILogicalOperatorToken? LogicalOpToken { get; }
+
     private Condition(ILogicalOperatorToken logicalOpToken) :
         base([(TokenBase)logicalOpToken]) => LogicalOpToken = logicalOpToken;
 
-    public ITreeElement Left => Children[0];
-    public ITreeElement Right => Children[2];
+    private ITreeElement Left => Children[0];
+    private ITreeElement Right => Children[2];
 
-    public ComparisonOperation? Comparison => GetChildOfType<ComparisonOperation>();
+    private ComparisonOperation? Comparison => GetChildOfType<ComparisonOperation>();
 
-    public bool IsComparisonOrEqualityOp => _isComparison ??= Comparison is not null;
-    public bool IsFlagCheck => Children.Length == 1;
+    private bool IsComparisonOrEqualityOp => _isComparison ??= Comparison is not null;
+    private bool IsFlagCheck => Children.Length == 1;
 
-    public bool IsMethod => _isMethod ??= GetMethod() is not null;
+    private bool IsMethod => _isMethod ??= GetMethod() is not null;
 
-    public ILogicalOperatorToken? LogicalOpToken { get; }
-
-    public Method? GetMethod() => GetChildOfType<Method>();
+    private Method? GetMethod() => GetChildOfType<Method>();
 
     public sealed class Parser : ElementParserBase<Condition>
     {
         protected override Type[] ValidParents { get; } = [typeof(WhereRoot), typeof(ConditionGroup)];
         public override IToken[] ExampleTokens => ConditionExampleTokens;
+
+        public static IToken[] ConditionExampleTokens { get; } =
+            [Entity.Empty, Dot.Empty, PropertyName.Empty, Equality.Empty, NameOrValue.Empty];
 
         protected override Condition? BuildBranch(IParsingContext context) =>
             context.Tokens switch
@@ -46,25 +48,20 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
                 [NameOrValue, Assignment, NameOrValue, ..] => ThrowOnReverseComparison(context),
                 [ILogicalOperatorToken conditionalLogicalOp, not LeftCircleBracket, ..] => new Condition(
                     conditionalLogicalOp),
-                [Entity, Dot, PropertyAccess, ..] => new Condition(),
-                [MethodCall, ..] => new Condition(),
+                [Entity, Dot, PropertyName, ..] => new Condition(),
+                [Entity, ..] => new Condition(),
+                [MethodName, ..] => new Condition(),
                 _ => null
             };
 
         private static Condition ThrowOnReverseComparison(IParsingContext context) =>
             throw new InvalidTokenCollectionException(context.SourceQueryString,
-                context.Tokens.Take(3).ToArray(),
+                context.Tokens,
                 ConditionExampleTokens,
-                [new And(default)],
-                [new Or(default)],
-                [new MethodCall(default)]
+                [And.Empty],
+                [Or.Empty],
+                [MethodName.Empty]
             );
-
-        public static IToken[] ConditionExampleTokens { get; } =
-        [
-            new Entity(default), new Dot(default), new PropertyAccess(default), new Equality(default),
-            new NameOrValue(default)
-        ];
     }
 
     public sealed class Converter(IConverterFactory converterFactory) : ElementToExpressionConverter<Condition>
@@ -94,6 +91,15 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
                     var conditionBuilderContext = new ArithmeticComparisonConditionBuilderContext(context);
                     left = converterFactory.GetToExpressionConverterFor<Property>()
                         .Build(conditionBuilderContext, property);
+                    right = conditionBuilderContext.ToExpression(condition.Right);
+                }
+                else if (condition.Left is EntityLeaf)
+                {
+                    var conditionBuilderContext = new ArithmeticComparisonConditionBuilderContext(context)
+                    {
+                        ComparisonType = context.Type
+                    };
+                    left = context.Param;
                     right = conditionBuilderContext.ToExpression(condition.Right);
                 }
 

@@ -1,8 +1,8 @@
 using System.Linq.Expressions;
-using HamsterWheel.HLinq.Appliers;
-using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Applier;
+using HamsterWheel.HLinq.Pipeline.Applier.Builders;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
@@ -15,7 +15,13 @@ public sealed class OrderByDescendingRoot(IToken[] tokens) : TreeBranch(tokens),
     public sealed class Parser : ElementParserBase<OrderByDescendingRoot>
     {
         public override IToken[] ExampleTokens { get; } = OrderRootExampleTokens;
-        
+
+        private static IToken[] OrderRootExampleTokens =>
+        [
+            OrderByDescending.Empty, LeftSquareBracket.Empty,
+            Entity.Empty, Dot.Empty, PropertyName.Empty, RightSquareBracket.Empty
+        ];
+
         protected override OrderByDescendingRoot? BuildBranch(IParsingContext context)
         {
             return context.Tokens switch
@@ -31,36 +37,23 @@ public sealed class OrderByDescendingRoot(IToken[] tokens) : TreeBranch(tokens),
         {
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
-                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
-                    [new RightSquareBracket(default)]);
+                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
+                    [RightSquareBracket.Empty]);
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);
-            context.RemoveTokensFromStart(1);
+            context.RemoveStartTokens(1);
         }
 
         private static OrderByDescendingRoot ThrowOnEmptySelect(IParsingContext context) =>
-            throw new InvalidTokenCollectionException(context.SourceQueryString,
-                context.Tokens.Take(3).ToArray(), OrderRootExampleTokens);
-
-        private static IToken[] OrderRootExampleTokens =>
-        [
-            new OrderByDescending(default), new LeftSquareBracket(default),
-            new Entity(default), new Dot(default), new PropertyAccess(default), new RightSquareBracket(default)
-        ];
-    }
-
-    public sealed class Converter : ElementToExpressionConverter<OrderByDescendingRoot>
-    {
-        protected override Expression Build(IBuilderContext context, OrderByDescendingRoot element) =>
-            context.ToExpression(element.Children[0]);
+            throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
+                OrderRootExampleTokens);
     }
 
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache)
         : RootApplierBase<OrderByDescendingRoot>
     {
-        protected override QueryableContext ApplyImpl(IQueryableContext context,
-            OrderByDescendingRoot orderBy,
+        protected override QueryableContext ApplyImpl(IQueryableContext context, OrderByDescendingRoot orderBy,
             string hLinqQuery)
         {
             var selector = builder.GetProperty(context.CurrentResultType, orderBy, hLinqQuery);
@@ -69,5 +62,11 @@ public sealed class OrderByDescendingRoot(IToken[] tokens) : TreeBranch(tokens),
             return new QueryableContext((IQueryable)method.Invoke(null, [context.Queryable, selector.Expression])!,
                 context.CurrentResultType, context.Count);
         }
+    }
+
+    public sealed class Converter : ElementToExpressionConverter<OrderByDescendingRoot>
+    {
+        protected override Expression Build(IBuilderContext context, OrderByDescendingRoot element) =>
+            context.ToExpression(element.Children[0]);
     }
 }

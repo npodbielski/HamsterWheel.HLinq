@@ -1,6 +1,6 @@
-using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Applier.Builders;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 
@@ -8,26 +8,23 @@ namespace HamsterWheel.HLinq.Tree.Filtering;
 
 public sealed class ConditionGroup : TreeBranch, ILogicalOperationGroupBranch
 {
-    public ConditionGroup(LeftCircleBracket bracket) : base([bracket])
+    private ConditionGroup(LeftCircleBracket bracket) : base([bracket])
     {
     }
 
-    public ConditionGroup(ILogicalOperatorToken logical, LeftCircleBracket bracket) :
+    private ConditionGroup(ILogicalOperatorToken logical, LeftCircleBracket bracket) :
         base([(TokenBase)logical, bracket])
     {
     }
 
-    public ILogicalOperatorToken? LogicalOpToken =>
-        Tokens.OfType<ILogicalOperatorToken>().SingleOrDefault();
+    public ILogicalOperatorToken? LogicalOpToken => Tokens.OfType<ILogicalOperatorToken>().SingleOrDefault();
 
     public sealed class Parser : ElementParserBase<ConditionGroup>
     {
         protected override Type[] ValidParents { get; } = [typeof(WhereRoot), typeof(ConditionGroup)];
 
         public override IToken[] ExampleTokens { get; } =
-        [
-            new LeftCircleBracket(default), .. Condition.Parser.ConditionExampleTokens, new RightCircleBracket(default)
-        ];
+            [LeftCircleBracket.Empty, .. Condition.Parser.ConditionExampleTokens, RightCircleBracket.Empty];
 
         protected override ConditionGroup? BuildBranch(IParsingContext context) =>
             context.Tokens switch
@@ -42,12 +39,12 @@ public sealed class ConditionGroup : TreeBranch, ILogicalOperationGroupBranch
         {
             if (context.Tokens is not [RightCircleBracket bracket, ..])
             {
-                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
-                    [new RightCircleBracket(default)]);
+                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
+                    [RightCircleBracket.Empty]);
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);
-            context.RemoveTokensFromStart(1);
+            context.RemoveStartTokens(1);
         }
     }
 

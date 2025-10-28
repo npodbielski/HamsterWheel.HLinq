@@ -1,11 +1,12 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 using NSubstitute;
 
 namespace HamsterWheel.HLinq.UnitTests.Exceptions;
 
+// ReSharper disable once InconsistentNaming
 public class NonParsableTokenSequenceExceptionUnitTests_NetStandard
 {
     [Fact]

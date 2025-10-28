@@ -1,14 +1,15 @@
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
+
 namespace HamsterWheel.HLinq.Tokens.Ordering;
 
-public sealed class OrderByDescending(Range range) : TokenBase(range)
+public sealed class OrderByDescending : TokenBase
 {
-    public const string TokenValue = "orderByDescending";
-
-    public sealed class Possibility() : TokenPossibility<OrderByDescending>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<OrderByDescending>(grammar, "orderByDescending")
     {
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            previousTokens.Count == 0 || previousTokens is [.., RightSquareBracket, Dot];
-
-        protected override OrderByDescending BuildImpl(Range range) => new(range);
+            Rule.PreviousTokensMatch(previousTokens);
     }
+
+    public static OrderByDescending Build(Range range) => new() { Range = range };
+    public static OrderByDescending Empty { get; } = new() { Range = default };
 }

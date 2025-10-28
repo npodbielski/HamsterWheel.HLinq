@@ -1,17 +1,19 @@
 using System.Reflection;
 using FluentAssertions;
 using HamsterWheel.HLinq.AspNet.Binder;
-using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Parser;
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.Tokens;
-using HamsterWheel.HLinq.UnitTests.Assertions;
-using HamsterWheel.HLinq.UnitTests.Dummies;
+using HamsterWheel.HLinq.UnitTests.TestUtils;
+using HamsterWheel.HLinq.UnitTests.TestUtils.Assertions;
+using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
-using static HamsterWheel.HLinq.UnitTests.Assertions.ExpectedTreeElement;
+using static HamsterWheel.HLinq.UnitTests.TestUtils.Assertions.ExpectedTreeElement;
 
 namespace HamsterWheel.HLinq.UnitTests.AspNet.Binder;
 

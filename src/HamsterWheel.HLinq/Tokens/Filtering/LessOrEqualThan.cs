@@ -1,14 +1,15 @@
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
+
 namespace HamsterWheel.HLinq.Tokens.Filtering;
 
-public sealed class LessOrEqualThan(Range range) : TokenBase(range), IComparisonToken
+public sealed class LessOrEqualThan : TokenBase, IComparisonToken
 {
-    public const string TokenValue = "<=";
-
-    public sealed class Possibility() : TokenPossibility<LessOrEqualThan>(TokenValue)
+    public sealed class Possibility(IGrammar grammar) : TokenPossibility<LessOrEqualThan>(grammar, "<=")
     {
         protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            previousToken is PropertyAccess or RightSquareBracket;
-
-        protected override LessOrEqualThan BuildImpl(Range range) => new(range);
+            Rule.PreviousTokenMatch(previousToken);
     }
+
+    public static LessOrEqualThan Build(Range range) => new() { Range = range };
+    public static LessOrEqualThan Empty { get; } = new() { Range = default };
 }

@@ -1,9 +1,8 @@
 namespace HamsterWheel.HLinq.Tokens;
 
-public abstract class TokenBase(Range range) : IToken
+public abstract class TokenBase : IToken
 {
-    public Range Range { get; } = range;
-    public IToken Token => this;
+    public Range Range { get; protected internal set; }
 
     public string GetValue(string str) => str[Range];
 }

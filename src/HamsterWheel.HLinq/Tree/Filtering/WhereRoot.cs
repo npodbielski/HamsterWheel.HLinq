@@ -1,7 +1,7 @@
-using HamsterWheel.HLinq.Appliers;
-using HamsterWheel.HLinq.Builders;
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Parsers;
+using HamsterWheel.HLinq.Pipeline.Applier;
+using HamsterWheel.HLinq.Pipeline.Applier.Builders;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
@@ -26,21 +26,17 @@ public sealed class WhereRoot(IToken[] tokens) : TreeBranch(tokens), IWhereRoot
             };
 
         public override IToken[] ExampleTokens { get; } =
-        [
-            new Where(default), new LeftSquareBracket(default), ..Condition.Parser.ConditionExampleTokens,
-            new RightSquareBracket(default)
-        ];
+            [Where.Empty, LeftSquareBracket.Empty, ..Condition.Parser.ConditionExampleTokens, RightSquareBracket.Empty];
 
         protected override void FinishImpl(IParsingContext context)
         {
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
-                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens.Take(5).ToArray(),
-                    [new RightSquareBracket(default)]);
+                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens, [RightSquareBracket.Empty]);
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);
-            context.RemoveTokensFromStart(1);
+            context.RemoveStartTokens(1);
         }
     }
 

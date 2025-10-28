@@ -1,7 +1,7 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.Client;
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.UnitTests.Dummies;
+using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
 
 namespace HamsterWheel.HLinq.UnitTests.Client;
 
