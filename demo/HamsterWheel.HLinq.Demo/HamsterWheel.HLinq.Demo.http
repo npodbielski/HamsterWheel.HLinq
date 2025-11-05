@@ -1,17 +1,25 @@
 @HostAddress = http://localhost:5087
 
 ##Memory
+###memory as-is
+GET {{HostAddress}}/demo/memory
+Accept: application/json
+
 ###memory order and take 1 
 GET {{HostAddress}}/demo/memory?orderBy[x.name].take[1]
 Accept: application/json
 
+###memory case-insensitive search
+GET {{HostAddress}}/demo/memory?where[x.name.contains(b, StringComparison.InvariantCultureIgnoreCase)]
+Accept: application/json
+
 ## DB
 ###constant equality
-GET {{HostAddress}}/demo/db?where[x.firstName==John Doe]
+GET {{HostAddress}}/demo/db
 Accept: application/json
 
 ###case insensitve PGSQL search
-GET {{HostAddress}}/demo/db?where[ilike(x.firstName, billy)]
+GET {{HostAddress}}/demo/db?where[ilike(x.firstName,tra%25)]
 Accept: application/json
 
 ###case insensitve PGSQL search with escape character
@@ -74,8 +82,14 @@ Accept: application/json
 ### ordering 
 GET {{HostAddress}}/demo/memory?orderBy[x.Name].thenBy[x.realName]
 Accept: application/json
-###
+
+## counting
+### counting
 GET {{HostAddress}}/demo/memory?where[x.name.contains(Ant)].count[]
+Accept: application/json
+
+### counting
+GET {{HostAddress}}/demo/db?count[]
 Accept: application/json
 
 

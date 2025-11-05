@@ -78,7 +78,7 @@ app.MapGet("/endpoint",
     });
 ```
 
-You need to add `HLinqQuery<MyEntity>` model into your endpoint which is actual HLinq query mapped from HTTP Query String into type safe structure. `MyEntity` type is important to be the actual type you intend your users to query. 
+You need to add `HLinqQuery<MyEntity>` model into your endpoint which is actual HLinq query mapped from HTTP Query String into type safe structure. `MyEntity` type is important to be the actual type your API exposes to the clients. 
 
 So in above example it will become:
 ```csharp
