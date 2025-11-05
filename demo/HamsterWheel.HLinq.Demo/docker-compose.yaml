@@ -1,7 +1,7 @@
 ﻿services:
   demo:
     hostname: api
-    image: hlinq-demo
+    image: registry.np0.pl/hamster-wheel/hlinq/hlinq-demo:latest
     ports:
       - "5087:8080"
 
