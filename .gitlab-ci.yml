@@ -17,8 +17,8 @@ cache:
 
 before_script:
   # Configure GitLab package registry as a NuGet source
-  - 'dotnet nuget add source "${CI_API_V4_URL}/groups/69/-/packages/nuget/index.json" --name group --username gitlab-ci-token --password $CI_JOB_TOKEN --store-password-in-clear-text'
-  - 'dotnet restore HLinq.slnx --packages $NUGET_PACKAGES_DIRECTORY'
+  - 'dotnet && dotnet nuget add source "${CI_API_V4_URL}/groups/69/-/packages/nuget/index.json" --name group --username gitlab-ci-token --password $CI_JOB_TOKEN --store-password-in-clear-text || true'
+  - 'dotnet && dotnet restore HLinq.slnx --packages $NUGET_PACKAGES_DIRECTORY || true'
 
 build:
   stage: build
@@ -64,6 +64,15 @@ package-alpha:
     # Push the package to the project's package registry
     - dotnet nuget push "src/**/bin/Release/*.nupkg" --source gitlab
   environment: staging
+
+build-docker-image:
+  image: quay.io/buildah/stable
+  stage: build
+  script:
+    - cd demo/HamsterWheel.HLinq.Demo
+    - echo "$CI_REGISTRY_PASSWORD" | buildah login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+    - buildah build -t $CI_REGISTRY_IMAGE:amd64 .
+    #- buildah push $CI_REGISTRY_IMAGE:amd64
 
 package:
   stage: deploy
