@@ -7,6 +7,8 @@
 
 - [Hamster Wheel](https://internetexception.com/why-hamster-wheel/)
 - [HLinq design](https://internetexception.com/2025/10/28/hlinq-design/)
+- [Demo - in memory collection](https://hlinq-demo.podbielski.it/demo/memory)
+- [Demo - db collection](https://hlinq-demo.podbielski.it/demo/db)
 
 # What's contained in this project
 
