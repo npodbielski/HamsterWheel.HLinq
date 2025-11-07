@@ -1,0 +1,20 @@
+﻿services:
+  demo:
+    hostname: api
+    image: registry.np0.pl/hamster-wheel/hlinq/hlinq-demo:latest
+    ports:
+      - "5087:8080"
+
+  postgres:
+    hostname: postgres
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: outflank-outage-undoing
+      POSTGRES_USER: postgres
+      POSTGRES_DB: Demo
+
+
+networks:
+  default:
+    name: demo
