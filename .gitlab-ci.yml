@@ -1,3 +1,9 @@
+stages:
+  - build
+  - test
+  - publish
+  - deploy
+
 image: mcr.microsoft.com/dotnet/sdk:9.0
 
 variables:
@@ -15,21 +21,34 @@ cache:
     - '$NUGET_PACKAGES_DIRECTORY'
   policy: pull-push
 
-before_script:
-  # Configure GitLab package registry as a NuGet source
-  - 'dotnet nuget add source "${CI_API_V4_URL}/groups/69/-/packages/nuget/index.json" --name group --username gitlab-ci-token --password $CI_JOB_TOKEN --store-password-in-clear-text'
-  - 'dotnet restore HLinq.slnx --packages $NUGET_PACKAGES_DIRECTORY'
+.build_image:
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [ "" ]
+  before_script:
+    - auth=$(echo -n $CI_REGISTRY_USER:$CI_REGISTRY_PASSWORD | base64 -w 0)
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$auth\"}}}" > /kaniko/.docker/config.json
+
+.dotnet:
+  before_script:
+    # Configure GitLab package registry as a NuGet source
+    - 'dotnet nuget add source "${CI_API_V4_URL}/groups/69/-/packages/nuget/index.json" --name group --username gitlab-ci-token --password $CI_JOB_TOKEN --store-password-in-clear-text'
+    - 'dotnet restore HLinq.slnx --packages $NUGET_PACKAGES_DIRECTORY'
 
 build:
   stage: build
+  extends: .dotnet
   script:
     - 'dotnet build --no-restore'
 
 tests:
   services:
     - name: postgres
+  extends: .dotnet
   variables:
     FF_NETWORK_PER_BUILD: 1
+    BUILDAH_FORMAT: docker
+    BUILDAH_ISOLATION: chroot
     POSTGRES_PASSWORD: outflank-outage-undoing
     POSTGRES_DB: Demo
     POSTGRES_HOST: postgres
@@ -55,6 +74,7 @@ tests:
 
 package-alpha:
   stage: deploy
+  extends: .dotnet
   rules:
     - if: $CI_COMMIT_BRANCH == "alpha"
   script:
@@ -65,8 +85,30 @@ package-alpha:
     - dotnet nuget push "src/**/bin/Release/*.nupkg" --source gitlab
   environment: staging
 
+publish-api:
+  stage: publish
+  extends: .dotnet
+  script:
+    - 'BUILD_CONFIGURATION=Release'
+    - 'cd demo/HamsterWheel.HLinq.Demo'
+    - 'dotnet publish "./HamsterWheel.HLinq.Demo.csproj" --no-restore -c $BUILD_CONFIGURATION /p:UseAppHost=false'
+  artifacts: 
+    paths:
+      - /builds/hamster-wheel/hlinq/demo/HamsterWheel.HLinq.Demo/bin/Release/net9.0/publish
+
+build-docker-image:
+  stage: publish
+  extends: .build_image
+  needs:
+    - publish-api
+  script: |
+    cd demo/HamsterWheel.HLinq.Demo
+    name=hlinq-demo
+    /kaniko/executor --context . --dockerfile ./Dockerfile --destination $CI_REGISTRY_IMAGE/$name:$CI_JOB_ID --destination $CI_REGISTRY_IMAGE/$name:latest
+
 package:
   stage: deploy
+  extends: .dotnet
   rules:
     - if: $CI_COMMIT_BRANCH == "master"
   script:
