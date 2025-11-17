@@ -34,11 +34,6 @@ public class DefaultConverter(
 
     public object? ConvertTo(Type targetType, object? value)
     {
-        if (!NeedConversion(targetType, value))
-        {
-            return value;
-        }
-
         if (targetType == typeof(bool) || targetType == typeof(bool?))
         {
             return ConvertToBoolean(value, targetType.IsNullable());
