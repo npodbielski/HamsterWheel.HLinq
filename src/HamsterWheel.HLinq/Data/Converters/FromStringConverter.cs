@@ -99,29 +99,23 @@ public class FromStringConverter(INullKeyword nullKeyword) : IConfigurableValueC
             }
         };
 
-    public bool CanConvert(object? value, Type destination)
-    {
-        if (value is string)
+    public bool CanConvert(object? value, Type destination) =>
+        value switch
         {
-            return destination.IsNullable() && _stringParseMethods.ContainsKey(destination.GetNullableArgument())
-                   || _stringParseMethods.ContainsKey(destination);
-        }
+            null => true,
+            string => destination.IsNullable()
+                      && _stringParseMethods.ContainsKey(destination.GetNullableArgument())
+                      || _stringParseMethods.ContainsKey(destination),
+            _ => false
+        };
 
-        return false;
-    }
-
-    public object? ConvertTo(object? value, Type destination)
-    {
-        if (value is string str)
+    public object? ConvertTo(object? value, Type destination) =>
+        value switch
         {
-            if (destination.IsNullable() && (string.IsNullOrWhiteSpace(str) || str == nullKeyword.Null))
-            {
-                return null;
-            }
-
-            return _stringParseMethods[destination.GetNullableArgument()](str);
-        }
-
-        throw new InvalidConstantStringToTypeConversionException(value, destination);
-    }
+            null => destination.IsNullable() ? null : Activator.CreateInstance(destination),
+            string str when destination.IsNullable() &&
+                            (string.IsNullOrWhiteSpace(str) || str == nullKeyword.Null) => null,
+            string str => _stringParseMethods[destination.GetNullableArgument()](str),
+            _ => throw new InvalidConstantStringToTypeConversionException(value, destination)
+        };
 }

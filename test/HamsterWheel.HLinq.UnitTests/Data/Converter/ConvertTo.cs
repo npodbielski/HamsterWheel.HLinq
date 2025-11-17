@@ -62,7 +62,8 @@ partial class DefaultConverterUnitTests
     [InlineData("90092311", 90092311)]
     [InlineData("102323281", 102323281)]
     [InlineData("2147483647", int.MaxValue)]
-    public void ConvertTo_WhenCalledWithConvertableStringToInt_ThenReturnsCorrectValue(string stringValue, int expected)
+    [InlineData(null, 0)]
+    public void ConvertTo_WhenCalledWithConvertableStringToInt_ThenReturnsCorrectValue(string? stringValue, int expected)
     {
         //act
         var actual = _sut.ConvertTo(typeof(int), stringValue);
