@@ -16,6 +16,8 @@ public class DefaultConverter(
         new(
         [
             new FromStringConverter(new NullKeyword()), new FromFormattableConverter(), new FromConvertibleConverter(),
+            new EnumValueConverter(),
+            new NullableEnumValueConverter(new NullKeyword(), new EnumValueConverter()),
             new ToInterfaceConverter(), new ViaSerializationConverter()
         ], new NullKeyword());
 
