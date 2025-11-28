@@ -21,7 +21,7 @@ public static class HLinqObjectExtensions
             return null;
         }
 
-        if (!query.StartsWith("select[") && query.StartsWith("x."))
+        if (!query.StartsWith("select[") && !query.Contains('['))
         {
             query = $"select[{query}]";
         }

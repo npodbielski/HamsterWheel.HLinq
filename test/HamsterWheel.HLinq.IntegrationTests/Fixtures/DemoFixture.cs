@@ -12,7 +12,7 @@ public class DemoFixture : IAsyncLifetime
             ? $"Host={Environment.GetEnvironmentVariable("POSTGRES_HOST")};Port=5432;" +
               $"Database={Environment.GetEnvironmentVariable("POSTGRES_DB")};Username=postgres;" +
               $"Password={Environment.GetEnvironmentVariable("POSTGRES_PASSWORD")};Include Error Detail=true"
-            : "Host=localhost;Port=55432;Database=Demo;Username=postgres;Password=outflank-outage-undoing;Include Error Detail=true";
+            : "Host=localhost;Port=45432;Database=Demo;Username=postgres;Password=outflank-outage-undoing;Include Error Detail=true";
 
     public PostGreSqlFixture PgSqlFixture { get; private set; } = null!;
 
