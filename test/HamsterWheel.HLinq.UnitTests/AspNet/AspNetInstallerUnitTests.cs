@@ -13,12 +13,27 @@ public class AspNetInstallerUnitTests
         var services = new ServiceCollection();
 
         //act
-        var actual = services.ConfigureHLinq(c => c.Extensions.CustomServices.Add(s => s.AddSingleton<Func<int>>(() => 1)))
+        var actual = services
+            .ConfigureHLinq(c => c.Extensions.CustomServices.Add(s => s.AddSingleton<Func<int>>(() => 1)))
             .BuildServiceProvider();
 
         //assert
         actual.GetService<Func<int>>().Should().NotBeNull();
         var service = actual.GetService<Func<int>>();
         service!().Should().Be(1);
+    }
+
+    [Fact]
+    public void ConfigureHLinq_WhenCalledWithoutParameters_ThenCanResolveHLinqBinder()
+    {
+        //arrange
+        var services = new ServiceCollection();
+
+        //act
+        services.ConfigureHLinq();
+
+        //assert
+        var provider = services.BuildServiceProvider();
+        provider.GetService<IHLinqQueryBinder>().Should().NotBeNull();
     }
 }

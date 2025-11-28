@@ -88,6 +88,30 @@ public class HLinqObjectExtensionsTests
     }
 
     [Fact]
+    public void ExecuteHLinq_WhenOnObjectWithQuotedValue_ThenIsValid()
+    {
+        //arrange
+        var obj = new
+        {
+            Name = "test.text",
+            Contents = "this is file content"
+        };
+        var expected = new
+        {
+            FileName = "test.text",
+            Contents = "this is file content",
+            Directory = "/temp"
+        };
+
+        //act
+        var actual = obj.ExecuteHLinq("FileName=x.Name, x.Contents, Directory=\"/temp\"");
+
+        //assert
+        actual.Should().NotBeNull();
+        actual.Should().BeEquivalentTo(expected);
+    }
+
+    [Fact]
     public void ExecuteHLinq_WhenOnCollectionOfPrimitives_ThenReturnsFiltered()
     {
         //arrange

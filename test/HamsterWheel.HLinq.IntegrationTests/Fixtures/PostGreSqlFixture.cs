@@ -43,5 +43,7 @@ public class PostGreSqlFixture : IAsyncDisposable
         {
             await _dbContainer.DisposeAsync();
         }
+
+        GC.SuppressFinalize(this);
     }
 }

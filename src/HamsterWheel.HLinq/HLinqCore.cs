@@ -82,5 +82,6 @@ internal static class HLinqCore
         services.AddSingleton<IDefaultConverter, DefaultConverter>();
         services.AddSingleton<IHLinqOptions, HLinqOptions>();
         services.AddSingleton<HLinqBinderDependenciesBag>();
+        services.AddSingleton<IHLinqQueryBinder, HLinqQueryBinder>();
     }
 }
