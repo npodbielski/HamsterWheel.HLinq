@@ -4,7 +4,9 @@ using HamsterWheel.HLinq.Exceptions;
 
 namespace HamsterWheel.HLinq.Data.Converters;
 
-public class DefaultConverter(IEnumerable<IConfigurableValueConverter> converters, INullKeyword nullKeyword,
+public class DefaultConverter(
+    IEnumerable<IConfigurableValueConverter> converters,
+    INullKeyword nullKeyword,
     IFallbackConverter? fallbackSerializer = null) : IDefaultConverter
 {
     private readonly IConfigurableValueConverter[] _converters =
@@ -14,8 +16,12 @@ public class DefaultConverter(IEnumerable<IConfigurableValueConverter> converter
         new(
         [
             new FromStringConverter(new NullKeyword()), new FromFormattableConverter(), new FromConvertibleConverter(),
+            new EnumValueConverter(),
+            new NullableEnumValueConverter(new NullKeyword(), new EnumValueConverter()),
             new ToInterfaceConverter(), new ViaSerializationConverter()
         ], new NullKeyword());
+
+    public bool NeedConversion(Type targetType, object? value) => !targetType.IsInstanceOfType(value);
 
     [return: NotNullIfNotNull(nameof(value))]
     public T? ConvertTo<T>(object? value)
