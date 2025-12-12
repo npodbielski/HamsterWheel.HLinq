@@ -24,17 +24,28 @@ public class Grammar(IServiceProvider serviceProvider) : IGrammar
     private string LeftSquareBracketTokenKeyword => _leftSquareBracketTokenKeyword ??=
         TokenPossibilities.First(t => t.ForType == typeof(LeftSquareBracket)).Keyword!;
 
-    private IGrammarRule[] Rules => _rules ??= 
+    private IGrammarRule[] Rules => _rules ??=
     [
-        new GrammarRule<Select>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]]),
-        new GrammarRule<Where>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]]),
-        new GrammarRule<OrderBy>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]], nextCharMatcher: c => c== LeftSquareBracketTokenKeyword[0]),
-        new GrammarRule<OrderByDescending>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]]),
-        new GrammarRule<Count>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]]),
-        new GrammarRule<Skip>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]]),
-        new GrammarRule<Take>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]]),
-        new GrammarRule<ThenBy>(false, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]], nextCharMatcher: c => c== LeftSquareBracketTokenKeyword[0]),
-        new GrammarRule<ThenByDescending>(false, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]]),
+        //roots
+        new GrammarRule<Select>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+            nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
+        new GrammarRule<Where>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+            nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
+        new GrammarRule<OrderBy>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+            nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
+        new GrammarRule<OrderByDescending>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+            nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
+        new GrammarRule<Count>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+            nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
+        new GrammarRule<Skip>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+            nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
+        new GrammarRule<Take>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+            nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
+        new GrammarRule<ThenBy>(false, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+            nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
+        new GrammarRule<ThenByDescending>(false, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+            nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
+
         new GrammarRule<PropertyName>(false,
             previousTokensMatchers: [pt => pt is [.., Entity, Dot] or [.., PropertyName, Dot]]),
         new GrammarRule<NameOrValue>(false,
@@ -55,9 +66,11 @@ public class Grammar(IServiceProvider serviceProvider) : IGrammar
         new GrammarRule<Equality>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(Entity)]),
         new GrammarRule<Inequality>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(Entity)]),
         new GrammarRule<LessOrEqualThan>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(Entity)]),
-        new GrammarRule<LessThan>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(Entity)], nextCharMatcher: c => c != EqualityTokenKeyword[0]),
+        new GrammarRule<LessThan>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(Entity)],
+            nextCharMatcher: c => c != EqualityTokenKeyword[0]),
         new GrammarRule<GreaterOrEqualThan>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(Entity)]),
-        new GrammarRule<GreaterThan>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(Entity)], nextCharMatcher: c => c != EqualityTokenKeyword[0]),
+        new GrammarRule<GreaterThan>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(Entity)],
+            nextCharMatcher: c => c != EqualityTokenKeyword[0]),
         new GrammarRule<LeftCircleBracket>(false,
             [typeof(LeftSquareBracket), typeof(And), typeof(Or), typeof(MethodName), typeof(LeftCircleBracket)]),
         new GrammarRule<Or>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(RightCircleBracket)]),

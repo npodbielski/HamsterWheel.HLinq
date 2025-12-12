@@ -25,7 +25,7 @@ public sealed class ThenByDescendingRoot(IToken[] tokens) : TreeBranch(tokens), 
         protected override ThenByDescendingRoot? BuildBranch(IParsingContext context) =>
             context.Tokens switch
             {
-                [ThenByDescending, LeftSquareBracket, RightSquareBracket] => ThrowOnEmptySelect(context),
+                [ThenByDescending, LeftSquareBracket, RightSquareBracket] => ThrowOnEmpty(context),
                 [ThenByDescending, LeftSquareBracket, ..] => new ThenByDescendingRoot(context.Tokens[..2]),
                 [Dot, ThenByDescending, LeftSquareBracket, ..] => new ThenByDescendingRoot(context.Tokens[..3]),
                 _ => default
@@ -43,7 +43,7 @@ public sealed class ThenByDescendingRoot(IToken[] tokens) : TreeBranch(tokens), 
             context.RemoveStartTokens(1);
         }
 
-        private static ThenByDescendingRoot ThrowOnEmptySelect(IParsingContext context) =>
+        private static ThenByDescendingRoot ThrowOnEmpty(IParsingContext context) =>
             throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
                 ThenByDescendingRootExampleTokens);
     }
@@ -51,7 +51,7 @@ public sealed class ThenByDescendingRoot(IToken[] tokens) : TreeBranch(tokens), 
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache)
         : RootApplierBase<ThenByDescendingRoot>
     {
-        protected override QueryableContext ApplyImpl(IQueryableContext context,
+        protected override IQueryableContext ApplyImpl(IQueryableContext context,
             ThenByDescendingRoot orderBy, string hLinqQuery)
         {
             var selector = builder.GetProperty(context.CurrentResultType, orderBy, hLinqQuery);

@@ -60,7 +60,7 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
         /// </summary>
         private int MaxTake => options.HttpDefaultMaxTakeRecords;
 
-        protected override QueryableContext ApplyImpl(IQueryableContext context, TakeRoot take, string hLinqQuery)
+        protected override IQueryableContext ApplyImpl(IQueryableContext context, TakeRoot take, string hLinqQuery)
         {
             var type = typeof(int);
 

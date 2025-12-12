@@ -1,3 +1,5 @@
+using FluentAssertions;
+using HamsterWheel.HLinq.Pipeline;
 using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Pipeline.Tokenizer;
@@ -14,6 +16,21 @@ public partial class HLinqQueryApplierUnitTests
     private readonly HLinqParser _parser = new(ServicesCollection.Parsers);
     private static readonly TestServicesCollection ServicesCollection = new();
 
-    private readonly HLinqQuery<object>.HLinqQueryApplier _sut =
-        new(ServicesCollection.Provider.GetRequiredService<IElementApplierFactory>(), ServicesCollection.Provider.GetRequiredService<IMethodsCache>());
+    private readonly HLinqQueryApplier _sut =
+        new(ServicesCollection.Provider.GetRequiredService<IElementApplierFactory>(),
+            ServicesCollection.Provider.GetRequiredService<IMethodsCache>());
+
+    [Fact]
+    public void Apply_WhenNullDataAndNullCount_ThenThrows()
+    {
+        //arrange
+        var expected = "";
+        var action = () => _sut.Apply(null!, typeof(int), new HLinqQuery<int>());
+
+        //act
+        var exception = action.Should().Throw<InvalidApplierResultException>();
+
+        //assert
+        exception.WithMessage("*'Data' and 'Count' null");
+    }
 }

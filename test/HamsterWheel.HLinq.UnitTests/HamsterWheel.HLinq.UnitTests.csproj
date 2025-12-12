@@ -27,5 +27,41 @@
         <Compile Update="Pipeline\Tokenizer\TokenizerPagingTests.cs">
           <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
         </Compile>
+        <Compile Update="Data\Converter\TimeOnly.cs">
+          <DependentUpon>ConvertToBoolean.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Applier\Builders\Filter.cs">
+          <DependentUpon>ExpressionBuilderUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Applier\Builders\Order.cs">
+          <DependentUpon>ExpressionBuilderUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Applier\Builders\Select.cs">
+          <DependentUpon>ExpressionBuilderUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Applier\QueryCount.cs">
+          <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Applier\QueryOrderBy.cs">
+          <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Applier\QuerySelect.cs">
+          <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Applier\QueryWhere.cs">
+          <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Tokenizer\TokenizerDifferentCaseTests.cs">
+          <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Tokenizer\TokenizerSelectTests.cs">
+          <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Tokenizer\TokenizerWhereTests.cs">
+          <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Tokenizer\TokenizerWhiteSpaceTests.cs">
+          <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
+        </Compile>
     </ItemGroup>
 </Project>

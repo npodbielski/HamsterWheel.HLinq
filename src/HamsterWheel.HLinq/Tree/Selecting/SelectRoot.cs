@@ -59,7 +59,7 @@ public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoo
 
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache) : RootApplierBase<ISelectRoot>
     {
-        protected override QueryableContext ApplyImpl(IQueryableContext context, ISelectRoot select,
+        protected override IQueryableContext ApplyImpl(IQueryableContext context, ISelectRoot select,
             string hLinqQuery)
         {
             var selector = builder.GetSelect(context.CurrentResultType, select, hLinqQuery);

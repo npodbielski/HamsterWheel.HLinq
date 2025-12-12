@@ -1,5 +1,3 @@
-using System.Linq.Expressions;
-using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
@@ -24,10 +22,5 @@ public class EntityLeaf(IToken token) : TreeLeaf([token]), IMethodParamElement
 
         protected override EntityLeaf? BuildBranch(IParsingContext context) =>
             context.Tokens is [Entity, IComparisonToken, ..] ? new EntityLeaf(context.Tokens[0]) : null;
-    }
-
-    public sealed class Converter : ElementToExpressionConverter<EntityLeaf>
-    {
-        protected override Expression Build(IBuilderContext context, EntityLeaf element) => context.Param;
     }
 }

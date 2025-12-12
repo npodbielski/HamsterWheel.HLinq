@@ -43,7 +43,8 @@ partial class DbDataTests
     }
 
     /// <summary>
-    /// This does not work in EF out of the box either.
+    /// THis need to be done via query string. This is because HLinq client is unable to do ignore-case comparison
+    /// This does not work in EF out of the box either, so it is fine to not be able to define such in HLinq client. At least for now.
     /// </summary>
     [Fact]
     public async Task WhenStringContainsIgnoreCase_ThenThrows()
@@ -76,6 +77,21 @@ partial class DbDataTests
 
         //assert
         response.Should().BeEquivalentTo(Persons.Where(x => x.FirstName == "Billy"));
+    }
+
+    [Fact]
+    public async Task WhenTwoGroupsOfCondition_ThenCanFilter()
+    {
+        //act
+        var response =
+            await fixture.Client.GetWithHLinq("/demo/db", q => q.For<Person>()
+                .Where(x => (x.FirstName == "Lil" && x.LastName == "Scatchar") ||
+                            (x.Email.Contains("ncowle0@") && x.Email.EndsWith(".com"))));
+
+        //assert
+        var expected = Persons.Where(x => (x.FirstName == "Lil" && x.LastName == "Scatchar") ||
+                                          (x.Email.Contains("ncowle0@") && x.Email.EndsWith(".com"))).ToArray();
+        response.Should().BeEquivalentTo(expected);
     }
 
     [Fact]

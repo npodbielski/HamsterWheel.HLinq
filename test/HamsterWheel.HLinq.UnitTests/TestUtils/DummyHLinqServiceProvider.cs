@@ -1,4 +1,6 @@
+#if !NETSTANDARD
 using HamsterWheel.HLinq.AspNet;
+#endif
 using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Pipeline.Tokenizer;
@@ -17,7 +19,10 @@ public class DummyHLinqServiceProviderFactory
         services.AddSingleton(MethodsCache);
         services.AddSingleton(Tokenizer);
         services.AddSingleton(QueryApplier);
+        services.AddSingleton(BinderDependenciesBag);
+#if !NETSTANDARD
         services.AddSingleton(Options);
+#endif
         return services.BuildServiceProvider();
     }
 
@@ -28,6 +33,14 @@ public class DummyHLinqServiceProviderFactory
     public IHLinqTokenizer Tokenizer { get; } = Substitute.For<IHLinqTokenizer>();
 
     public IHLinqParser Parser { get; } = Substitute.For<IHLinqParser>();
+#if !NETSTANDARD
     public IHLinqOptions Options { get; } = new HLinqOptionsConfiguration();
-    public HLinqBinderDependenciesBag BinderDependenciesBag => new(QueryApplier, Options, Parser, Tokenizer, MethodsCache);
+#endif
+    public HLinqBinderDependenciesBag BinderDependenciesBag => new(QueryApplier,
+#if NETSTANDARD
+        null!,
+#else
+        Options,
+#endif
+        Parser, Tokenizer, MethodsCache);
 }

@@ -1,7 +1,6 @@
 using System.Text.Json;
 using FluentAssertions;
 using HamsterWheel.HLinq.Data;
-using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Tree.Filtering;
 using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
 
@@ -401,9 +400,139 @@ partial class DefaultConverterUnitTests
         Guid? guid = null;
 
         //act
-        var actual = _sut.ConvertTo<Guid?>(new NullKeyword().Null);
+        var actual = _sut.ConvertTo<Guid?>(new NullKeyword().Value);
 
         //assert
         actual.Should().Be(guid);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenDoubleToInt_ThenCanConvert()
+    {
+        //arrange
+        var expected = 10;
+
+        //act
+        var actual = _sut.ConvertTo<int>(9.999);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenDecimalToDouble_ThenCanConvert()
+    {
+        //arrange
+        var expected = 0.199;
+
+        //act
+        var actual = _sut.ConvertTo<double>(0.199m);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenDoubleToDecimal_ThenCanConvert()
+    {
+        //arrange
+        var expected = 23231.98899m;
+
+        //act
+        var actual = _sut.ConvertTo<decimal>(23231.98899);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenDoubleToString_ThenCanConvert()
+    {
+        //arrange
+        var expected = "-276372.722";
+
+        //act
+        var actual = _sut.ConvertTo<string>(-276372.722);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenIntToByte_ThenCanConvert()
+    {
+        //arrange
+        byte expected = 11;
+
+        //act
+        var actual = _sut.ConvertTo<byte>((int)11);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenStringToChar_ThenCanConvert()
+    {
+        //arrange
+        var expected = 'a';
+
+        //act
+        var actual = _sut.ConvertTo<char>("abaads");
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenIntToChar_ThenCanConvert()
+    {
+        //arrange
+        var expected = '\0';
+
+        //act
+        var actual = _sut.ConvertTo<char>(0);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenIntToShort_ThenCanConvert()
+    {
+        //arrange
+        short expected = 123;
+
+        //act
+        var actual = _sut.ConvertTo<short>(123);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenIntToLong_ThenCanConvert()
+    {
+        //arrange
+        var expected = 1233232L;
+
+        //act
+        var actual = _sut.ConvertTo<long>(1233232);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenDateTimeOffsetToDateTime_ThenCanConvert()
+    {
+        //arrange
+        var expected = new DateTime(2025, 1, 1, 0 ,0, 0, DateTimeKind.Utc).ToLocalTime();
+
+        //act
+        var actual = _sut.ConvertTo<DateTime>(new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero));
+
+        //assert
+        actual.Should().Be(expected);
     }
 }

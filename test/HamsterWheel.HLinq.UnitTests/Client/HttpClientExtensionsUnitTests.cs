@@ -1,6 +1,6 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.Client;
-using HamsterWheel.HLinq.Exceptions;
+using HamsterWheel.HLinq.Client.Exceptions;
 using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
 
 namespace HamsterWheel.HLinq.UnitTests.Client;
@@ -23,7 +23,7 @@ public class HttpClientExtensionsUnitTests
         actual.WithMessage("Could not deserialize string*");
     }
 
-    public class DummyHttpClientHandler(HttpResponseMessage response) : HttpClientHandler
+    private class DummyHttpClientHandler(HttpResponseMessage response) : HttpClientHandler
     {
         protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken) =>
             response;

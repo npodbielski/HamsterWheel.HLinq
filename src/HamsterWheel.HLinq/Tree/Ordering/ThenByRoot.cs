@@ -25,7 +25,7 @@ public sealed class ThenByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
         protected override ThenByRoot? BuildBranch(IParsingContext context) =>
             context.Tokens switch
             {
-                [ThenBy, LeftSquareBracket, RightSquareBracket] => ThrowOnEmptySelect(context),
+                [ThenBy, LeftSquareBracket, RightSquareBracket] => ThrowOnEmpty(context),
                 [ThenBy, LeftSquareBracket, ..] => new ThenByRoot(context.Tokens[..2]),
                 [Dot, ThenBy, LeftSquareBracket, ..] => new ThenByRoot(context.Tokens[..3]),
                 _ => default
@@ -43,14 +43,14 @@ public sealed class ThenByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
             context.RemoveStartTokens(1);
         }
 
-        private static ThenByRoot ThrowOnEmptySelect(IParsingContext context) =>
+        private static ThenByRoot ThrowOnEmpty(IParsingContext context) =>
             throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
                 ThenByRootExampleTokens);
     }
 
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache) : RootApplierBase<ThenByRoot>
     {
-        protected override QueryableContext ApplyImpl(IQueryableContext context, ThenByRoot orderBy,
+        protected override IQueryableContext ApplyImpl(IQueryableContext context, ThenByRoot orderBy,
             string hLinqQuery)
         {
             var selector = builder.GetProperty(context.CurrentResultType, orderBy, hLinqQuery);

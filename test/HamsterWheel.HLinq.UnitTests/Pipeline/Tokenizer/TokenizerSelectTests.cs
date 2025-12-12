@@ -1,3 +1,5 @@
+using FluentAssertions;
+using HamsterWheel.HLinq.Pipeline.Tokenizer;
 using HamsterWheel.HLinq.UnitTests.TestUtils;
 using static HamsterWheel.HLinq.UnitTests.TestUtils.Assertions.ExpectedToken;
 
@@ -143,5 +145,13 @@ partial class HLinqTokenizerUnitTests
             Prop("Id"),
             RightSquareBracket
         ]);
+    }
+
+    [Fact]
+    public void Tokenize_WhenSelectWitNestedProp1_CanParse()
+    {
+        const string query = "orderByDescendingTest[x.Id]";
+        var action = () => _sut.Tokenize(query);
+        action.Should().Throw<HLinqTokenizer.UnknownTokenException>();
     }
 }

@@ -26,7 +26,7 @@ public sealed class OrderByDescendingRoot(IToken[] tokens) : TreeBranch(tokens),
         {
             return context.Tokens switch
             {
-                [OrderByDescending, LeftSquareBracket, RightSquareBracket] => ThrowOnEmptySelect(context),
+                [OrderByDescending, LeftSquareBracket, RightSquareBracket] => ThrowOnEmpty(context),
                 [OrderByDescending, LeftSquareBracket, ..] => new OrderByDescendingRoot(context.Tokens[..2]),
                 [Dot, OrderByDescending, LeftSquareBracket, ..] => new OrderByDescendingRoot(context.Tokens[..3]),
                 _ => default
@@ -45,7 +45,7 @@ public sealed class OrderByDescendingRoot(IToken[] tokens) : TreeBranch(tokens),
             context.RemoveStartTokens(1);
         }
 
-        private static OrderByDescendingRoot ThrowOnEmptySelect(IParsingContext context) =>
+        private static OrderByDescendingRoot ThrowOnEmpty(IParsingContext context) =>
             throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
                 OrderRootExampleTokens);
     }
@@ -53,7 +53,7 @@ public sealed class OrderByDescendingRoot(IToken[] tokens) : TreeBranch(tokens),
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache)
         : RootApplierBase<OrderByDescendingRoot>
     {
-        protected override QueryableContext ApplyImpl(IQueryableContext context, OrderByDescendingRoot orderBy,
+        protected override IQueryableContext ApplyImpl(IQueryableContext context, OrderByDescendingRoot orderBy,
             string hLinqQuery)
         {
             var selector = builder.GetProperty(context.CurrentResultType, orderBy, hLinqQuery);

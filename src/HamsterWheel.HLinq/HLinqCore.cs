@@ -1,6 +1,7 @@
 using System.Reflection;
 using HamsterWheel.HLinq.Data;
 using HamsterWheel.HLinq.Data.Converters;
+using HamsterWheel.HLinq.Pipeline;
 using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
@@ -68,7 +69,7 @@ internal static class HLinqCore
         }
 
         services.AddSingleton<IElementApplierFactory, ApplierFactory>();
-        services.AddSingleton<IHLinqQueryApplier, HLinqQuery<object>.HLinqQueryApplier>();
+        services.AddSingleton<IHLinqQueryApplier, HLinqQueryApplier>();
 
         //builders
         services.AddSingleton<IExpressionBuilder, ExpressionBuilder>();

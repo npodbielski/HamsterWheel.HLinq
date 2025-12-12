@@ -615,6 +615,7 @@ public partial class ExpressionBuilderUnitTests
         filter.Invoke(entity).Should().Be(entity.NullableFloat == value);
     }
 
+#if !NETSTANDARD
     [Theory]
     [InlineAutoData("00:00:00")]
     [InlineAutoData("23:59:59.99999999")]
@@ -660,6 +661,7 @@ public partial class ExpressionBuilderUnitTests
         var filter = actual.Compile();
         filter.Invoke(entity).Should().Be(entity.NullableTime == value);
     }
+#endif
 
     [Theory]
     [InlineAutoData("0001-01-01 00:00:00")]

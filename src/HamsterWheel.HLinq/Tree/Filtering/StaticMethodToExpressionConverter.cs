@@ -25,7 +25,7 @@ public class StaticMethodToExpressionConverter : IStaticMethodToExpressionConver
             }
             catch (ArgumentException)
             {
-                //swallow exception and try to bind another method from list of available
+                //swallow the exception and try to bind another method from the list
             }
         }
 

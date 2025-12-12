@@ -12,8 +12,6 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.8" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
         <PackageReference Include="RandomDataGenerator.Net" Version="1.0.19.1" />
-<!--        <PackageReference Include="HamsterWheel.HLinq.AspNet" Version="0.4.0" />-->
-<!--        <PackageReference Include="HamsterWheel.HLinq.PgSql" Version="0.4.0" />-->
     </ItemGroup>
 
     <ItemGroup>

@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using HamsterWheel.HLinq.Data.Converters;
 
 namespace HamsterWheel.HLinq.Pipeline.Applier.Builders;
 
@@ -22,7 +23,17 @@ public class ParametersConverter : IParametersConverter
             var param = hLinqParams[i];
             if (type == typeof(string))
             {
-                expressions.Add(param.expression is not null ? param.expression : Expression.Constant(param.value));
+                expressions.Add(param.expression is not null
+                    ? param.expression
+                    : Expression.Constant(DefaultConverter.Instance.ConvertTo<string>(param.value)));
+                i++;
+                continue;
+            }
+            if (type == typeof(char) && param.value.Length == 1)
+            {
+                expressions.Add(param.expression is not null
+                    ? param.expression
+                    : Expression.Constant(DefaultConverter.Instance.ConvertTo<char>(param.value)));
                 i++;
                 continue;
             }
@@ -32,21 +43,21 @@ public class ParametersConverter : IParametersConverter
                 continue;
             }
 
-            if (!param.value.Contains('.') && Enum.TryParse(type, param.value, out var enumMember))
+            if (!param.value.Contains('.') && type.IsEnum && param.value.TryParseEnum(type) is (true, { } enumValue))
             {
-                expressions.Add(Expression.Constant(enumMember));
+                expressions.Add(Expression.Constant(enumValue));
                 i++;
                 continue;
             }
 
             var splits = param.value.Split('.');
             if (!string.Equals(splits[0], type.Name, StringComparison.CurrentCultureIgnoreCase)
-                || !Enum.TryParse(type, splits[1], out var enumMember1))
+                || splits[1].TryParseEnum(type) is not (convertible: true, enumValue: { } enumMember))
             {
                 continue;
             }
 
-            expressions.Add(Expression.Constant(enumMember1));
+            expressions.Add(Expression.Constant(enumMember));
             i++;
         }
 

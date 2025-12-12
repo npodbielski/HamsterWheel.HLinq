@@ -14,12 +14,24 @@ public class FromStringConverter(INullKeyword nullKeyword) : IConfigurableValueC
                 typeof(string),
                 s =>
                 {
-                    if (s == nullKeyword.Null)
+                    if (s == nullKeyword.Value)
                     {
                         return null;
                     }
 
                     return s.IsDoubleQuoted() ? s.UnQuote() : s;
+                }
+            },
+            {
+                typeof(char),
+                s =>
+                {
+                    if (s == nullKeyword.Value)
+                    {
+                        return null;
+                    }
+
+                    return s.IsSingleQuoted() ? s.UnQuote() : s[0];
                 }
             },
             {
@@ -44,8 +56,8 @@ public class FromStringConverter(INullKeyword nullKeyword) : IConfigurableValueC
             },
             {
                 typeof(DateTime),
-                s => DateTime.TryParse(s, CultureInfo.InvariantCulture, out var dt)
-                    ? dt
+                s => DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var dt)
+                    ? dt.ToUniversalTime()
                     : throw new InvalidConstantStringToTypeConversionException(s, typeof(DateTime))
             },
             {
@@ -57,46 +69,48 @@ public class FromStringConverter(INullKeyword nullKeyword) : IConfigurableValueC
             },
             {
                 typeof(decimal),
-                s => decimal.TryParse(s, CultureInfo.InvariantCulture, out var number)
+                s => decimal.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var number)
                     ? number
                     : throw new InvalidConstantStringToTypeConversionException(s, typeof(decimal))
             },
             {
                 typeof(double),
-                s => double.TryParse(s, CultureInfo.InvariantCulture, out var number)
+                s => double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var number)
                     ? number
                     : throw new InvalidConstantStringToTypeConversionException(s, typeof(double))
             },
             {
                 typeof(float),
-                s => float.TryParse(s, CultureInfo.InvariantCulture, out var number)
+                s => float.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var number)
                     ? number
                     : throw new InvalidConstantStringToTypeConversionException(s, typeof(float))
             },
             {
                 typeof(int),
-                s => int.TryParse(s, CultureInfo.InvariantCulture, out var number)
+                s => int.TryParse(s,  NumberStyles.Any,CultureInfo.InvariantCulture, out var number)
                     ? number
                     : throw new InvalidConstantStringToTypeConversionException(s, typeof(int))
             },
             {
                 typeof(long),
-                s => long.TryParse(s, CultureInfo.InvariantCulture, out var number)
+                s => long.TryParse(s,  NumberStyles.Any,CultureInfo.InvariantCulture, out var number)
                     ? number
                     : throw new InvalidConstantStringToTypeConversionException(s, typeof(long))
             },
             {
                 typeof(short),
-                s => short.TryParse(s, CultureInfo.InvariantCulture, out var number)
+                s => short.TryParse(s,  NumberStyles.Any,CultureInfo.InvariantCulture, out var number)
                     ? number
                     : throw new InvalidConstantStringToTypeConversionException(s, typeof(short))
             },
+#if !NETSTANDARD
             {
                 typeof(TimeOnly),
                 s => TimeOnly.TryParse(s, CultureInfo.InvariantCulture, out var number)
                     ? number
                     : throw new InvalidConstantStringToTypeConversionException(s, typeof(TimeOnly))
             }
+#endif
         };
 
     public bool CanConvert(object? value, Type destination) =>
@@ -114,7 +128,7 @@ public class FromStringConverter(INullKeyword nullKeyword) : IConfigurableValueC
         {
             null => destination.IsNullable() ? null : Activator.CreateInstance(destination),
             string str when destination.IsNullable() &&
-                            (string.IsNullOrWhiteSpace(str) || str == nullKeyword.Null) => null,
+                            (string.IsNullOrWhiteSpace(str) || str == nullKeyword.Value) => null,
             string str => _stringParseMethods[destination.GetNullableArgument()](str),
             _ => throw new InvalidConstantStringToTypeConversionException(value, destination)
         };

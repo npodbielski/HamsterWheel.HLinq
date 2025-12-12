@@ -15,7 +15,7 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
     public string[] GetPath(string hLinqQuery) =>
         Tokens.OfType<PropertyName>().Select(t => t.GetValue(hLinqQuery)).ToArray();
 
-    public string GetValue(string hLinqQuery) => string.Join('.', GetPath(hLinqQuery));
+    public string GetValue(string hLinqQuery) => GetPath(hLinqQuery).JoinWithDot();
 
     public sealed class Parser : ElementParserBase<Property>
     {

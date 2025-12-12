@@ -42,7 +42,7 @@ public sealed class WhereRoot(IToken[] tokens) : TreeBranch(tokens), IWhereRoot
 
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache) : RootApplierBase<WhereRoot>
     {
-        protected override QueryableContext ApplyImpl(IQueryableContext context, WhereRoot where,
+        protected override IQueryableContext ApplyImpl(IQueryableContext context, WhereRoot where,
             string hLinqQuery)
         {
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Where),
