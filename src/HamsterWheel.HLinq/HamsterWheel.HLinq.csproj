@@ -19,11 +19,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="DynamicAnonymousType" Version="1.0.6"/>
-        <PackageReference Include="HamsterWheel.CodeShare.NetStandard" Version="0.6.0-alpha-8301" />
-        <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0"/>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2"/>
-        <PackageReference Include="System.Text.Json" Version="9.0.9" />
+        <PackageReference Include="DynamicAnonymousType" />
+        <PackageReference Include="HamsterWheel.CodeShare.NetStandard" />
+        <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+        <PackageReference Include="System.Text.Json"  />
     </ItemGroup>
     
     <ItemGroup Condition=" '$(TargetFramework)' == 'net9.0' ">

@@ -15,21 +15,21 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="JunitXml.TestLogger" Version="5.0.0"/>
-        <PackageReference Include="AutoFixture.Xunit2" Version="4.18.1"/>
-        <PackageReference Include="coverlet.collector" Version="6.0.4">
+        <PackageReference Include="JunitXml.TestLogger"/>
+        <PackageReference Include="AutoFixture.Xunit2"/>
+        <PackageReference Include="coverlet.collector">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="coverlet.msbuild" Version="6.0.4">
+        <PackageReference Include="coverlet.msbuild">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="FluentAssertions" Version="8.0.1"/>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0"/>
-        <PackageReference Include="NSubstitute" Version="5.3.0"/>
-        <PackageReference Include="xunit" Version="2.9.3"/>
-        <PackageReference Include="xunit.runner.visualstudio" Version="3.0.1">
+        <PackageReference Include="FluentAssertions"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+        <PackageReference Include="NSubstitute"/>
+        <PackageReference Include="xunit"/>
+        <PackageReference Include="xunit.runner.visualstudio">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>

@@ -10,9 +10,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="RandomDataGenerator.Net" Version="1.0.19.1"/>
-        <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.3.0"/>
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.1"/>
+        <PackageReference Include="RandomDataGenerator.Net" />
+        <PackageReference Include="Microsoft.AspNetCore.Http" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" />
     </ItemGroup>
 
     <ItemGroup>

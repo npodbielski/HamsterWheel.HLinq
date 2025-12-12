@@ -1,51 +1,51 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.8" />
-    <PackageReference Include="Testcontainers.PostgreSql" Version="4.6.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\demo\HamsterWheel.HLinq.Demo\HamsterWheel.HLinq.Demo.csproj" />
-    <ProjectReference Include="..\..\src\HamsterWheel.HLinq.Client\HamsterWheel.HLinq.Client.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Update="Select.cs">
-      <DependentUpon>MemoryDataTests.cs</DependentUpon>
-    </Compile>
-    <Compile Update="Filter.cs">
-      <DependentUpon>MemoryDataTests.cs</DependentUpon>
-    </Compile>
-    <Compile Update="OrderBy.cs">
-      <DependentUpon>MemoryDataTests.cs</DependentUpon>
-    </Compile>
-    <Compile Update="DbSelect.cs">
-      <DependentUpon>DbDataTests.cs</DependentUpon>
-    </Compile>
-    <Compile Update="DbCount.cs">
-      <DependentUpon>DbDataTests.cs</DependentUpon>
-    </Compile>
-    <Compile Update="DbFilter.cs">
-      <DependentUpon>DbDataTests.cs</DependentUpon>
-    </Compile>
-    <Compile Update="DbOrderBy.cs">
-      <DependentUpon>DbDataTests.cs</DependentUpon>
-    </Compile>
-    <Compile Update="DbSkip.cs">
-      <DependentUpon>DbDataTests.cs</DependentUpon>
-    </Compile>
-    <Compile Update="DbTake.cs">
-      <DependentUpon>DbDataTests.cs</DependentUpon>
-    </Compile>
-    <Compile Update="Skip.cs">
-      <DependentUpon>MemoryDataTests.cs</DependentUpon>
-    </Compile>
-    <Compile Update="Take.cs">
-      <DependentUpon>MemoryDataTests.cs</DependentUpon>
-    </Compile>
-    <Compile Update="DbErrors.cs">
-      <DependentUpon>DbDataTests.cs</DependentUpon>
-    </Compile>
-    <Compile Update="Count.cs">
-      <DependentUpon>MemoryDataTests.cs</DependentUpon>
-    </Compile>
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"/>
+        <PackageReference Include="Testcontainers.PostgreSql"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\demo\HamsterWheel.HLinq.Demo\HamsterWheel.HLinq.Demo.csproj"/>
+        <ProjectReference Include="..\..\src\HamsterWheel.HLinq.Client\HamsterWheel.HLinq.Client.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Update="Select.cs">
+            <DependentUpon>MemoryDataTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Filter.cs">
+            <DependentUpon>MemoryDataTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="OrderBy.cs">
+            <DependentUpon>MemoryDataTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="DbSelect.cs">
+            <DependentUpon>DbDataTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="DbCount.cs">
+            <DependentUpon>DbDataTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="DbFilter.cs">
+            <DependentUpon>DbDataTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="DbOrderBy.cs">
+            <DependentUpon>DbDataTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="DbSkip.cs">
+            <DependentUpon>DbDataTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="DbTake.cs">
+            <DependentUpon>DbDataTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Skip.cs">
+            <DependentUpon>MemoryDataTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Take.cs">
+            <DependentUpon>MemoryDataTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="DbErrors.cs">
+            <DependentUpon>DbDataTests.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Count.cs">
+            <DependentUpon>MemoryDataTests.cs</DependentUpon>
+        </Compile>
+    </ItemGroup>
 </Project>

@@ -2,7 +2,7 @@
 
     <Import Project="../Nuget.props"/>
     <PropertyGroup>
-        <LangVersion>13</LangVersion>
+        <LangVersion>14</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
