@@ -1,7 +1,7 @@
+using System.Globalization;
 using System.Text.Json;
 using FluentAssertions;
 using HamsterWheel.HLinq.Data;
-using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Tree.Filtering;
 using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
 
@@ -214,7 +214,7 @@ partial class DefaultConverterUnitTests
         var actual = _sut.ConvertTo(typeof(DateTime), stringValue);
 
         //assert
-        actual.Should().Be(new DateTime(year, month, day, hour, minute, second, millisecond));
+        actual.Should().Be(new DateTime(year, month, day, hour, minute, second, millisecond, DateTimeKind.Utc));
     }
 
     [Theory]
@@ -387,12 +387,17 @@ partial class DefaultConverterUnitTests
     {
         //arrange 
         var dateTimeOffset = DateTimeOffset.UtcNow;
+        var expected = dateTimeOffset.ToString("O", CultureInfo.InvariantCulture);
+        //for some reason it returns different value depending if the last millisecond is 0 or not
+        // probably it is a bit different on .net core and .net standard
+        // "2025-12-11T11:06:02.2855140+00:00", but found "2025-12-11T11:06:02.285514+00:00".
+        expected = expected.Replace("0+", "+");
 
         //act
         var actual = _sut.ConvertTo(typeof(string), dateTimeOffset);
 
         //assert
-        actual.Should().Be(dateTimeOffset.ToString("O"));
+        actual.Should().Be(expected);
     }
 
     [Fact]
@@ -400,12 +405,17 @@ partial class DefaultConverterUnitTests
     {
         //arrange 
         var dateTime = DateTime.UtcNow;
+        var expected = dateTime.ToString("O", CultureInfo.InvariantCulture);
+        //for some reason it returns different value depending if the last millisecond is 0 or not
+        // probably it is a bit different on .net core and .net standard
+        // "2025-12-11T11:06:02.2855140+00:00", but found "2025-12-11T11:06:02.285514+00:00".
+        expected = expected.Replace("0+", "+");
 
         //act
         var actual = _sut.ConvertTo(typeof(string), dateTime);
 
         //assert
-        actual.Should().Be(dateTime.ToString("O"));
+        actual.Should().Be(expected);
     }
 
     [Fact]
@@ -441,7 +451,7 @@ partial class DefaultConverterUnitTests
         Guid? guid = null;
 
         //act
-        var actual = _sut.ConvertTo(typeof(Guid?),new NullKeyword().Null);
+        var actual = _sut.ConvertTo(typeof(Guid?),new NullKeyword().Value);
 
         //assert
         actual.Should().Be(guid);

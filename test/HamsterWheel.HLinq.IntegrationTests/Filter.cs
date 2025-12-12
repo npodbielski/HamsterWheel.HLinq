@@ -469,14 +469,14 @@ partial class MemoryDataTests
 
     public static TheoryData<DateTime> DateTimeData =>
     [
-        DateTime.MinValue,
-        DateTime.MaxValue,
-        DateTime.Parse("0002-01-01 00:00:00"),
-        DateTime.Parse("9999-01-01 00:00"),
-        DateTime.Parse("2000-02-27 15:13:23.000"),
-        DateTime.Parse("2024-10-11 23:59:33.999"),
-        DateTime.Parse("2010-08-31 01:45:21.321"),
-        DateTime.Parse("2030-12-22 15:55:40.433")
+        DateTime.MinValue.ToUniversalTime(),
+        DateTime.MaxValue.ToUniversalTime(),
+        DateTime.Parse("0002-01-01 00:00:00").ToUniversalTime(),
+        DateTime.Parse("9999-01-01 00:00").ToUniversalTime(),
+        DateTime.Parse("2000-02-27 15:13:23.000").ToUniversalTime(),
+        DateTime.Parse("2024-10-11 23:59:33.999").ToUniversalTime(),
+        DateTime.Parse("2010-08-31 01:45:21.321").ToUniversalTime(),
+        DateTime.Parse("2030-12-22 15:55:40.433").ToUniversalTime()
     ];
 
     public static TheoryData<DateTime?> NullableDateTimeData => [null, ..DateTimeData];

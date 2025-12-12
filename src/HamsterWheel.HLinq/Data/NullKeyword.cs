@@ -2,5 +2,6 @@ namespace HamsterWheel.HLinq.Data;
 
 public class NullKeyword : INullKeyword
 {
-    public string Null => "null";
+    public const string Keyword = "null";
+    public string Value => Keyword;
 }

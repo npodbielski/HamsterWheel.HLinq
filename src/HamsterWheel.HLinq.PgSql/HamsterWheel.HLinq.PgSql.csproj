@@ -8,11 +8,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\HamsterWheel.HLinq.AspNet\HamsterWheel.HLinq.AspNet.csproj" />
+        <ProjectReference Include="..\HamsterWheel.HLinq.AspNet\HamsterWheel.HLinq.AspNet.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL"/>
     </ItemGroup>
 
 </Project>

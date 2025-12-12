@@ -1,3 +1,6 @@
+#if NETSTANDARD
+//extern alias hlinq;
+#endif
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;

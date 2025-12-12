@@ -8,6 +8,10 @@
         <RootNamespace>HamsterWheel.HLinq</RootNamespace>
     </PropertyGroup>
 
+    <ItemGroup>
+        <PackageReference Include="System.Memory" />
+    </ItemGroup>
+
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
       <DefineConstants>TRACE;HLINQ</DefineConstants>
     </PropertyGroup>
@@ -15,9 +19,5 @@
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
       <DefineConstants>TRACE;HLINQ</DefineConstants>
     </PropertyGroup>
-
-    <ItemGroup>
-      <PackageReference Include="System.Memory" Version="4.6.3" />
-    </ItemGroup>
 
 </Project>

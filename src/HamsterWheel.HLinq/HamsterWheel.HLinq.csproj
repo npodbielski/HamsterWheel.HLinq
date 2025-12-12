@@ -1,58 +1,67 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>HamsterWheel.HLinq</RootNamespace>
+        <TargetFrameworks>net9.0;netstandard2.0</TargetFrameworks>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-      <DefineConstants>TRACE;HLINQ</DefineConstants>
+        <DefineConstants>TRACE;HLINQ</DefineConstants>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-      <DefineConstants>TRACE;HLINQ</DefineConstants>
+        <DefineConstants>TRACE;HLINQ</DefineConstants>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\HamsterWheel.HLinq.Abstractions\HamsterWheel.HLinq.Abstractions.csproj" />
+        <ProjectReference Include="..\HamsterWheel.HLinq.Abstractions\HamsterWheel.HLinq.Abstractions.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="DynamicAnonymousType" Version="1.0.6" />
-        <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
+        <PackageReference Include="DynamicAnonymousType" />
+        <PackageReference Include="HamsterWheel.CodeShare.NetStandard" />
+        <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+        <PackageReference Include="System.Text.Json"  />
+    </ItemGroup>
+    
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net9.0' ">
+        <Compile Remove="**\*.NetStandard.cs" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+        <Compile Remove="**\*.Net90.cs" />
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Update="Tree\Filter\Condition.Exceptions.cs">
-        <DependentUpon>Condition.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Tree\Paging\SkipRoot.Exceptions.cs">
-        <DependentUpon>SkipRoot.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Request\HLinqQuery.Exceptions.cs">
-        <DependentUpon>HLinqQuery.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Tree\Filtering\Condition.Exceptions.cs">
-        <DependentUpon>Condition.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Tree\Filtering\Method.Exceptions.cs">
-        <DependentUpon>Method.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Tree\Filtering\MethodSource.cs">
-        <DependentUpon>Method.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Tree\Filtering\PropertyMethodToExpressionConverter.cs">
-        <DependentUpon>Method.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Tree\Filtering\StaticMethodToExpressionConverter.cs">
-        <DependentUpon>Method.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Tree\Selecting\PropertyAssigment.Exceptions.cs">
-        <DependentUpon>PropertyAssignment.cs</DependentUpon>
-      </Compile>
+        <Compile Update="Tree\Filter\Condition.Exceptions.cs">
+            <DependentUpon>Condition.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Tree\Paging\SkipRoot.Exceptions.cs">
+            <DependentUpon>SkipRoot.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Request\HLinqQuery.Exceptions.cs">
+            <DependentUpon>HLinqQuery.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Tree\Filtering\Condition.Exceptions.cs">
+            <DependentUpon>Condition.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Tree\Filtering\Method.Exceptions.cs">
+            <DependentUpon>Method.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Tree\Filtering\MethodSource.cs">
+            <DependentUpon>Method.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Tree\Filtering\PropertyMethodToExpressionConverter.cs">
+            <DependentUpon>Method.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Tree\Filtering\StaticMethodToExpressionConverter.cs">
+            <DependentUpon>Method.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Tree\Selecting\PropertyAssigment.Exceptions.cs">
+            <DependentUpon>PropertyAssignment.cs</DependentUpon>
+        </Compile>
     </ItemGroup>
 
 </Project>

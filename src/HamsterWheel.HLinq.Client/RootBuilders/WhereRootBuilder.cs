@@ -1,7 +1,9 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using HamsterWheel.HLinq.Data;
 using HamsterWheel.HLinq.Data.Converters;
+using HamsterWheel.HLinq.Reflection;
 
 namespace HamsterWheel.HLinq.Client.RootBuilders;
 
@@ -41,10 +43,23 @@ public class WhereRootBuilder<T>(StringBuilder query)
             {
                 query.Append('(');
             }
-
             GetStringForBinaryExpression(leftBe);
             AppendLogicalOperator(be);
             GetStringForBinaryExpression(rightBe);
+            if (nested)
+            {
+                query.Append(')');
+            }
+        }
+        if (right is MethodCallExpression rmce && left is MethodCallExpression lmce)
+        {
+            if (nested)
+            {
+                query.Append('(');
+            }
+            query.Append(lmce);
+            AppendLogicalOperator(be);
+            query.Append(rmce);
             if (nested)
             {
                 query.Append(')');
@@ -59,16 +74,16 @@ public class WhereRootBuilder<T>(StringBuilder query)
                 value = ce.Value ?? "null";
             }
 
-            if (value is null && right is MemberExpression { Expression: ConstantExpression mce } me)
+            if (value is null && right is MemberExpression { Expression: ConstantExpression mece } me)
             {
-                value = me.Member is FieldInfo fi ? fi.GetValue(mce.Value) ?? "null" : null;
+                value = me.Member is FieldInfo fi ? fi.GetValue(mece.Value) ?? "null" : null;
             }
 
             if (value is not null)
             {
                 query.Append(
                     be.ToString().Replace(be.Left.ToString(), left.ToString()).TrimStart('(')
-                        .Replace(be.Right.ToString(), DefaultConverter.Instance.ConvertTo<string>(value))
+                        .Replace(be.Right.ToString(), DefaultConverter.Instance.ConvertTo<string?>(value) ?? NullKeyword.Keyword)
                         .TrimEnd(')')
                 );
             }

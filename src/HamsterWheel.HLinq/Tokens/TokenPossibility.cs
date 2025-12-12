@@ -108,7 +108,7 @@ public abstract class TokenPossibility<T>(IGrammar grammar, string? tokenString 
     private IGrammarRule? _rule;
     public override Type ForType => typeof(T);
     public sealed override bool CanBeFirst => Rule.CanBeFirst;
-    public sealed override TokenBase Build(Range range) => BuildImpl(range);
+    public sealed override IToken Build(Range range) => BuildImpl(range);
     protected IGrammarRule Rule => _rule ??= Grammar.GetRuleFor<T>();
 
     protected virtual T BuildImpl(Range range)

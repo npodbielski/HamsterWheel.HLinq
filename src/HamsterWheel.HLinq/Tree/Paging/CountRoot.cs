@@ -31,7 +31,7 @@ public sealed class CountRoot(IToken[] tokens) : TreeBranch(tokens)
 
     public sealed class Applier(IMethodsCache methodsCache) : RootApplierBase<CountRoot>
     {
-        protected override QueryableContext ApplyImpl(IQueryableContext context, CountRoot where,
+        protected override IQueryableContext ApplyImpl(IQueryableContext context, CountRoot where,
             string hLinqQuery)
         {
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Count),

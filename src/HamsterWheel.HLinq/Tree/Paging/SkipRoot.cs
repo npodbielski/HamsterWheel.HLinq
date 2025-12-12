@@ -49,7 +49,7 @@ public sealed partial class SkipRoot(IToken[] tokens) : TreeBranch(tokens), ITre
 
     public sealed class Applier(IDefaultConverter converter, IMethodsCache methodsCache) : RootApplierBase<SkipRoot>
     {
-        protected override QueryableContext ApplyImpl(IQueryableContext context, SkipRoot skip,
+        protected override IQueryableContext ApplyImpl(IQueryableContext context, SkipRoot skip,
             string hLinqQuery)
         {
             var numberAsString = skip.GetSkipNumber(hLinqQuery);

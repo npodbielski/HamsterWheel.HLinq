@@ -2,23 +2,182 @@
 
     <PropertyGroup>
         <RootNamespace>HamsterWheel.HLinq.UnitTests</RootNamespace>
+        <ImplicitUsings>true</ImplicitUsings>
     </PropertyGroup>
+
+    <PropertyGroup>
+        <DefineConstants>TRACE; NETSTANDARD</DefineConstants>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="RandomDataGenerator.Net" />
+        <PackageReference Include="Microsoft.AspNetCore.Http" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\HamsterWheel.HLinq.Abstractions\HamsterWheel.HLinq.Abstractions.csproj">
             <SetTargetFramework>TargetFramework=netstandard2.0</SetTargetFramework>
         </ProjectReference>
+        <ProjectReference Include="..\..\src\HamsterWheel.HLinq.Client\HamsterWheel.HLinq.Client.csproj"/>
+        <ProjectReference Include="..\..\src\HamsterWheel.HLinq\HamsterWheel.HLinq.csproj">
+            <SetTargetFramework>TargetFramework=netstandard2.0</SetTargetFramework>
+        </ProjectReference>
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Data\" />
-      <Folder Include="Pipeline\" />
-    </ItemGroup>
 
     <ItemGroup>
-      <Compile Include="..\HamsterWheel.HLinq.UnitTests\Data\ValueConverters\BaseConfigurableValueConverterUnitTests.cs">
-        <Link>Data\ValueConverters\BaseConfigurableValueConverterUnitTests.cs</Link>
-      </Compile>
+        <Compile Include="..\..\demo\HamsterWheel.HLinq.Demo\Data\RandomData.cs">
+            <Link>Data\RandomData.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Data\Converter\ConvertTo.cs">
+            <Link>Data/Converter/ConvertTo.cs</Link>
+            <DependentUpon>DefaultConverterUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Data\Converter\ConvertToBoolean.cs">
+            <Link>Data/Converter/ConvertToBoolean.cs</Link>
+            <DependentUpon>DefaultConverterUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Data\Converter\ConvertToT1.cs">
+            <Link>Data/Converter/ConvertToT1.cs</Link>
+            <DependentUpon>DefaultConverterUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Data\Converter\DefaultConverterUnitTests.cs">
+            <Link>Data\Converter\DefaultConverterUnitTests.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Data\ValueConverters\BaseConfigurableValueConverterUnitTests.cs">
+            <Link>Data\ValueConverters\BaseConfigurableValueConverterUnitTests.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\ExtensionMethods\HLinqObjectExtensionsTests.cs">
+            <Link>ExtensionMethods\HLinqObjectExtensionsTests.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\ExtensionMethods\StringExtensionsUnitTests.cs">
+            <Link>ExtensionMethods\StringExtensionsUnitTests.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\ExtensionMethods\TypeExtensionsUnitTest.cs">
+            <Link>ExtensionMethods\TypeExtensionsUnitTest.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\Builders\ExpressionBuilderUnitTests.cs">
+            <Link>Pipeline\Applier\Builders\ExpressionBuilderUnitTests.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\Builders\Filter.cs">
+            <Link>Pipeline/Applier/Builders/Filter.cs</Link>
+            <DependentUpon>ExpressionBuilderUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\Builders\Order.cs">
+            <Link>Pipeline/Applier/Builders/Order.cs</Link>
+            <DependentUpon>ExpressionBuilderUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\Builders\Select.cs">
+            <Link>Pipeline/Applier/Builders/Select.cs</Link>
+            <DependentUpon>ExpressionBuilderUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\HLinqQueryApplierUnitTests.cs">
+            <Link>Pipeline\Applier\HLinqQueryApplierUnitTests.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\QueryCount.cs">
+            <Link>Pipeline/Applier/QueryCount.cs</Link>
+            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\QueryOrderBy.cs">
+            <Link>Pipeline/Applier/QueryOrderBy.cs</Link>
+            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\QuerySelect.cs">
+            <Link>Pipeline/Applier/QuerySelect.cs</Link>
+            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\QueryWhere.cs">
+            <Link>Pipeline/Applier/QueryWhere.cs</Link>
+            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Parser\HLinqParserUnitTests.cs">
+            <Link>Pipeline\Parser\HLinqParserUnitTests.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Tokenizer\HLinqTokenizerUnitTests.cs">
+            <Link>Pipeline\Tokenizer\HLinqTokenizerUnitTests.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Tokenizer\TokenizerDifferentCaseTests.cs">
+            <Link>Pipeline/Tokenizer/TokenizerDifferentCaseTests.cs</Link>
+            <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Tokenizer\TokenizerOrderingTests.cs">
+            <Link>Pipeline/Tokenizer/TokenizerOrderingTests.cs</Link>
+            <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Tokenizer\TokenizerPagingTests.cs">
+            <Link>Pipeline/Tokenizer/TokenizerPagingTests.cs</Link>
+            <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Tokenizer\TokenizerSelectTests.cs">
+            <Link>Pipeline/Tokenizer/TokenizerSelectTests.cs</Link>
+            <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Tokenizer\TokenizerWhereTests.cs">
+            <Link>Pipeline/Tokenizer/TokenizerWhereTests.cs</Link>
+            <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Tokenizer\TokenizerWhiteSpaceTests.cs">
+            <Link>Pipeline/Tokenizer/TokenizerWhiteSpaceTests.cs</Link>
+            <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Reflection\MethodsCacheUnitTests.cs">
+            <Link>Reflection\MethodsCacheUnitTests.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Requests\HLinqQueryUnitTests.cs">
+            <Link>Requests\HLinqQueryUnitTests.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\TestUtils\Dummies\DummyEntity.cs">
+            <Link>TestUtils\Dummies\DummyEntity.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\TestUtils\DummyHLinqServiceProvider.cs">
+            <Link>TestUtils\DummyHLinqServiceProvider.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\TestUtils\ExtensionMethods\Assertions\ExpectedToken.cs">
+            <Link>TestUtils\ExtensionMethods\Assertions\ExpectedToken.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\TestUtils\ExtensionMethods\Assertions\ExpectedTreeElement.cs">
+            <Link>TestUtils\ExtensionMethods\Assertions\ExpectedTreeElement.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\TestUtils\ExtensionMethods\Assertions\HLinqITreeBranchAssertions.cs">
+            <Link>TestUtils\ExtensionMethods\Assertions\HLinqITreeBranchAssertions.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\TestUtils\ExtensionMethods\Assertions\HLinqTokenArrayAssertions.cs">
+            <Link>TestUtils\ExtensionMethods\Assertions\HLinqTokenArrayAssertions.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\TestUtils\ExtensionMethods\Assertions\HLinqTokenAssertions.cs">
+            <Link>TestUtils\ExtensionMethods\Assertions\HLinqTokenAssertions.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\TestUtils\ExtensionMethods\FluentValidationExtensions.cs">
+            <Link>TestUtils\ExtensionMethods\FluentValidationExtensions.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\TestUtils\ExtensionMethods\IHLinqParserTestExtensions.cs">
+            <Link>TestUtils\ExtensionMethods\IHLinqParserTestExtensions.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\TestUtils\ExtensionMethods\ITreeBranchExtensions.cs">
+            <Link>TestUtils\ExtensionMethods\ITreeBranchExtensions.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\TestUtils\Fixtures\AutoData\CollectionSize.cs">
+            <Link>TestUtils\Fixtures\AutoData\CollectionSize.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\TestUtils\TestServicesCollection.cs">
+            <Link>TestUtils\TestServicesCollection.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Tokens\*.cs">
+            <Link>Tokens\*.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Tokens\Paging\*.cs">
+            <Link>Tokens\Paging\*.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Tokens\Selecting\*.cs">
+            <Link>Tokens\Selecting\*.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Tokens\Ordering\*.cs">
+            <Link>Tokens\Ordering\*.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Tree\EntityLeafUniTests.cs">
+            <Link>Tree\EntityLeafUniTests.cs</Link>
+        </Compile>
     </ItemGroup>
 
 </Project>

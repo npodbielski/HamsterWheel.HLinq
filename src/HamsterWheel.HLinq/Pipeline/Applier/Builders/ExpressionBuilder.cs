@@ -156,8 +156,7 @@ public sealed class ExpressionBuilder(
             var targetProp = props.Single(currentType, prop);
             if (targetProp is null)
             {
-                var join = string.Join('.', path);
-                throw new InvalidPropertyPathException(sourceType, join,
+                throw new InvalidPropertyPathException(sourceType, path.JoinWithDot(),
                     props.From(currentType).Select(p => p.Name.ToCamelCase()).ToArray());
             }
 

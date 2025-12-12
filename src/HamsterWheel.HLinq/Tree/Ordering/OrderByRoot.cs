@@ -50,7 +50,7 @@ public sealed class OrderByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache) : RootApplierBase<OrderByRoot>
     {
-        protected override QueryableContext ApplyImpl(IQueryableContext context, OrderByRoot orderBy, string hLinqQuery)
+        protected override IQueryableContext ApplyImpl(IQueryableContext context, OrderByRoot orderBy, string hLinqQuery)
         {
             var selector = builder.GetProperty(context.CurrentResultType, orderBy, hLinqQuery);
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.OrderBy),

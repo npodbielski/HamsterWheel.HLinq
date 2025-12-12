@@ -1,17 +1,17 @@
 ﻿<Solution>
   <Folder Name="/Demo/">
-    <Project Path="demo\HamsterWheel.HLinq.Demo\HamsterWheel.HLinq.Demo.csproj" Type="Classic C#" />
+    <Project Path="demo\HamsterWheel.HLinq.Demo\HamsterWheel.HLinq.Demo.csproj" Type="C#" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="src\HamsterWheel.HLinq.Abstractions\HamsterWheel.HLinq.Abstractions.csproj" Type="Classic C#" />
-    <Project Path="src\HamsterWheel.HLinq.AspNet\HamsterWheel.HLinq.AspNet.csproj" Type="Classic C#" />
-    <Project Path="src\HamsterWheel.HLinq.Client\HamsterWheel.HLinq.Client.csproj" Type="Classic C#" />
-    <Project Path="src\HamsterWheel.HLinq.PgSql\HamsterWheel.HLinq.PgSql.csproj" Type="Classic C#" />
-    <Project Path="src\HamsterWheel.HLinq\HamsterWheel.HLinq.csproj" Type="Classic C#" />
+    <Project Path="src\HamsterWheel.HLinq.Abstractions\HamsterWheel.HLinq.Abstractions.csproj" Type="C#" />
+    <Project Path="src\HamsterWheel.HLinq.AspNet\HamsterWheel.HLinq.AspNet.csproj" Type="C#" />
+    <Project Path="src\HamsterWheel.HLinq.Client\HamsterWheel.HLinq.Client.csproj" Type="C#" />
+    <Project Path="src\HamsterWheel.HLinq.PgSql\HamsterWheel.HLinq.PgSql.csproj" Type="C#" />
+    <Project Path="src\HamsterWheel.HLinq\HamsterWheel.HLinq.csproj" Type="C#" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="test\HamsterWheel.HLinq.IntegrationTests\HamsterWheel.HLinq.IntegrationTests.csproj" Type="Classic C#" />
-    <Project Path="test\HamsterWheel.HLinq.UnitTests.NetStandard\HamsterWheel.HLinq.UnitTests.NetStandard.csproj" Type="Classic C#" />
-    <Project Path="test\HamsterWheel.HLinq.UnitTests\HamsterWheel.HLinq.UnitTests.csproj" Type="Classic C#" />
+    <Project Path="test\HamsterWheel.HLinq.IntegrationTests\HamsterWheel.HLinq.IntegrationTests.csproj" Type="C#" />
+    <Project Path="test\HamsterWheel.HLinq.UnitTests.NetStandard\HamsterWheel.HLinq.UnitTests.NetStandard.csproj" Type="C#" />
+    <Project Path="test\HamsterWheel.HLinq.UnitTests\HamsterWheel.HLinq.UnitTests.csproj" Type="C#" />
   </Folder>
 </Solution>

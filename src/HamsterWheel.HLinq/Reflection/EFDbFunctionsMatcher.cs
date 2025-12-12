@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace HamsterWheel.HLinq;
+namespace HamsterWheel.HLinq.Reflection;
 
 public static class EfDbFunctionsMatcher
 {

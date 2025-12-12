@@ -9,7 +9,7 @@ namespace HamsterWheel.HLinq.Pipeline.Tokenizer;
 
 using CurrentTokenPossibility = (IHLinqTokenPossibility token, int possibility);
 
-public sealed class HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPossibilities) : IHLinqTokenizer
+public sealed partial class HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPossibilities) : IHLinqTokenizer
 {
     public IToken[] Tokenize(string hLinqQuery)
     {
@@ -21,6 +21,7 @@ public sealed class HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPoss
         var previousTokenIndex = 0;
 
         ReadOnlySpan<char> currentSubset = null;
+        var currentPossibleTokens = GetStartingTokens(allTokens);
         for (var index = 0; index < span.Length; index++)
         {
             var range = previousTokenIndex..(index + 1);
@@ -32,7 +33,6 @@ public sealed class HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPoss
                 continue;
             }
 
-            var currentPossibleTokens = GetPossibleTokens(nextPossibleTokens, allTokens, index).ToArray();
             nextPossibleTokens.Clear();
             foreach (var pt in currentPossibleTokens)
             {
@@ -60,13 +60,14 @@ public sealed class HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPoss
                 {
                     previousTokenIndex = index + 1;
                     nextPossibleTokens.Clear();
-                    tokens.Add(first.token.Build(range));
+                    tokens.Add(first.token.Build(GetRange(range)));
                     currentSubset = [];
+                    currentPossibleTokens = allTokens;
                     continue;
                 }
             }
 
-            if (currentPossibleTokens.Length == 0)
+            if (currentPossibleTokens.Length == 0 && !currentSubset.IsEmpty)
             {
                 tokens.Add(Unknown.Empty);
             }
@@ -87,16 +88,8 @@ public sealed class HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPoss
         return tokens.ToArray();
     }
 
-    private static CurrentTokenPossibility[] GetPossibleTokens(List<CurrentTokenPossibility> nextPossibleTokens,
-        CurrentTokenPossibility[] allTokens, int index)
-    {
-        if (index == 0)
-        {
-            return allTokens.Where(t => t.token.CanBeFirst).ToArray();
-        }
-
-        return nextPossibleTokens.Count > 0 ? [..nextPossibleTokens] : allTokens;
-    }
+    private static CurrentTokenPossibility[] GetStartingTokens(CurrentTokenPossibility[] allTokens) =>
+        allTokens.Where(t => t.token.CanBeFirst).ToArray();
 
     public sealed class UnknownTokenException(string queryString, IToken[] expectedTokens)
         : InvalidTokenCollectionException(queryString, [], expectedTokens.Take(1).ToArray(),

@@ -4,7 +4,7 @@ stages:
   - publish
   - deploy
 
-image: mcr.microsoft.com/dotnet/sdk:9.0
+image: mcr.microsoft.com/dotnet/sdk:10.0
 
 variables:
   OBJECTS_DIRECTORY: 'obj'
@@ -111,6 +111,8 @@ package:
   extends: .dotnet
   rules:
     - if: $CI_COMMIT_BRANCH == "master"
+      changes:
+        - src/**/*
   script:
     - dotnet pack HLinq.slnx -c Release
     # Configure GitLab package registry as a NuGet source

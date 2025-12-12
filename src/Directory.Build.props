@@ -1,6 +1,9 @@
 <Project>
 
     <Import Project="../Nuget.props"/>
+    <PropertyGroup>
+        <LangVersion>14</LangVersion>
+    </PropertyGroup>
 
     <ItemGroup>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">

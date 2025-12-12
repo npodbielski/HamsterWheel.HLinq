@@ -2,7 +2,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using HamsterWheel.HLinq.Exceptions;
+using HamsterWheel.HLinq.Client.Exceptions;
 
 namespace HamsterWheel.HLinq.Client;
 

@@ -6,7 +6,9 @@ public sealed class EnumValueConverter : BaseConfigurableValueConverter
     public override bool CanConvert(object? value, Type destination) => destination.IsEnum;
 
     public override object ConvertTo(object? value, Type destination) =>
-        (value is string str && Enum.TryParse(destination, str, true, out var val))
+        value is string str 
+        && destination.IsEnum
+        && str.TryParseEnum(destination) is {convertible: true, enumValue: {} val}
             ? val
             : base.ConvertTo(value, destination)!;
 }
@@ -22,7 +24,7 @@ public sealed class NullableEnumValueConverter(INullKeyword nullKeyword, EnumVal
         && destination.GetGenericArguments().First().IsEnum;
 
     public override object? ConvertTo(object? value, Type destination) =>
-        value is string str && str == nullKeyword.Null
+        value is string str && str == nullKeyword.Value
             ? null
             : baseConverter.ConvertTo(value, destination.GetGenericArguments().First());
 }

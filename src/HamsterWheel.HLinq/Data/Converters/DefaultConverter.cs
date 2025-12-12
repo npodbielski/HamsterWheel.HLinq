@@ -26,7 +26,7 @@ public class DefaultConverter(
     [return: NotNullIfNotNull(nameof(value))]
     public T? ConvertTo<T>(object? value)
     {
-        if (value is T typedValue)
+        if (value is T typedValue and not string)
         {
             return typedValue;
         }
@@ -51,7 +51,7 @@ public class DefaultConverter(
 
     public bool? ConvertToBoolean(object? arg, bool isNullable)
     {
-        if (nullKeyword.Null.Equals(arg) || arg is null)
+        if (nullKeyword.Value.Equals(arg) || arg is null)
         {
             return !isNullable ? false : null;
         }
