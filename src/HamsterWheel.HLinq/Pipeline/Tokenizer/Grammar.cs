@@ -1,6 +1,7 @@
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
+using HamsterWheel.HLinq.Tokens.Grouping;
 using HamsterWheel.HLinq.Tokens.Ordering;
 using HamsterWheel.HLinq.Tokens.Paging;
 using HamsterWheel.HLinq.Tokens.Selecting;
@@ -41,6 +42,8 @@ public class Grammar(IServiceProvider serviceProvider) : IGrammar
             nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
         new GrammarRule<Take>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
             nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
+        new GrammarRule<GroupBy>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+            nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
         new GrammarRule<ThenBy>(false, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
             nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
         new GrammarRule<ThenByDescending>(false, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
@@ -79,7 +82,7 @@ public class Grammar(IServiceProvider serviceProvider) : IGrammar
         new GrammarRule<Dot>(false, [typeof(Entity), typeof(PropertyName), typeof(RightSquareBracket)]),
         new GrammarRule<LeftSquareBracket>(false, [
             typeof(Where), typeof(Skip), typeof(Take), typeof(OrderBy), typeof(OrderByDescending), typeof(ThenBy),
-            typeof(ThenByDescending), typeof(Select), typeof(Count)
+            typeof(ThenByDescending), typeof(Select), typeof(Count), typeof(GroupBy)
         ]),
         new GrammarRule<RightSquareBracket>(false,
             [typeof(PropertyName), typeof(NameOrValue), typeof(RightCircleBracket), typeof(LeftSquareBracket)]),

@@ -34,6 +34,13 @@ public class HLinqClientQueryBuilder<T> : ResponseHLinqClientQueryBuilder<T[]>
         return Next<TResult>(this);
     }
 
+    public UnorderedHLinqClientQueryBuilder<T> GroupBy<TKey>(Expression<Func<T, TKey>> keySelector)
+    {
+        AddDotIfNecessary();
+        new GroupByRootBuilder<T>(Query).Build(keySelector);
+        return Next<T>(this);
+    }
+
     public UnorderedHLinqClientQueryBuilder<T> Where(Expression<Func<T, bool>> predicate)
     {
         AddDotIfNecessary();
