@@ -391,7 +391,9 @@ partial class DefaultConverterUnitTests
         //for some reason it returns different value depending if the last millisecond is 0 or not
         // probably it is a bit different on .net core and .net standard
         // "2025-12-11T11:06:02.2855140+00:00", but found "2025-12-11T11:06:02.285514+00:00".
-        expected = expected.Replace("0+", "+");
+        // JSON serialization strips ALL trailing zeros, so we must do the same.
+        while (expected.Contains("0+"))
+            expected = expected.Replace("0+", "+");
 
         //act
         var actual = _sut.ConvertTo(typeof(string), dateTimeOffset);

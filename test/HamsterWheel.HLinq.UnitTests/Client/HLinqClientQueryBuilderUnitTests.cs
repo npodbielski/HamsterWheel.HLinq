@@ -72,6 +72,16 @@ public class HLinqClientQueryBuilderUnitTests
         //assert
         actual.Should().Be(expected);
     }
+    [Fact]
+    public void GroupBy_WhenCalledWithProperty_ThenCanBuildQuery()
+    {
+        //arrange
+        var expected = "groupby[x.FirstName]";
+        //act
+        var actual = _sut.GroupBy(x => x.FirstName).Build();
+        //assert
+        actual.Should().Be(expected);
+    }
 
     private class Person
     {

@@ -5,6 +5,7 @@ using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Selecting;
 using HamsterWheel.HLinq.Tree.Filtering;
+using HamsterWheel.HLinq.Tree.Grouping;
 using HamsterWheel.HLinq.Tree.Ordering;
 using HamsterWheel.HLinq.Tree.Selecting;
 
@@ -24,7 +25,7 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
         protected override Type[] ValidParents { get; } =
         [
             typeof(Condition), typeof(Method), typeof(OrderByRoot), typeof(OrderByDescendingRoot), typeof(ThenByRoot),
-            typeof(ThenByDescendingRoot), typeof(PropertyAssignment)
+            typeof(ThenByDescendingRoot), typeof(PropertyAssignment), typeof(GroupByRoot)
         ];
 
         protected override Property? BuildBranch(IParsingContext context)

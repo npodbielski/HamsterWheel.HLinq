@@ -56,7 +56,7 @@ public class FromStringConverter(INullKeyword nullKeyword) : IConfigurableValueC
             },
             {
                 typeof(DateTime),
-                s => DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var dt)
+                s => DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dt)
                     ? dt.ToUniversalTime()
                     : throw new InvalidConstantStringToTypeConversionException(s, typeof(DateTime))
             },
