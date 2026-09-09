@@ -6,7 +6,7 @@ public sealed class EnumValueConverter : BaseConfigurableValueConverter
     public override bool CanConvert(object? value, Type destination) => destination.IsEnum;
 
     public override object ConvertTo(object? value, Type destination) =>
-        value is string str 
+        value?.ToString() is { } str 
         && destination.IsEnum
         && str.TryParseEnum(destination) is {convertible: true, enumValue: {} val}
             ? val

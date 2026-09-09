@@ -3,6 +3,7 @@
     <PropertyGroup>
         <RootNamespace>HamsterWheel.HLinq.UnitTests</RootNamespace>
         <ImplicitUsings>true</ImplicitUsings>
+        <TargetFramework>net10.0</TargetFramework>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -44,6 +45,9 @@
         </Compile>
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Data\Converter\DefaultConverterUnitTests.cs">
             <Link>Data\Converter\DefaultConverterUnitTests.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Data\Converter\EnumValueConverterUnitTests.cs">
+            <Link>Data\Converter\EnumValueConverterUnitTests.cs</Link>
         </Compile>
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Data\ValueConverters\BaseConfigurableValueConverterUnitTests.cs">
             <Link>Data\ValueConverters\BaseConfigurableValueConverterUnitTests.cs</Link>

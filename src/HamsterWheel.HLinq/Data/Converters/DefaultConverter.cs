@@ -12,16 +12,29 @@ public class DefaultConverter(
     private readonly IConfigurableValueConverter[] _converters =
         converters.Concat([fallbackSerializer]).Where(c => c is not null).OrderBy(c => c!.Priority).ToArray()!;
 
-    internal static DefaultConverter Instance { get; } =
-        new(
+    internal static DefaultConverter Instance { get; } = new(GetDefaultConverters(), new NullKeyword());
+
+    internal static IEnumerable<IConfigurableValueConverter> GetDefaultConverters()
+    {
+        return
         [
             new FromStringConverter(new NullKeyword()), new FromFormattableConverter(), new FromConvertibleConverter(),
             new EnumValueConverter(),
             new NullableEnumValueConverter(new NullKeyword(), new EnumValueConverter()),
+            new CustomTypeCombinationsConverter(),
             new ToInterfaceConverter(), new ViaSerializationConverter()
-        ], new NullKeyword());
+        ];
+    }
 
-    public bool NeedConversion(Type targetType, object? value) => !targetType.IsInstanceOfType(value);
+    public bool NeedConversion(Type targetType, object? value)
+    {
+        if (targetType.IsClass && value == null)
+        {
+            return false;
+        }
+
+        return !targetType.IsInstanceOfType(value);
+    }
 
     [return: NotNullIfNotNull(nameof(value))]
     public T? ConvertTo<T>(object? value)

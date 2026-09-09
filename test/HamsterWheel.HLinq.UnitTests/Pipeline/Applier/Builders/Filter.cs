@@ -761,4 +761,36 @@ public partial class ExpressionBuilderUnitTests
         var filter = actual.Compile();
         filter.Invoke(entity).Should().Be(entity.NullableDateTimeOffset == value);
     }
+
+    [Fact]
+    public void GetFilter_WhenNotExistingPropertyMethod_ThenThrows()
+    {
+        //arrange
+        const string query = "where[x.Name.NoMethod(n)]";
+        var tokens = _tokenizer.Tokenize(query);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        var action = () => _sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(), query);
+
+        //act
+        var exception = action.Should().Throw<Method.InvalidMethodException>();
+
+        //assert
+        exception.WithMessage("Invalid method for property*");
+    }
+
+    [Fact]
+    public void GetFilter_WhenNotExistingStaticMethod_ThenThrows()
+    {
+        //arrange
+        const string query = "where[NoMethod(x.Name)]";
+        var tokens = _tokenizer.Tokenize(query);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        var action = () => _sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(), query);
+
+        //act
+        var exception = action.Should().Throw<Method.InvalidStaticMethodException>();
+
+        //assert
+        exception.WithMessage("Invalid static method in query*");
+    }
 }

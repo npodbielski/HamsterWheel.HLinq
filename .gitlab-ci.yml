@@ -94,7 +94,7 @@ publish-api:
     - 'dotnet publish "./HamsterWheel.HLinq.Demo.csproj" --no-restore -c $BUILD_CONFIGURATION /p:UseAppHost=false'
   artifacts: 
     paths:
-      - /builds/hamster-wheel/hlinq/demo/HamsterWheel.HLinq.Demo/bin/Release/net9.0/publish
+      - /builds/hamster-wheel/hlinq/demo/HamsterWheel.HLinq.Demo/bin/Release/net10.0/publish
 
 build-docker-image:
   stage: publish

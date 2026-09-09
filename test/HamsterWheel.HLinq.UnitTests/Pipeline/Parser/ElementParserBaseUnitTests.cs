@@ -107,10 +107,10 @@ public class ElementParserBaseUnitTests
         context.Received(1).RemoveStartTokens(Arg.Any<int>());
         context.Received(1).RemoveStartTokens(Arg.Is(2));
     }
-}
 
-public class TestElementParser(SelectRoot? root = null) : ElementParserBase<SelectRoot>
-{
-    public override IToken[] ExampleTokens { get; } = [];
-    protected override SelectRoot BuildBranch(IParsingContext context) => root ?? new SelectRoot([]);
+    public class TestElementParser(SelectRoot? root = null) : ElementParserBase<SelectRoot>
+    {
+        public override IToken[] ExampleTokens { get; } = [];
+        protected override SelectRoot BuildBranch(IParsingContext context) => root ?? new SelectRoot([]);
+    }
 }

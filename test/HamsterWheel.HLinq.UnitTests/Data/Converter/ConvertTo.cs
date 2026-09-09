@@ -63,7 +63,8 @@ partial class DefaultConverterUnitTests
     [InlineData("102323281", 102323281)]
     [InlineData("2147483647", int.MaxValue)]
     [InlineData(null, 0)]
-    public void ConvertTo_WhenCalledWithConvertableStringToInt_ThenReturnsCorrectValue(string? stringValue, int expected)
+    public void ConvertTo_WhenCalledWithConvertableStringToInt_ThenReturnsCorrectValue(string? stringValue,
+        int expected)
     {
         //act
         var actual = _sut.ConvertTo(typeof(int), stringValue);
@@ -451,9 +452,40 @@ partial class DefaultConverterUnitTests
         Guid? guid = null;
 
         //act
-        var actual = _sut.ConvertTo(typeof(Guid?),new NullKeyword().Value);
+        var actual = _sut.ConvertTo(typeof(Guid?), new NullKeyword().Value);
 
         //assert
         actual.Should().Be(guid);
+    }
+
+    [Fact]
+    public void ConvertTo_InfiniteRecursion_ThenCanConvert()
+    {
+        //arrange
+        var source = new InfiniteRecursionClass
+        {
+            Name = "name"
+        };
+        source.Child = source;
+
+        //act
+        var actual = _sut.ConvertTo(typeof(Flat), source);
+
+        //assert
+        actual.Should().BeEquivalentTo(new Flat
+        {
+            Name = source.Name
+        });
+    }
+
+    public class InfiniteRecursionClass
+    {
+        public string Name { get; set; }
+        public InfiniteRecursionClass Child { get; set; }
+    }
+
+    public class Flat
+    {
+        public string Name { get; set; }
     }
 }

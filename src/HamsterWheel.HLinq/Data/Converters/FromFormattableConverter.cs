@@ -14,12 +14,19 @@ public class FromFormattableConverter : IConfigurableValueConverter
             { typeof(DateTime), c => c.ToString("O", CultureInfo.InvariantCulture) }
         };
 
-    public bool CanConvert(object? value, Type to) =>
-        value switch
+    public bool CanConvert(object? value, Type to)
+    {
+        if (to != typeof(string))
+        {
+            return false;
+        }
+
+        return value switch
         {
             IConvertible when FormattableMethods.TryGetValue(value.GetType(), out _) => true,
             _ => false
         };
+    }
 
     public object ConvertTo(object? value, Type to) =>
         value switch

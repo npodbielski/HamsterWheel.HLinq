@@ -1,6 +1,8 @@
+using System.Runtime.Serialization;
 using System.Text.Json;
 using FluentAssertions;
 using HamsterWheel.HLinq.Data;
+using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Tree.Filtering;
 using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
 
@@ -333,6 +335,22 @@ partial class DefaultConverterUnitTests
     }
 
     [Fact]
+    public void ConvertToT1_WhenCalledWithIncompatibleProperties_ThenReturnsCorrectValue()
+    {
+        //arrange
+        var entity = new ObjectWithEnumProperty
+        {
+            Permissions = Permissions.Admin
+        };
+
+        //act
+        var actual = _sut.ConvertTo<ObjectWithStringProp>(entity);
+
+        //assert
+        actual.Permissions.Should().Be(entity.Permissions.ToString());
+    }
+
+    [Fact]
     public void ConvertToT1_WhenCalledWithJsonStringToCustomTypeAndCustomSerializer_ThenCallsCustomSerializer()
     {
         //arrange
@@ -527,12 +545,276 @@ partial class DefaultConverterUnitTests
     public void ConvertToT1_WhenDateTimeOffsetToDateTime_ThenCanConvert()
     {
         //arrange
-        var expected = new DateTime(2025, 1, 1, 0 ,0, 0, DateTimeKind.Utc).ToLocalTime();
+        var expected = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc).ToLocalTime();
 
         //act
         var actual = _sut.ConvertTo<DateTime>(new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero));
 
         //assert
         actual.Should().Be(expected);
+    }
+
+#if !NETSTANDARD
+    [Fact]
+    public void ConvertToT1_WhenDateTimeToTimeOnly_ThenCanConvert()
+    {
+        //arrange
+        var expected = new TimeOnly(0, 0, 0);
+
+        //act
+        var actual = _sut.ConvertTo<TimeOnly>(new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenDateTimeOffsetToTimeOnly_ThenCanConvert()
+    {
+        //arrange
+        var expected = new TimeOnly(0, 0, 0);
+
+        //act
+        var actual = _sut.ConvertTo<TimeOnly>(new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero));
+
+        //assert
+        actual.Should().Be(expected);
+    }
+#endif
+
+    [Fact]
+    public void ConvertToT1_WhenUnconvertibleStringToInt_ThenThrows()
+    {
+        //arrange
+        var action = () => _sut.ConvertTo<int>("dog");
+
+        //act
+        var actual = action.Should().Throw<InvalidConstantStringToTypeConversionException>();
+
+        //assert
+        actual.WithMessage("*can not be converted to type*");
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenLessThanMaxValueToByte_ThenCanConvert()
+    {
+        //arrange
+        var expected = byte.MinValue;
+
+        //act
+        var actual = _sut.ConvertTo<byte>(-32321);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenLessThanMinValueToInt_ThenCanConvert()
+    {
+        //arrange
+        var expected = int.MinValue;
+
+        //act
+        var actual = _sut.ConvertTo<int>(long.MinValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenMoreThanMaxValueToByte_ThenCanConvert()
+    {
+        //arrange
+        var expected = byte.MaxValue;
+
+        //act
+        var actual = _sut.ConvertTo<byte>(10_000);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenMoreThanMaxValueToInt_ThenCanConvert()
+    {
+        //arrange
+        var expected = int.MaxValue;
+
+        //act
+        var actual = _sut.ConvertTo<int>(long.MaxValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenMoreThanMaxValueToDecimal_ThenCanConvert()
+    {
+        //arrange
+        var expected = decimal.MaxValue;
+
+        //act
+        var actual = _sut.ConvertTo<decimal>(double.MaxValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenMoreLessMinValueToDecimal_ThenCanConvert()
+    {
+        //arrange
+        var expected = decimal.MinValue;
+
+        //act
+        var actual = _sut.ConvertTo<decimal>(double.MinValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenMoreThanMaxValueToShort_ThenCanConvert()
+    {
+        //arrange
+        var expected = short.MaxValue;
+
+        //act
+        var actual = _sut.ConvertTo<short>(int.MaxValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenMoreLessMinValueToShort_ThenCanConvert()
+    {
+        //arrange
+        var expected = short.MinValue;
+
+        //act
+        var actual = _sut.ConvertTo<short>(int.MinValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenMoreThanMaxValueToLong_ThenCanConvert()
+    {
+        //arrange
+        var expected = long.MaxValue;
+
+        //act
+        var actual = _sut.ConvertTo<long>(double.MaxValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenMoreLessMinValueToLong_ThenCanConvert()
+    {
+        //arrange
+        var expected = long.MinValue;
+
+        //act
+        var actual = _sut.ConvertTo<long>(double.MinValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenMoreThanMaxValueToSbyte_ThenCanConvert()
+    {
+        //arrange
+        var expected = sbyte.MaxValue;
+
+        //act
+        var actual = _sut.ConvertTo<sbyte>(int.MaxValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenMoreLessMinValueToSbyte_ThenCanConvert()
+    {
+        //arrange
+        var expected = sbyte.MinValue;
+
+        //act
+        var actual = _sut.ConvertTo<sbyte>(int.MinValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenMoreThanMaxValueToUshort_ThenCanConvert()
+    {
+        //arrange
+        var expected = ushort.MaxValue;
+
+        //act
+        var actual = _sut.ConvertTo<ushort>(int.MaxValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenMoreLessMinValueToUShort_ThenCanConvert()
+    {
+        //arrange
+        var expected = ushort.MinValue;
+
+        //act
+        var actual = _sut.ConvertTo<ushort>(int.MinValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenMoreThanMaxValueToUint_ThenCanConvert()
+    {
+        //arrange
+        var expected = uint.MaxValue;
+
+        //act
+        var actual = _sut.ConvertTo<uint>(long.MaxValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenMoreLessMinValueToUint_ThenCanConvert()
+    {
+        //arrange
+        var expected = uint.MinValue;
+
+        //act
+        var actual = _sut.ConvertTo<uint>(long.MinValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    public class ObjectWithStringProp(string Permissions)
+    {
+        public string Permissions { get; } = Permissions;
+    }
+
+    public sealed class ObjectWithEnumProperty
+    {
+        public Permissions Permissions { get; set; } = default!;
+    }
+
+    public enum Permissions
+    {
+        Admin
     }
 }

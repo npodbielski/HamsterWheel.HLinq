@@ -25,9 +25,11 @@ public class PropertyMethodToExpressionConverter : IPropertyMethodToExpressionCo
         foreach (var info in methods)
         {
             var expressions = parametersConverter.AttemptConversion(parameters,
-                info.GetParameters()
+            [
+                .. info.GetParameters()
                     .Select<ParameterInfo, IBindingParameterInfo>(m => new BindingParameterInfo
-                        { Info = m }).ToArray());
+                        { Info = m })
+            ]);
             try
             {
                 methodCallExpression = Expression.Call(expression, info, expressions);

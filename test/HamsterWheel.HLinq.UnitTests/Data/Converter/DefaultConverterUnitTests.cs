@@ -9,12 +9,7 @@ public partial class DefaultConverterUnitTests
     private readonly DefaultConverter _sut = GetSut();
 
     private static DefaultConverter GetSut(IFallbackConverter? converter = null) =>
-        new(
-        [
-            new FromStringConverter(new NullKeyword()), new FromFormattableConverter(), new EnumValueConverter(),
-            new NullableEnumValueConverter(new NullKeyword(), new EnumValueConverter()), new FromConvertibleConverter(),
-            new ToInterfaceConverter(), new ViaSerializationConverter()
-        ], new NullKeyword(), converter);
+        new(DefaultConverter.GetDefaultConverters(), new NullKeyword(), converter);
 }
 
 public class FallbackConverter : FallbackConverterBase

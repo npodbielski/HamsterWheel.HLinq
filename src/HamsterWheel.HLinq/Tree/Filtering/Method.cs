@@ -10,7 +10,6 @@ namespace HamsterWheel.HLinq.Tree.Filtering;
 public sealed partial class Method(IToken[] tokens) : TreeBranch(tokens), IMethod
 {
     private MethodSource? _source;
-    private MethodName? _method;
 
     private MethodSource SourceType => _source ?? Tokens.First() switch
     {
@@ -19,7 +18,7 @@ public sealed partial class Method(IToken[] tokens) : TreeBranch(tokens), IMetho
         _ => _source ??= MethodSource.Static
     };
 
-    private MethodName MethodName => _method ??= Tokens.OfType<MethodName>().First();
+    private MethodName MethodName => field ??= Tokens.OfType<MethodName>().First();
 
     public string GetName(string hLinqQuery) => MethodName.GetValue(hLinqQuery);
 
