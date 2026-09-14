@@ -66,6 +66,40 @@ public class HLinqParserUnitTests
     }
 
     [Fact]
+    public void Parse_WhenWhereHasDanglingEntity_ThenThrowsInsteadOfLoopingForever()
+    {
+        // Regression: Condition matches [Entity, ..] but is built with zero tokens,
+        // so the parse loop made no progress and spun forever (`where[x` in a request).
+        const string query = "where[x";
+        IToken[] tokens =
+        [
+            Where.Empty,
+            LeftSquareBracket.Empty,
+            Entity.Empty
+        ];
+
+        var action = () => _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
+        action.Should().Throw<NonParsableTokenSequenceException>();
+    }
+
+    [Fact]
+    public void Parse_WhenWhereHasEntityAndDanglingDot_ThenThrowsInsteadOfLoopingForever()
+    {
+        // Regression: same as above with a trailing dot (`where[x.` in a request).
+        const string query = "where[x.";
+        IToken[] tokens =
+        [
+            Where.Empty,
+            LeftSquareBracket.Empty,
+            Entity.Empty,
+            Dot.Empty
+        ];
+
+        var action = () => _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
+        action.Should().Throw<NonParsableTokenSequenceException>();
+    }
+
+    [Fact]
     public void Parse_WhenEmptySkip_ThenThrows()
     {
         const string query = "skip[]";

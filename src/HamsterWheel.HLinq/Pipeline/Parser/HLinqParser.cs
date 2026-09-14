@@ -34,6 +34,8 @@ public sealed class HLinqParser(IEnumerable<IElementParser> allParsers) : IHLinq
         while (context.Tokens.Length > 0)
         {
             numberOfInvalidParsers = 0;
+            var tokensBefore = context.Tokens.Length;
+            var depthBefore = context.Parents.Count;
             foreach (var parser in parsers)
             {
                 if (parser.TryBuildElement(context))
@@ -53,6 +55,17 @@ public sealed class HLinqParser(IEnumerable<IElementParser> allParsers) : IHLinq
             }
 
             if (numberOfInvalidParsers == parsers.Length) break;
+
+            // A parser may build an element without consuming a token (Condition is
+            // a frame its children parse into). A pass that built at least one
+            // element yet consumed no token and ended at the same tree depth made
+            // no progress; the parse is deterministic, so repeating it would loop
+            // forever (e.g. `where[x` - Condition matches [Entity, ..] and nothing
+            // consumes the dangling Entity).
+            if (context.Tokens.Length == tokensBefore && context.Parents.Count == depthBefore)
+            {
+                throw new NonParsableTokenSequenceException(context.SourceQueryString, context.Tokens, parsers);
+            }
         }
 
         if (context.CurrentElement is IHLinqQuery && numberOfInvalidParsers >= parsers.Length)

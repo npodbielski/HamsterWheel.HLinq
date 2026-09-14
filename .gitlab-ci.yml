@@ -1,3 +1,9 @@
+include:
+  # Shared buildah image build+push job (hidden .buildah-image).
+  - project: "ci/templates"
+    ref: "main"
+    file: "/buildah-image.yml"
+
 stages:
   - build
   - test
@@ -21,14 +27,6 @@ cache:
     - '$NUGET_PACKAGES_DIRECTORY'
   policy: pull-push
 
-.build_image:
-  image:
-    name: gcr.io/kaniko-project/executor:debug
-    entrypoint: [ "" ]
-  before_script:
-    - auth=$(echo -n $CI_REGISTRY_USER:$CI_REGISTRY_PASSWORD | base64 -w 0)
-    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$auth\"}}}" > /kaniko/.docker/config.json
-
 .dotnet:
   before_script:
     # Configure GitLab package registry as a NuGet source
@@ -47,8 +45,6 @@ tests:
   extends: .dotnet
   variables:
     FF_NETWORK_PER_BUILD: 1
-    BUILDAH_FORMAT: docker
-    BUILDAH_ISOLATION: chroot
     POSTGRES_PASSWORD: outflank-outage-undoing
     POSTGRES_DB: Demo
     POSTGRES_HOST: postgres
@@ -96,15 +92,17 @@ publish-api:
     paths:
       - /builds/hamster-wheel/hlinq/demo/HamsterWheel.HLinq.Demo/bin/Release/net10.0/publish
 
+# Demo app image, built by the shared buildah template (ci/templates) instead
+# of kaniko. The Dockerfile COPYs the publish-api output, hence needs: it.
 build-docker-image:
+  extends: .buildah-image
   stage: publish
-  extends: .build_image
   needs:
     - publish-api
-  script: |
-    cd demo/HamsterWheel.HLinq.Demo
-    name=hlinq-demo
-    /kaniko/executor --context . --dockerfile ./Dockerfile --destination $CI_REGISTRY_IMAGE/$name:$CI_JOB_ID --destination $CI_REGISTRY_IMAGE/$name:latest
+  variables:
+    BUILDAH_CONTEXT: demo/HamsterWheel.HLinq.Demo
+    BUILDAH_DOCKERFILE: demo/HamsterWheel.HLinq.Demo/Dockerfile
+    IMAGE_REFS: "$CI_REGISTRY_IMAGE/hlinq-demo:$CI_JOB_ID $CI_REGISTRY_IMAGE/hlinq-demo:latest"
 
 package:
   stage: deploy
