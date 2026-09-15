@@ -1,6 +1,7 @@
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tree;
 using HamsterWheel.HLinq.Tree.Filtering;
+using HamsterWheel.HLinq.Tree.Paging;
 using HamsterWheel.HLinq.Tree.Selecting;
 
 namespace HamsterWheel.HLinq.UnitTests.TestUtils.Assertions;
@@ -52,4 +53,17 @@ public class ExpectedTreeElement(
 
     public static ExpectedTreeElement MethodConstParam(params ExpectedToken[] tokens) =>
         new(typeof(MethodConstParam), tokens: tokens);
+
+    //paging
+    public static ExpectedTreeElement SkipRoot(params ExpectedTreeElement[] children) =>
+        new(typeof(SkipRoot), children);
+
+    public static ExpectedTreeElement TakeRoot(params ExpectedTreeElement[] children) =>
+        new(typeof(TakeRoot), children);
+
+    public static ExpectedTreeElement SkipOrTakeConstant(string value) =>
+        new(typeof(SkipOrTakeConstant), tokens: [ExpectedToken.NameOrValue(value)]);
+
+    public static ExpectedTreeElement SkipOrTakeRange(ExpectedToken[] tokens, params ExpectedTreeElement[] children) =>
+        new(typeof(SkipOrTakeRange), children, tokens);
 }

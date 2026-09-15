@@ -77,6 +77,7 @@ public class InvalidTokenCollectionException(
             "PropertyName" => "Name",
             "Skip" => "skip",
             "Take" => "take",
+            "RangeOperator" => "..",
             "Equality" => "==",
             "NameOrValue" => "Jan",
             "And" => "&&",

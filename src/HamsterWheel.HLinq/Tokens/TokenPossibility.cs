@@ -33,6 +33,18 @@ public abstract class TokenPossibility(IGrammar grammar, string? keyword = null)
 
     public virtual int CanBeAt(int index, ReadOnlySpan<char> subset, char? next, List<IToken> previousToken)
     {
+        return CanBeAtPossibility(index, subset, next, previousToken);
+    }
+
+    /// <summary>
+    ///     <see cref="CanBeAt(int,ReadOnlySpan{char},char?,List{IToken})" /> with a one character
+    ///     lookahead (<paramref name="nextNext" />) so tokens can tell i.e. <c>.</c> from <c>..</c>.
+    /// </summary>
+    public virtual int CanBeAt(int index, ReadOnlySpan<char> subset, char? next, char? nextNext, List<IToken> previousToken) =>
+        CanBeAtPossibility(index, subset, next, previousToken);
+
+    private int CanBeAtPossibility(int index, ReadOnlySpan<char> subset, char? next, List<IToken> previousToken)
+    {
         var possibility = 0;
         if (!PreviousTokensMatch(previousToken))
         {

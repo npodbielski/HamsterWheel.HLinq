@@ -419,4 +419,94 @@ public class HLinqParserUnitTests
             )
         ]);
     }
+
+    [Fact]
+    public void Parse_WhenTakeRange_ThenCanParse()
+    {
+        const string query = "take[10..20]";
+        var tokens = new HLinqTokenizer(TestServicesCollection.TokenPossibilities).Tokenize(query);
+
+        var tree = _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
+
+        tree.Should().HaveStructureOf(query, [
+            TakeRoot(
+                SkipOrTakeRange([ExpectedToken.NameOrValue("10"), ExpectedToken.RangeOperator], SkipOrTakeConstant("20"))
+            )
+        ]);
+    }
+
+    [Fact]
+    public void Parse_WhenTakeRangeOpenStart_ThenCanParse()
+    {
+        const string query = "take[..20]";
+        var tokens = new HLinqTokenizer(TestServicesCollection.TokenPossibilities).Tokenize(query);
+
+        var tree = _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
+
+        tree.Should().HaveStructureOf(query, [
+            TakeRoot(
+                SkipOrTakeRange([ExpectedToken.RangeOperator], SkipOrTakeConstant("20"))
+            )
+        ]);
+    }
+
+    [Fact]
+    public void Parse_WhenTakeRangeOpenEnd_ThenCanParse()
+    {
+        const string query = "take[10..]";
+        var tokens = new HLinqTokenizer(TestServicesCollection.TokenPossibilities).Tokenize(query);
+
+        var tree = _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
+
+        tree.Should().HaveStructureOf(query, [
+            TakeRoot(
+                SkipOrTakeRange([ExpectedToken.NameOrValue("10"), ExpectedToken.RangeOperator])
+            )
+        ]);
+    }
+
+    [Fact]
+    public void Parse_WhenSkipThenTakeRange_ThenCanParse()
+    {
+        const string query = "skip[5].take[10..20]";
+        var tokens = new HLinqTokenizer(TestServicesCollection.TokenPossibilities).Tokenize(query);
+
+        var tree = _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
+
+        tree.Should().HaveStructureOf(query, [
+            SkipRoot(
+                SkipOrTakeConstant("5")
+            ),
+            TakeRoot(
+                SkipOrTakeRange([ExpectedToken.NameOrValue("10"), ExpectedToken.RangeOperator], SkipOrTakeConstant("20"))
+            )
+        ]);
+    }
+
+    [Fact]
+    public void Parse_WhenTakeRangeHasNonNumericValues_ThenParsableAndFailsAtConversionOnly()
+    {
+        const string query = "take[a..b]";
+        var tokens = new HLinqTokenizer(TestServicesCollection.TokenPossibilities).Tokenize(query);
+
+        var action = () => _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
+
+        action.Should().NotThrow();
+    }
+
+    [Theory]
+    [InlineData("take[..]")] // takes nothing, means nothing
+    [InlineData("take[10..20")] // not closed
+    [InlineData("take[10..2..3]")] // chained ranges
+    [InlineData("skip[10..20]")] // skip keeps its single value
+    public void Parse_WhenInvalidTakeRange_ThenThrows(string query)
+    {
+        var action = () =>
+        {
+            var tokens = new HLinqTokenizer(TestServicesCollection.TokenPossibilities).Tokenize(query);
+            _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
+        };
+
+        action.Should().Throw<InvalidTokenCollectionException>();
+    }
 }

@@ -196,6 +196,8 @@ For example, `count` root does not take any parameters. The only valid usage is 
 
 `take` and `skip` roots single number as a parameter (i.e. `take[10]`, `skip[20]`).
 
+`take` root additionally accepts a range of rows (i.e. `take[10..20]`). See [Paging](#paging).
+
 `orderBy` and `orderByDescending` roots take a single parameter, which is a property name to order by.
 
 `select` root takes unspecified number of parameters, separated by `,`, parameters with two variants:
@@ -291,6 +293,21 @@ GET /demo/memory?skip[20].take[10]
 This allows for simple and expressive paging of data on the client side. I.e., if the default page size is 10 rows, call the endpoint with:
 ```csharp
 await httpClient.GetAsync($"/demo/memory?skip[{pageSize*page}].take[{pageSize}]");
+```
+
+The `take` root also accepts a range of rows, `take[start..end]`, which is a sugar for `skip[start].take[end-start]` (the C# `Range` semantics).
+```http request
+GET /demo/memory?take[10..20]
+```
+returns the same 10 rows (indices 10-19) as `skip[10].take[10]`. Both ends are optional:
+- `take[10..]` means everything after the first 10 rows (like a bare `skip[10]`, not capped at the maximum take),
+- `take[..20]` means the first 20 rows (like `take[20]`).
+
+`take[..]` takes nothing and expresses nothing, so it is invalid, and so are ranges with a negative side or with `start` not smaller than `end` (i.e. `take[10..2]`). The maximum take cap applies to the number of rows taken (`end - start`), the skipped part is never capped.
+
+The HLinq client builder has a matching `Take(Range)` overload:
+```csharp
+var superheroes = await httpClient.GetWithHLinq("/demo/memory", q => q.For<Superhero>().Take(10..20));
 ```
 
 To count total number of records in the collection you are querying you need to use `count[]` root.

@@ -51,8 +51,16 @@ public class Grammar(IServiceProvider serviceProvider) : IGrammar
         new GrammarRule<NameOrValue>(false,
             previousTokensMatchers:
             [
-                pt => pt is [.., _, IComparisonToken or LeftCircleBracket or LeftSquareBracket or Comma or Assignment]
+                pt => pt is [.., _, IComparisonToken or LeftCircleBracket or LeftSquareBracket or Comma or Assignment],
+                // end side of take[start..end] / take[..end] range
+                pt => pt is [.., RangeOperator]
             ]),
+        new GrammarRule<RangeOperator>(false, previousTokensMatchers:
+        [
+            pt => pt is [.., NameOrValue],
+            // open start of the range: take[..20]
+            pt => pt is [.., LeftSquareBracket]
+        ]),
         new GrammarRule<Assignment>(false, [typeof(NameOrValue)]),
         new GrammarRule<And>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(RightCircleBracket)]),
         new GrammarRule<Or>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(RightCircleBracket)]),
@@ -82,7 +90,10 @@ public class Grammar(IServiceProvider serviceProvider) : IGrammar
             typeof(ThenByDescending), typeof(Select), typeof(Count)
         ]),
         new GrammarRule<RightSquareBracket>(false,
-            [typeof(PropertyName), typeof(NameOrValue), typeof(RightCircleBracket), typeof(LeftSquareBracket)]),
+        [
+            typeof(PropertyName), typeof(NameOrValue), typeof(RightCircleBracket), typeof(LeftSquareBracket),
+            typeof(RangeOperator)
+        ]),
         new GrammarRule<MethodName>(false, [typeof(Dot), typeof(LeftSquareBracket)]),
     ];
 
