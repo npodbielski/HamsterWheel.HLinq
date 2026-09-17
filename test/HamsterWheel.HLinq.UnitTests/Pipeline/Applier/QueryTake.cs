@@ -36,6 +36,11 @@ partial class HLinqQueryApplierUnitTests
     [InlineData(0, 25)]
     [InlineData(24, 25)]
     [InlineData(25, 26)] // range beyond data, skip yields nothing
+    [InlineData(1, 1000)] // big numbers, uncapped (MaxTake is 1000)
+    [InlineData(1000, 1010)]
+    [InlineData(676766, 66878878)] // the count is capped at MaxTake, the skip is not - empty anyway
+    [InlineData(20, 30)] // second page of ten over 25 rows, data exhausted -> 5 rows, no throw
+    [InlineData(10, 20)] // second page of ten over 25 rows, fully inside data
     public void Apply_WhenTakeRange_ThenSameAsSkipThenTake(int start, int end)
     {
         //arrange
@@ -119,7 +124,9 @@ partial class HLinqQueryApplierUnitTests
         var entities = Entities(25);
 
         //act
-        var action = () => Apply("take[a..b]", entities.AsQueryable());
+        // `take[a..b]` is rejected by the tokenizer already (RangeOperator grammar reads `10..`
+        // together with a number), the open start side still fails on conversion only
+        var action = () => Apply("take[..b]", entities.AsQueryable());
 
         //assert
         action.Should().Throw<InvalidConstantStringToTypeConversionException>();

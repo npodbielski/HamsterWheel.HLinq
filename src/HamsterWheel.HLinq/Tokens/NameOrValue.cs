@@ -9,16 +9,10 @@ public sealed class NameOrValue : TokenBase
         protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
             Rule.PreviousTokensMatch(previousTokens);
 
-        public override int CanBeAt(int index, ReadOnlySpan<char> subset, char? next, char? nextNext,
-            List<IToken> previousToken)
+        public override int CanBeAt(int index, ReadOnlySpan<char> subset, char? next, List<IToken> previousToken)
         {
-            // a value may contain single dots (i.e. `1.21` dates or floats) but never a `..`,
-            // end the value here so the `..` range operator of take[start..end] can be tokenized
-            if (next == '.' && nextNext == '.' && subset[^1] != '.' && PreviousTokensMatch(previousToken))
-            {
-                return 100;
-            }
-
+            // a name or value may contain single dots (i.e. `1.21` floats or dates) but never a `..`,
+            // that is the range operator (which reads the number in front of it as its own grammar)
             for (var dotIndex = 0; dotIndex + 1 < subset.Length; dotIndex++)
             {
                 if (subset[dotIndex] == '.' && subset[dotIndex + 1] == '.')

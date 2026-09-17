@@ -16,8 +16,6 @@ public sealed class SkipOrTakeConstant(NameOrValue value) : TreeLeaf([value])
         protected override SkipOrTakeConstant? BuildBranch(IParsingContext context) =>
             context.Tokens switch
             {
-                // start side of a take[start..end] range is claimed by SkipOrTakeRange.Parser
-                [NameOrValue, RangeOperator, ..] => null,
                 [NameOrValue value, ..] => new SkipOrTakeConstant(value),
                 _ => null
             };

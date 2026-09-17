@@ -55,10 +55,10 @@ public class Grammar(IServiceProvider serviceProvider) : IGrammar
                 // end side of take[start..end] / take[..end] range
                 pt => pt is [.., RangeOperator]
             ]),
+        // the range operator matches the number in front of it (`10..`), so it is only ever
+        // possible directly after the `[` of take/skip - see RangeOperator.Possibility.CanBeAt
         new GrammarRule<RangeOperator>(false, previousTokensMatchers:
         [
-            pt => pt is [.., NameOrValue],
-            // open start of the range: take[..20]
             pt => pt is [.., LeftSquareBracket]
         ]),
         new GrammarRule<Assignment>(false, [typeof(NameOrValue)]),

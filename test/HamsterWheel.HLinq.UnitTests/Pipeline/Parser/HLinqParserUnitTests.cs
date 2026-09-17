@@ -430,7 +430,7 @@ public class HLinqParserUnitTests
 
         tree.Should().HaveStructureOf(query, [
             TakeRoot(
-                SkipOrTakeRange([ExpectedToken.NameOrValue("10"), ExpectedToken.RangeOperator], SkipOrTakeConstant("20"))
+                SkipOrTakeRange([ExpectedToken.RangeOperatorWithStart("10")], SkipOrTakeConstant("20"))
             )
         ]);
     }
@@ -460,7 +460,7 @@ public class HLinqParserUnitTests
 
         tree.Should().HaveStructureOf(query, [
             TakeRoot(
-                SkipOrTakeRange([ExpectedToken.NameOrValue("10"), ExpectedToken.RangeOperator])
+                SkipOrTakeRange([ExpectedToken.RangeOperatorWithStart("10")])
             )
         ]);
     }
@@ -478,7 +478,7 @@ public class HLinqParserUnitTests
                 SkipOrTakeConstant("5")
             ),
             TakeRoot(
-                SkipOrTakeRange([ExpectedToken.NameOrValue("10"), ExpectedToken.RangeOperator], SkipOrTakeConstant("20"))
+                SkipOrTakeRange([ExpectedToken.RangeOperatorWithStart("10")], SkipOrTakeConstant("20"))
             )
         ]);
     }
@@ -486,7 +486,9 @@ public class HLinqParserUnitTests
     [Fact]
     public void Parse_WhenTakeRangeHasNonNumericValues_ThenParsableAndFailsAtConversionOnly()
     {
-        const string query = "take[a..b]";
+        // only the open start side stays parsable - `take[a..b]` is rejected by the tokenizer
+        // because the RangeOperator grammar reads `10..` together with a number
+        const string query = "take[..b]";
         var tokens = new HLinqTokenizer(TestServicesCollection.TokenPossibilities).Tokenize(query);
 
         var action = () => _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
@@ -499,6 +501,7 @@ public class HLinqParserUnitTests
     [InlineData("take[10..20")] // not closed
     [InlineData("take[10..2..3]")] // chained ranges
     [InlineData("skip[10..20]")] // skip keeps its single value
+    [InlineData("take[a..b]")] // rejected by the tokenizer: RangeOperator grammar reads `10..` only with a number
     public void Parse_WhenInvalidTakeRange_ThenThrows(string query)
     {
         var action = () =>

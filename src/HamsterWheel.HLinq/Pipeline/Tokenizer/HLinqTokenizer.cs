@@ -44,22 +44,7 @@ public sealed partial class HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> t
                     nextCharIndex++;
                 } while (next is not null && char.IsWhiteSpace(next.Value));
 
-                // one more character of lookahead, needed to tell `.` from the `..` range operator
-                char? nextNext = null;
-                if (next == '.')
-                {
-                    var peekIndex = nextCharIndex + 1;
-                    while (peekIndex < span.Length && char.IsWhiteSpace(span[peekIndex]))
-                    {
-                        peekIndex++;
-                    }
-
-                    nextNext = peekIndex < span.Length ? span[peekIndex] : null;
-                }
-
-                var possibility = pt.token is TokenPossibility tokenPossibility
-                    ? tokenPossibility.CanBeAt(index, currentSubset, next, nextNext, tokens)
-                    : pt.token.CanBeAt(index, currentSubset, next, tokens);
+                var possibility = pt.token.CanBeAt(index, currentSubset, next, tokens);
                 if (possibility > 0)
                 {
                     nextPossibleTokens.Add(pt with { possibility = possibility });

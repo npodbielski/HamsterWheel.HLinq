@@ -34,6 +34,9 @@ public class ExpectedToken(Type type, string value)
     public static ExpectedToken Take => new(typeof(Take), "take");
     public static ExpectedToken Skip => new(typeof(Skip), "skip");
     public static ExpectedToken RangeOperator => new(typeof(RangeOperator), "..");
+
+    // the range operator carries the start number of take[start..end] (`10..`)
+    public static ExpectedToken RangeOperatorWithStart(string start) => new(typeof(RangeOperator), $"{start}..");
     public static ExpectedToken OrderBy => new(typeof(OrderBy), "orderBy");
     public static ExpectedToken ThenBy => new(typeof(ThenBy), "thenBy");
     public static ExpectedToken ThenByDescending => new(typeof(ThenByDescending), "thenByDescending");

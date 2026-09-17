@@ -28,6 +28,10 @@ partial class MemoryDataTests
     [InlineData(10, 20)]
     [InlineData(0, 40)]
     [InlineData(39, 40)]
+    [InlineData(1, 1000)] // big numbers, uncapped (MaxTake is 1000)
+    [InlineData(1000, 1010)] // beyond data
+    [InlineData(676766, 66878878)] // beyond data, huge range
+    [InlineData(35, 50)] // page of ten over 40 rows, data exhausted -> 5 rows, no throw
     public async Task WhenTakeRange_ThenReturnsSameRowsAsSkipThenTake(int start, int end)
     {
         //act
