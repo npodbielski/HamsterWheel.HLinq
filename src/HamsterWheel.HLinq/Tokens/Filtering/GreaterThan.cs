@@ -6,8 +6,6 @@ public sealed class GreaterThan : TokenBase, IComparisonToken
 {
     public sealed class Possibility(IGrammar grammar) : TokenPossibility<GreaterThan>(grammar, ">")
     {
-        protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            Rule.PreviousTokenMatch(previousToken);
 
         protected override bool NextIsAllowedWhenKeywordMatch(char? next) =>
             Rule.NextCharMatch(next);

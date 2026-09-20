@@ -478,7 +478,7 @@ public class HLinqParserUnitTests
                 SkipOrTakeConstant("5")
             ),
             TakeRoot(
-                SkipOrTakeRange([ExpectedToken.RangeOperatorWithStart("10")], SkipOrTakeConstant("20"))
+                SkipOrTakeRange([RangeOperatorWithStart("10")], SkipOrTakeConstant("20"))
             )
         ]);
     }

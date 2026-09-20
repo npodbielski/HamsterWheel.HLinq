@@ -1,9 +1,13 @@
 using HamsterWheel.HLinq.Pipeline.Tokenizer;
+using HamsterWheel.HLinq.Tokens.Patterns;
 
 namespace HamsterWheel.HLinq.Tokens;
 
 public abstract class TokenPossibility(IGrammar grammar, string? keyword = null) : IHLinqTokenPossibility
 {
+    public MatchAt MatchAt(ReadOnlySpan<char> window, char? next) => Pattern.Match(window, next);
+
+    private TokenPattern? _pattern;
     private bool _delimitersFetched;
     private char[]? _delimiters;
 
@@ -31,73 +35,22 @@ public abstract class TokenPossibility(IGrammar grammar, string? keyword = null)
     protected IGrammar Grammar => grammar;
     public abstract Type ForType { get; }
 
-    public virtual int CanBeAt(int index, ReadOnlySpan<char> subset, char? next, List<IToken> previousToken)
-    {
-        var possibility = 0;
-        if (!PreviousTokensMatch(previousToken))
-        {
-            return possibility;
-        }
+    /// <summary>
+    ///     The text rule of this token, see <see cref="TokenPattern" />; its adjacency rule is
+    ///     <see cref="MatchesPreviousTokens" />. Keywords get a <see cref="KeywordPattern" />,
+    ///     everything else a <see cref="ValuePattern" /> - override <see cref="BuildPattern" />
+    ///     for a custom text rule (i.e. <see cref="Patterns.RangeOperatorPattern" />).
+    /// </summary>
+    protected TokenPattern Pattern => _pattern ??= BuildPattern();
 
-        possibility += 50;
-        if (Keyword is not null)
-        {
-            if (subset.Length < Keyword.Length)
-            {
-                if (Keyword.AsSpan()[..subset.Length].Equals(subset, StringComparison.OrdinalIgnoreCase))
-                {
-                    possibility += 50 * subset.Length / Keyword.Length;
-                    //check next char -> i.e., if we have subset 'orderBy' and the next char is '['
-                    //...then the possibility of 'orderByDescending' is zero at this point
-                    if (Keyword.Length > subset.Length && next != Keyword[subset.Length])
-                    {
-                        possibility = 0;
-                    }
-                }
-                else
-                {
-                    return 0;
-                }
-            }
-            else
-            {
-                if (Keyword.AsSpan().Equals(subset, StringComparison.OrdinalIgnoreCase) &&
-                    NextIsAllowedWhenKeywordMatch(next))
-                {
-                    possibility += 50;
-                }
-                else
-                {
-                    return 0;
-                }
-            }
-        }
-        else
-        {
-            if (next is null)
-            {
-                return possibility;
-            }
-
-            if (Delimiters?.Contains(next.Value) == true)
-            {
-                possibility += 50;
-            }
-            else if (!char.IsLetterOrDigit(next.Value) && next.Value != '_')
-            {
-                possibility = 0;
-            }
-        }
-
-        return possibility;
-    }
+    protected virtual TokenPattern BuildPattern() =>
+        Keyword is not null
+            ? new KeywordPattern(Keyword, NextIsAllowedWhenKeywordMatch)
+            : new ValuePattern(() => Delimiters);
 
     public abstract IToken Build(Range range);
 
-    protected virtual bool PreviousTokensMatch(List<IToken> previousTokens) =>
-        previousTokens.Count != 0 && PreviousTokenMatchImpl(previousTokens[^1]);
-
-    protected virtual bool PreviousTokenMatchImpl(IToken previousToken) => false;
+    public abstract bool MatchesPreviousTokens(List<IToken> previousTokens);
 
     protected virtual bool NextIsAllowedWhenKeywordMatch(char? next) => true;
 }
@@ -108,6 +61,14 @@ public abstract class TokenPossibility<T>(IGrammar grammar, string? tokenString 
     private IGrammarRule? _rule;
     public override Type ForType => typeof(T);
     public sealed override bool CanBeFirst => Rule.CanBeFirst;
+
+    /// <summary>
+    ///     Adjacency comes from the token's single grammar rule, so a localization replacing this
+    ///     possibility can never drift from (or carry its own copy of) the grammar.
+    /// </summary>
+    public sealed override bool MatchesPreviousTokens(List<IToken> previousTokens) =>
+        Rule.PreviousTokensMatch(previousTokens);
+
     public sealed override IToken Build(Range range) => BuildImpl(range);
     protected IGrammarRule Rule => _rule ??= Grammar.GetRuleFor<T>();
 

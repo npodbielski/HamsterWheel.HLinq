@@ -6,6 +6,4 @@ namespace HamsterWheel.HLinq.Demo.Extensions.Translations.pl;
 
 public class OrderByPossibility(IGrammar grammar) : TokenPossibility<OrderBy>(grammar, "sortujPo")
 {
-    protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-        Rule.PreviousTokensMatch(previousTokens);
 }

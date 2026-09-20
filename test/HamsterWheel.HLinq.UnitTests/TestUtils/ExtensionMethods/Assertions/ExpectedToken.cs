@@ -20,6 +20,7 @@ public class ExpectedToken(Type type, string value)
     public static ExpectedToken Dot => new(typeof(Dot), ".");
     public static ExpectedToken Prop(string prop) => new(typeof(PropertyName), prop);
     public static ExpectedToken Equality => new(typeof(Equality), "==");
+    public static ExpectedToken Inequality => new(typeof(Inequality), "!=");
     public static ExpectedToken GreaterOrEqualThan => new(typeof(GreaterOrEqualThan), ">=");
     public static ExpectedToken LessOrEqualThan => new(typeof(LessOrEqualThan), "<=");
     public static ExpectedToken LessThan => new(typeof(LessThan), "<");
@@ -32,11 +33,15 @@ public class ExpectedToken(Type type, string value)
     public static ExpectedToken Entity(string name = "x") => new(typeof(Entity), name);
     public static ExpectedToken MethodName(string name) => new(typeof(MethodName), name);
     public static ExpectedToken Take => new(typeof(Take), "take");
+    public static ExpectedToken Count => new(typeof(Count), "count");
     public static ExpectedToken Skip => new(typeof(Skip), "skip");
     public static ExpectedToken RangeOperator => new(typeof(RangeOperator), "..");
 
     // the range operator carries the start number of take[start..end] (`10..`)
     public static ExpectedToken RangeOperatorWithStart(string start) => new(typeof(RangeOperator), $"{start}..");
+
+    // any range operator text, not only the `<start>..` form RangeOperatorWithStart expresses
+    public static ExpectedToken RangeOperatorValue(string value) => new(typeof(RangeOperator), value);
     public static ExpectedToken OrderBy => new(typeof(OrderBy), "orderBy");
     public static ExpectedToken ThenBy => new(typeof(ThenBy), "thenBy");
     public static ExpectedToken ThenByDescending => new(typeof(ThenByDescending), "thenByDescending");

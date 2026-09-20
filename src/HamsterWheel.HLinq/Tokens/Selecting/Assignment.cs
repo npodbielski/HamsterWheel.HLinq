@@ -6,8 +6,10 @@ public sealed class Assignment : TokenBase
 {
     public sealed class Possibility(IGrammar grammar) : TokenPossibility<Assignment>(grammar, "=")
     {
-        protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            Rule.PreviousTokenMatch(previousToken);
+        //`=` renames in select, `==` compares in where; until the grammar tells the two roots apart,
+        //a following `=` must not complete an Assignment on the first character of an Equality
+        protected override bool NextIsAllowedWhenKeywordMatch(char? next) =>
+            Rule.NextCharMatch(next);
     }
 
     public static Assignment Build(Range range) => new() { Range = range };

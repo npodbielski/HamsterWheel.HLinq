@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
@@ -10,103 +11,256 @@ namespace HamsterWheel.HLinq.Pipeline.Tokenizer;
 
 public class Grammar(IServiceProvider serviceProvider) : IGrammar
 {
+    private static readonly ConcurrentDictionary<Type, IToken> Markers = new();
+
     private IEnumerable<IHLinqTokenPossibility>? _tokenPossibilities;
-    private string? _equalityTokenKeyword;
-    private string? _leftSquareBracketTokenKeyword;
-    private static IGrammarRule[]? _rules;
+    private IGrammarRule[]? _rules;
 
     private IEnumerable<IHLinqTokenPossibility> TokenPossibilities =>
         _tokenPossibilities ??= serviceProvider.GetServices<IHLinqTokenPossibility>();
 
-    private string EqualityTokenKeyword => _equalityTokenKeyword ??=
-        TokenPossibilities.First(t => t.ForType == typeof(Equality)).Keyword!;
+    private string EqualityTokenKeyword =>
+        KeywordOf(typeof(Equality)) ?? throw new UnknownTokenTypeException<Equality>();
 
-    private string LeftSquareBracketTokenKeyword => _leftSquareBracketTokenKeyword ??=
-        TokenPossibilities.First(t => t.ForType == typeof(LeftSquareBracket)).Keyword!;
+    private string LeftSquareBracketTokenKeyword =>
+        KeywordOf(typeof(LeftSquareBracket)) ?? throw new UnknownTokenTypeException<LeftSquareBracket>();
 
+    /// <summary>
+    ///     The whole grammar, one rule per token, adjacency declared only as matchers over the
+    ///     tokens committed so far: <c>After(typeof(NameOrValue))</c> means "directly after a
+    ///     value", a pattern like <c>[.., RightSquareBracket, Dot]</c> means "after the closing
+    ///     bracket of one clause and the chain dot". Which characters end a free text token are
+    ///     the first characters of the keywords of the tokens these same matchers allow to
+    ///     follow, see <see cref="GetDelimiters" />.
+    /// </summary>
     private IGrammarRule[] Rules => _rules ??=
     [
         //roots
-        new GrammarRule<Select>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+        new GrammarRule<Select>(true, [AfterChain.RightSquareBracketThenDot],
             nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
-        new GrammarRule<Where>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+        new GrammarRule<Where>(true, [AfterChain.RightSquareBracketThenDot],
             nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
-        new GrammarRule<OrderBy>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+        new GrammarRule<OrderBy>(true, [AfterChain.RightSquareBracketThenDot],
             nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
-        new GrammarRule<OrderByDescending>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+        new GrammarRule<OrderByDescending>(true, [AfterChain.RightSquareBracketThenDot],
             nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
-        new GrammarRule<Count>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+        new GrammarRule<Count>(true, [AfterChain.RightSquareBracketThenDot],
             nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
-        new GrammarRule<Skip>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+        new GrammarRule<Skip>(true, [AfterChain.RightSquareBracketThenDot],
             nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
-        new GrammarRule<Take>(true, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+        new GrammarRule<Take>(true, [AfterChain.RightSquareBracketThenDot],
             nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
-        new GrammarRule<ThenBy>(false, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+        new GrammarRule<ThenBy>(false, [AfterChain.RightSquareBracketThenDot],
             nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
-        new GrammarRule<ThenByDescending>(false, previousTokensMatchers: [pt => pt is [.., RightSquareBracket, Dot]],
+        new GrammarRule<ThenByDescending>(false, [AfterChain.RightSquareBracketThenDot],
             nextCharMatcher: c => c == LeftSquareBracketTokenKeyword[0]),
 
         new GrammarRule<PropertyName>(false,
-            previousTokensMatchers: [pt => pt is [.., Entity, Dot] or [.., PropertyName, Dot]]),
+            [pt => pt is [.., Entity, Dot] or [.., PropertyName, Dot]]),
         new GrammarRule<NameOrValue>(false,
-            previousTokensMatchers:
             [
                 pt => pt is [.., _, IComparisonToken or LeftCircleBracket or LeftSquareBracket or Comma or Assignment],
                 // end side of take[start..end] / take[..end] range
                 pt => pt is [.., RangeOperator]
             ]),
         // the range operator matches the number in front of it (`10..`), so it is only ever
-        // possible directly after the `[` of take/skip - see RangeOperator.Possibility.CanBeAt
-        new GrammarRule<RangeOperator>(false, previousTokensMatchers:
-        [
-            pt => pt is [.., LeftSquareBracket]
-        ]),
-        new GrammarRule<Assignment>(false, [typeof(NameOrValue)]),
-        new GrammarRule<And>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(RightCircleBracket)]),
-        new GrammarRule<Or>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(RightCircleBracket)]),
-        new GrammarRule<Entity>(false,
-        [
-            typeof(LeftSquareBracket), typeof(And), typeof(Or), typeof(Comma), typeof(LeftCircleBracket),
-            typeof(Assignment)
-        ]),
-        new GrammarRule<Comma>(false, [typeof(NameOrValue), typeof(PropertyName)]),
-        new GrammarRule<Dot>(false, [typeof(Entity), typeof(PropertyName), typeof(RightSquareBracket)]),
-        new GrammarRule<Equality>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(Entity)]),
-        new GrammarRule<Inequality>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(Entity)]),
-        new GrammarRule<LessOrEqualThan>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(Entity)]),
-        new GrammarRule<LessThan>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(Entity)],
+        // possible directly after the `[` of take/skip
+        new GrammarRule<RangeOperator>(false, [pt => pt is [.., LeftSquareBracket]]),
+        // until the grammar tells the select root (`=` renames) from the where root (`==` compares),
+        // a second dot-free `=` must not let an Assignment swallow the start of an Equality
+        new GrammarRule<Assignment>(false, [After(typeof(NameOrValue))],
             nextCharMatcher: c => c != EqualityTokenKeyword[0]),
-        new GrammarRule<GreaterOrEqualThan>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(Entity)]),
-        new GrammarRule<GreaterThan>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(Entity)],
+        new GrammarRule<And>(false, [After(typeof(NameOrValue), typeof(PropertyName), typeof(RightCircleBracket))]),
+        new GrammarRule<Or>(false, [After(typeof(NameOrValue), typeof(PropertyName), typeof(RightCircleBracket))]),
+        new GrammarRule<Entity>(false,
+            [
+                After(typeof(LeftSquareBracket), typeof(And), typeof(Or), typeof(Comma), typeof(LeftCircleBracket),
+                    typeof(Assignment))
+            ]),
+        new GrammarRule<Comma>(false, [After(typeof(NameOrValue), typeof(PropertyName))]),
+        new GrammarRule<Dot>(false, [After(typeof(Entity), typeof(PropertyName), typeof(RightSquareBracket))]),
+        new GrammarRule<Equality>(false, [After(typeof(NameOrValue), typeof(PropertyName), typeof(Entity))]),
+        new GrammarRule<Inequality>(false, [After(typeof(NameOrValue), typeof(PropertyName), typeof(Entity))]),
+        new GrammarRule<LessOrEqualThan>(false, [After(typeof(NameOrValue), typeof(PropertyName), typeof(Entity))]),
+        new GrammarRule<LessThan>(false, [After(typeof(NameOrValue), typeof(PropertyName), typeof(Entity))],
+            nextCharMatcher: c => c != EqualityTokenKeyword[0]),
+        new GrammarRule<GreaterOrEqualThan>(false, [After(typeof(NameOrValue), typeof(PropertyName), typeof(Entity))]),
+        new GrammarRule<GreaterThan>(false, [After(typeof(NameOrValue), typeof(PropertyName), typeof(Entity))],
             nextCharMatcher: c => c != EqualityTokenKeyword[0]),
         new GrammarRule<LeftCircleBracket>(false,
-            [typeof(LeftSquareBracket), typeof(And), typeof(Or), typeof(MethodName), typeof(LeftCircleBracket)]),
-        new GrammarRule<Or>(false, [typeof(NameOrValue), typeof(PropertyName), typeof(RightCircleBracket)]),
+            [After(typeof(LeftSquareBracket), typeof(And), typeof(Or), typeof(MethodName), typeof(LeftCircleBracket))]),
         new GrammarRule<RightCircleBracket>(false,
-            [typeof(NameOrValue), typeof(PropertyName), typeof(RightCircleBracket)]),
-        new GrammarRule<Dot>(false, [typeof(Entity), typeof(PropertyName), typeof(RightSquareBracket)]),
-        new GrammarRule<LeftSquareBracket>(false, [
-            typeof(Where), typeof(Skip), typeof(Take), typeof(OrderBy), typeof(OrderByDescending), typeof(ThenBy),
-            typeof(ThenByDescending), typeof(Select), typeof(Count)
-        ]),
+            [After(typeof(NameOrValue), typeof(PropertyName), typeof(RightCircleBracket))]),
+        new GrammarRule<LeftSquareBracket>(false,
+            [
+                After(typeof(Where), typeof(Skip), typeof(Take), typeof(OrderBy), typeof(OrderByDescending),
+                    typeof(ThenBy), typeof(ThenByDescending), typeof(Select), typeof(Count))
+            ]),
         new GrammarRule<RightSquareBracket>(false,
-        [
-            typeof(PropertyName), typeof(NameOrValue), typeof(RightCircleBracket), typeof(LeftSquareBracket),
-            typeof(RangeOperator)
-        ]),
-        new GrammarRule<MethodName>(false, [typeof(Dot), typeof(LeftSquareBracket)]),
+            [
+                After(typeof(PropertyName), typeof(NameOrValue), typeof(RightCircleBracket),
+                    typeof(LeftSquareBracket), typeof(RangeOperator))
+            ]),
+        new GrammarRule<MethodName>(false, [After(typeof(Dot), typeof(LeftSquareBracket))]),
     ];
 
-    public char[] GetDelimiters(Type type) =>
-        Rules.Where(r => r.AllowedPreviousTokens.Length > 0 && r.AllowedPreviousTokens.Contains(type))
-            .Select(r => TokenPossibilities.First(tp => tp.ForType == r.ForType).Keyword).Where(k => k is not null)
+    /// <summary>
+    ///     The characters that may directly follow <paramref name="type" />: the first characters
+    ///     of the keywords of every token whose adjacency rule accepts a query ending in it.
+    /// </summary>
+    public char[] GetDelimiters(Type type)
+    {
+        IToken[] marker = [MarkerOf(type)];
+        return Rules
+            .Where(r => r.PreviousTokensMatchers.Any(m => m(marker)))
+            .Select(r => KeywordOf(r.ForType))
+            .Where(k => k is not null)
             .Cast<string>()
             .Select(k => k[0])
             .Distinct()
             .ToArray();
+    }
 
     public IGrammarRule GetRuleFor<TToken>() => Rules.FirstOrDefault(t => t.IsFor<TToken>()) ??
                                                 throw new UnknownTokenTypeException<TToken>();
+
+    public void Validate()
+    {
+        var problems = new List<string>();
+        var possibilities = TokenPossibilities.ToArray();
+
+        foreach (var duplicate in Rules.GroupBy(r => r.ForType).Where(g => g.Count() > 1))
+        {
+            problems.Add($"token '{duplicate.Key.Name}' has {duplicate.Count()} grammar rules, exactly one is expected");
+        }
+
+        foreach (var possibility in possibilities)
+        {
+            if (Rules.All(r => r.ForType != possibility.ForType))
+            {
+                problems.Add($"token '{possibility.ForType.Name}' has no grammar rule");
+            }
+        }
+
+        foreach (var rule in Rules)
+        {
+            if (possibilities.All(p => p.ForType != rule.ForType))
+            {
+                problems.Add($"grammar rule for '{rule.ForType.Name}' has no registered token possibility");
+            }
+        }
+
+        if (problems.Count > 0)
+        {
+            throw new GrammarValidationException(problems);
+        }
+
+        ValidateReachability(possibilities, problems);
+        ValidateKeywordCollisions(possibilities, problems);
+
+        if (problems.Count > 0)
+        {
+            throw new GrammarValidationException(problems);
+        }
+    }
+
+    private void ValidateReachability(IHLinqTokenPossibility[] possibilities, List<string> problems)
+    {
+        var reachable = new HashSet<Type>(possibilities
+            .Where(p => Rules.First(r => r.ForType == p.ForType).CanBeFirst)
+            .Select(p => p.ForType));
+
+        var grew = true;
+        while (grew)
+        {
+            grew = false;
+            foreach (var possibility in possibilities.Where(p => !reachable.Contains(p.ForType)).ToArray())
+            {
+                if (Contexts(reachable).Any(c => possibility.MatchesPreviousTokens(c)))
+                {
+                    reachable.Add(possibility.ForType);
+                    grew = true;
+                }
+            }
+        }
+
+        foreach (var unreachable in possibilities.Select(p => p.ForType).Where(t => !reachable.Contains(t)))
+        {
+            problems.Add($"token '{unreachable.Name}' is unreachable from the start of a query");
+        }
+    }
+
+    private void ValidateKeywordCollisions(IHLinqTokenPossibility[] possibilities, List<string> problems)
+    {
+        var keywords = possibilities.Where(p => p.Keyword is not null).ToArray();
+        var allContexts = Contexts(new HashSet<Type>(Rules.Select(r => r.ForType))).ToList();
+
+        foreach (var shorter in keywords)
+        {
+            foreach (var longer in keywords)
+            {
+                if (shorter == longer || longer.Keyword!.Length <= shorter.Keyword!.Length
+                                      || !longer.Keyword.StartsWith(shorter.Keyword,
+                                          StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var swallowed = shorter.MatchAt(shorter.Keyword.AsSpan(), longer.Keyword[shorter.Keyword.Length]);
+                //the shorter keyword does not finish before the longer one would continue
+                if (!swallowed.IsCompleted)
+                {
+                    continue;
+                }
+                //they never compete in the same place
+                if (allContexts.All(c => !(shorter.MatchesPreviousTokens(c) && longer.MatchesPreviousTokens(c))))
+                {
+                    continue;
+                }
+
+                problems.Add(
+                    $"keyword '{shorter.Keyword}' completes where '{longer.Keyword}' could still continue and both " +
+                    $"are allowed in the same place - add a next-character rule to '{shorter.ForType.Name}'");
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Every token list of up to two markers built from the given token types - enough to
+    ///     evaluate any adjacency matcher against a synthetic query ending in those types.
+    /// </summary>
+    private static IEnumerable<List<IToken>> Contexts(HashSet<Type> tokenTypes)
+    {
+        yield return [];
+        var markers = tokenTypes.Select(MarkerOf).ToArray();
+        foreach (var one in markers)
+        {
+            yield return new List<IToken> { one };
+        }
+
+        foreach (var first in markers)
+        {
+            foreach (var second in markers)
+            {
+                yield return new List<IToken> { second, first };
+            }
+        }
+    }
+
+    private string? KeywordOf(Type tokenType) =>
+        TokenPossibilities.FirstOrDefault(p => p.ForType == tokenType)?.Keyword;
+
+    private static IToken MarkerOf(Type tokenType) =>
+        Markers.GetOrAdd(tokenType, t => (IToken)Activator.CreateInstance(t)!);
+
+    private static Func<IReadOnlyList<IToken>, bool> After(params Type[] tokenTypes) =>
+        tokens => tokens.Count > 0 && Array.IndexOf(tokenTypes, tokens[^1].GetType()) >= 0;
+
+    private static class AfterChain
+    {
+        public static bool RightSquareBracketThenDot(IReadOnlyList<IToken> tokens) =>
+            tokens is [.., RightSquareBracket, Dot];
+    }
 
     private sealed class UnknownTokenTypeException<T>()
         : HLinqQueryException($"Unknown token type: '{typeof(T).Name}'. This token is not supported by HLinq grammar");

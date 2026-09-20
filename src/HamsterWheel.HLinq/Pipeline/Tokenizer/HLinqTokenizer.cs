@@ -1,97 +1,130 @@
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Tokens;
-using HamsterWheel.HLinq.Tokens.Filtering;
-using HamsterWheel.HLinq.Tokens.Ordering;
-using HamsterWheel.HLinq.Tokens.Paging;
-using HamsterWheel.HLinq.Tokens.Selecting;
 
 namespace HamsterWheel.HLinq.Pipeline.Tokenizer;
 
-using CurrentTokenPossibility = (IHLinqTokenPossibility token, int possibility);
-
-public sealed partial class HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPossibilities) : IHLinqTokenizer
+/// <summary>
+///     Single left-to-right walk over the query, no backtracking and no syntax peeking.
+///     For each window (the text after the last committed token) the adjacency rule of every
+///     possibility (<see cref="IHLinqTokenPossibility.MatchesPreviousTokens" />) is evaluated
+///     once - it cannot change while the window grows - and every window growth then asks only
+///     its text rule (<see cref="IHLinqTokenPossibility.MatchAt" />). The first possibility
+///     (in registration order) that completes at an offset commits its token and the walk jumps
+///     to that offset; windows that match nothing throw. Ambiguity is resolved by the token
+///     grammars themselves, never by the tokenizer looking at surrounding syntax.
+/// </summary>
+public sealed partial class HLinqTokenizer : IHLinqTokenizer
 {
+    private readonly IHLinqTokenPossibility[] _allPossibilities;
+
+    private readonly IHLinqTokenPossibility[] _startingPossibilities;
+
+    public HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPossibilities)
+    {
+        _allPossibilities = [.. tokenPossibilities];
+        _startingPossibilities = [.. _allPossibilities.Where(t => t.CanBeFirst)];
+    }
+
     public IToken[] Tokenize(string hLinqQuery)
     {
-        List<IToken> tokens = [];
-
-        CurrentTokenPossibility[] allTokens = tokenPossibilities.Select(t => (t, 0)).ToArray();
-        List<CurrentTokenPossibility> nextPossibleTokens = [];
         var span = hLinqQuery.AsSpan();
+        List<IToken> tokens = [];
+        var candidates = new IHLinqTokenPossibility[_allPossibilities.Length];
+        var candidateCount = 0;
+        var possible = new IHLinqTokenPossibility[_allPossibilities.Length];
+        var possibleCount = 0;
         var previousTokenIndex = 0;
+        var candidatesValid = false;
+        var windowHasText = false;
 
-        ReadOnlySpan<char> currentSubset = null;
-        var currentPossibleTokens = GetStartingTokens(allTokens);
         for (var index = 0; index < span.Length; index++)
         {
-            var range = previousTokenIndex..(index + 1);
-            currentSubset = span[range];
-
-            if (currentSubset.IsWhiteSpace())
+            var window = span.Slice(previousTokenIndex, index - previousTokenIndex + 1);
+            if (window.IsWhiteSpace())
             {
+                //whitespace never starts a window, slide the window start over it
                 previousTokenIndex++;
+                candidatesValid = false;
                 continue;
             }
 
-            nextPossibleTokens.Clear();
-            foreach (var pt in currentPossibleTokens)
-            {
-                var nextCharIndex = index;
-                char? next;
-                do
-                {
-                    next = nextCharIndex + 1 < span.Length ? span[nextCharIndex + 1] : null;
-                    nextCharIndex++;
-                } while (next is not null && char.IsWhiteSpace(next.Value));
+            windowHasText = true;
 
-                var possibility = pt.token.CanBeAt(index, currentSubset, next, tokens);
-                if (possibility > 0)
+            if (!candidatesValid)
+            {
+                candidateCount = 0;
+                foreach (var possibility in tokens.Count == 0 ? _startingPossibilities : _allPossibilities)
                 {
-                    nextPossibleTokens.Add(pt with { possibility = possibility });
+                    if (possibility.MatchesPreviousTokens(tokens))
+                    {
+                        candidates[candidateCount++] = possibility;
+                    }
                 }
+
+                candidatesValid = true;
             }
 
-            nextPossibleTokens = nextPossibleTokens.OrderBy(t => t.possibility).ToList();
-
-            if (nextPossibleTokens.Any(t => t.possibility == 100))
+            var next = NextNonWhiteSpace(span, index);
+            possibleCount = 0;
+            IHLinqTokenPossibility? winner = null;
+            var completeAt = 0;
+            for (var candidate = 0; candidate < candidateCount; candidate++)
             {
-                var first = nextPossibleTokens.First(t => t.possibility == 100);
-                if (first.possibility >= 100)
+                var match = candidates[candidate].MatchAt(window, next);
+                if (match.IsDiscarded)
                 {
-                    previousTokenIndex = index + 1;
-                    nextPossibleTokens.Clear();
-                    tokens.Add(first.token.Build(GetRange(range)));
-                    currentSubset = [];
-                    currentPossibleTokens = allTokens;
                     continue;
                 }
+
+                possible[possibleCount++] = candidates[candidate];
+                if (match.IsCompleted && winner is null)
+                {
+                    winner = candidates[candidate];
+                    completeAt = match.CompleteAt;
+                }
             }
 
-            if (currentPossibleTokens.Length == 0 && !currentSubset.IsEmpty)
+            if (winner is null)
             {
-                tokens.Add(Unknown.Empty);
+                continue;
             }
 
-            if (tokens.Count != 0 && tokens[^1] is Unknown)
+            if (completeAt == 0)
             {
-                throw new UnknownTokenException(hLinqQuery,
-                    [Where.Empty, Select.Empty, Skip.Empty, Take.Empty, OrderBy.Empty, OrderByDescending.Empty]);
+                throw new ZeroLengthCompletionException(winner.ForType.Name);
             }
+
+            // commit [previousTokenIndex, previousTokenIndex + completeAt) and continue the walk
+            // right behind the completed match - characters it did not cover open the next window
+            var tokenEnd = previousTokenIndex + completeAt;
+            tokens.Add(winner.Build(GetRange(previousTokenIndex..tokenEnd)));
+            previousTokenIndex = tokenEnd;
+            index = tokenEnd - 1;
+            candidatesValid = false;
+            windowHasText = false;
+            possibleCount = 0;
         }
 
-        if (hLinqQuery.Length > 0 && currentSubset.Length > 0 && !currentSubset.IsWhiteSpace())
+        if (windowHasText)
         {
             throw new UnknownTokenException(hLinqQuery,
-                nextPossibleTokens.Select(npt => npt.token.Build(default)).ToArray());
+                possible.Take(possibleCount).Select(npt => npt.Build(default)).ToArray());
         }
 
-        return tokens.ToArray();
+        return [.. tokens];
     }
 
-    private static CurrentTokenPossibility[] GetStartingTokens(CurrentTokenPossibility[] allTokens) =>
-        allTokens.Where(t => t.token.CanBeFirst).ToArray();
+    private static char? NextNonWhiteSpace(ReadOnlySpan<char> span, int windowEnd)
+    {
+        var nextCharIndex = windowEnd;
+        char? next;
+        do
+        {
+            next = nextCharIndex + 1 < span.Length ? span[nextCharIndex + 1] : null;
+            nextCharIndex++;
+        } while (next is not null && char.IsWhiteSpace(next.Value));
 
-    public sealed class UnknownTokenException(string queryString, IToken[] expectedTokens)
-        : InvalidTokenCollectionException(queryString, [], expectedTokens.Take(1).ToArray(),
-            expectedTokens.Skip(1).Select(t => new[] { t }).ToArray());
+        return next;
+    }
+
 }

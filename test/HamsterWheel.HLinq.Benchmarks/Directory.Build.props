@@ -1,0 +1,11 @@
+<Project>
+
+    <!-- stops MSBuild from walking up to test/Directory.Build.props, which would
+         turn this project into an xunit test project (test sdk, IsTestProject, net9.0) -->
+    <Import Project="../../Nuget.props"/>
+
+    <PropertyGroup>
+        <LangVersion>14</LangVersion>
+    </PropertyGroup>
+
+</Project>

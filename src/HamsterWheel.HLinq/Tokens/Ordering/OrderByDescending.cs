@@ -7,8 +7,6 @@ public sealed class OrderByDescending : TokenBase
     public sealed class Possibility(IGrammar grammar)
         : TokenPossibility<OrderByDescending>(grammar, "orderByDescending")
     {
-        protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-            Rule.PreviousTokensMatch(previousTokens);
 
         protected override bool NextIsAllowedWhenKeywordMatch(char? next) => Rule.NextCharMatch(next);
     }

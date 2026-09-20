@@ -6,8 +6,6 @@ public sealed class Inequality : TokenBase, IComparisonToken
 {
     public sealed class Possibility(IGrammar grammar) : TokenPossibility<Inequality>(grammar, "!=")
     {
-        protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            Rule.PreviousTokenMatch(previousToken);
     }
 
     public static Inequality Build(Range range) => new() { Range = range };

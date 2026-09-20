@@ -6,8 +6,6 @@ public sealed class RightCircleBracket: TokenBase
 {
     public sealed class Possibility(IGrammar grammar) : TokenPossibility<RightCircleBracket>(grammar, ")")
     {
-        protected override bool PreviousTokenMatchImpl(IToken previousToken) =>
-            Rule.PreviousTokenMatch(previousToken);
     }
 
     public static RightCircleBracket Build(Range range) => new() { Range = range };
