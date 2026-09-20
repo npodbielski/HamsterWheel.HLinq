@@ -12,9 +12,24 @@ public class GrammarRule<T>(
     public bool CanBeFirst { get; } = canBeFirst;
     public Func<IReadOnlyList<IToken>, bool>[] PreviousTokensMatchers { get; } = previousTokensMatchers;
 
-    public bool PreviousTokensMatch(IReadOnlyList<IToken> previousTokens) =>
-        previousTokens.Count == 0 && CanBeFirst
-        || PreviousTokensMatchers.Any(m => m(previousTokens));
+    public bool PreviousTokensMatch(IReadOnlyList<IToken> previousTokens)
+    {
+        if (previousTokens.Count == 0)
+        {
+            return CanBeFirst;
+        }
+
+        //use loop to avoid allocation with lambda
+        foreach (var matcher in PreviousTokensMatchers)
+        {
+            if (matcher(previousTokens))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     public bool NextCharMatch(char? next) => nextCharMatcher is null || nextCharMatcher(next);
 }
