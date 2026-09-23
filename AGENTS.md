@@ -79,12 +79,26 @@ Flow: `feature branch` → MR → `master` (merged only after maintainer approva
   `take[10..20]` and `take[10.2]` diverge without the tokenizer knowing either
   exists. If new syntax cannot be expressed this way, prefer a new token whose
   grammar absorbs the ambiguity — simplicity beats complexity.
+- **Clause scope is a property of the possibility list, not of adjacency.** The
+  walk knows which clause it is in because committing a clause root
+  (`IClauseRootToken`) says so — possibilities are grouped per clause root once,
+  at tokenizer construction, and committing a root switches the group. A token
+  of another clause is therefore never asked anything. This is not lookahead:
+  the clause is a committed fact, the same kind of fact adjacency reads. The
+  question a rule answers about the clause (`insideClauseOf:` /
+  `outsideClauseOf:`) is separate from its matchers — see the next rule.
 - **One grammar rule per token, declared as adjacency matchers only.** The
   characters that end a free-text token (its delimiters) are *derived* from
   which tokens the rule allows to follow it — never declared separately, so a
   rule change cannot silently stop making a following token a delimiter (or
-  vice versa). `IGrammar.Validate()` self-checks the effective grammar (one
-  rule per token, every token reachable, no keyword swallowing a longer one it
-  competes with) against the registered possibilities, so localized grammars
+  vice versa). Clause scope is the one thing declared beside the matchers, never
+  as one: a matcher sees the tokens before it and can answer no question about a
+  clause, and deriving delimiters must stay clause-blind (`=` is a delimiter of
+  `NameOrValue` in every clause, or floats and GUIDs in values break). Two
+  tokens sharing a prefix (the `=` of `Assignment` and the `==` of `Equality`) are
+  kept apart by their clauses, not by a next-character rule. `IGrammar.Validate()`
+  self-checks the effective grammar (one rule per token, every token reachable,
+  no keyword swallowing a longer one it competes with *in a clause where both are
+  allowed*) against the registered possibilities, so localized grammars
   (`AddTokenPossibility`) validate as they run; call it in tests when touching
   grammar.

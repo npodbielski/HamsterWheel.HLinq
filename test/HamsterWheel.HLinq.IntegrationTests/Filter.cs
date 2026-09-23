@@ -380,7 +380,7 @@ partial class MemoryDataTests
         233,
     ];
 
-    public static TheoryData<byte?> NullableByteData => [null, ..ByteData];
+    public static TheoryData<byte?> NullableByteData => [null, .. ByteData.Select(static r => (byte?)r)];
 
     public static TheoryData<short> ShortData =>
     [
@@ -395,7 +395,7 @@ partial class MemoryDataTests
         (short)32323,
     ];
 
-    public static TheoryData<short?> NullableShortData => [null, ..ShortData];
+    public static TheoryData<short?> NullableShortData => [null, .. ShortData.Select(static r => (short?)r)];
 
     public static TheoryData<int> IntData =>
     [
@@ -409,7 +409,7 @@ partial class MemoryDataTests
         323123,
     ];
 
-    public static TheoryData<int?> NullableIntData => [null, ..IntData];
+    public static TheoryData<int?> NullableIntData => [null, .. IntData.Select(static r => (int?)r)];
 
     public static TheoryData<long> LongData =>
     [
@@ -424,7 +424,7 @@ partial class MemoryDataTests
         323123321312L
     ];
 
-    public static TheoryData<long?> NullableLongData => [null, ..LongData];
+    public static TheoryData<long?> NullableLongData => [null, .. LongData.Select(static r => (long?)r)];
 
     public static TheoryData<float> FloatData =>
     [
@@ -439,7 +439,7 @@ partial class MemoryDataTests
         (float)323123321312.897878d
     ];
 
-    public static TheoryData<float?> NullableFloatData => [null, ..FloatData];
+    public static TheoryData<float?> NullableFloatData => [null, .. FloatData.Select(static r => (float?)r)];
 
     public static TheoryData<RandomEnum> EnumData =>
     [
@@ -451,7 +451,7 @@ partial class MemoryDataTests
         RandomEnum.Negative,
     ];
 
-    public static TheoryData<RandomEnum?> NullableEnumData => [null, ..EnumData];
+    public static TheoryData<RandomEnum?> NullableEnumData => [null, .. EnumData.Select(static r => (RandomEnum?)r)];
 
     public static TheoryData<TimeOnly> TimeOnlyData =>
     [
@@ -465,7 +465,7 @@ partial class MemoryDataTests
         TimeOnly.Parse("15:55:40.433")
     ];
 
-    public static TheoryData<TimeOnly?> NullableTimeOnlyData => [null, ..TimeOnlyData];
+    public static TheoryData<TimeOnly?> NullableTimeOnlyData => [null, .. TimeOnlyData.Select(static r => (TimeOnly?)r)];
 
     public static TheoryData<DateTime> DateTimeData =>
     [
@@ -479,7 +479,7 @@ partial class MemoryDataTests
         DateTime.Parse("2030-12-22 15:55:40.433").ToUniversalTime()
     ];
 
-    public static TheoryData<DateTime?> NullableDateTimeData => [null, ..DateTimeData];
+    public static TheoryData<DateTime?> NullableDateTimeData => [null, .. DateTimeData.Select(static r => (DateTime?)r)];
 
     public static TheoryData<DateTimeOffset> DateTimeOffsetData =>
     [
@@ -497,5 +497,5 @@ partial class MemoryDataTests
         DateTimeOffset.Parse("2012-12-31 15:55:32.433+04:00"),
     ];
 
-    public static TheoryData<DateTimeOffset?> NullableDateTimeOffsetData => [null, .. DateTimeOffsetData];
+    public static TheoryData<DateTimeOffset?> NullableDateTimeOffsetData => [null, .. DateTimeOffsetData.Select(static r => (DateTimeOffset?)r)];
 }

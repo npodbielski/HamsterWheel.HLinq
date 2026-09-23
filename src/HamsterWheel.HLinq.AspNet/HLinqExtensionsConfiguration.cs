@@ -7,7 +7,7 @@ namespace HamsterWheel.HLinq.AspNet;
 public class HLinqExtensionsConfiguration
 {
     public List<Action<IServiceCollection>> CustomServices { get; } = [];
-    
+
     public void AddTokenPossibility<T>() where T : class, IHLinqTokenPossibility =>
         CustomServices.Add(s => s.AddSingleton<IHLinqTokenPossibility, T>());
 

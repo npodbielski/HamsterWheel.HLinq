@@ -351,7 +351,22 @@ GET /data?where[x.Name==John]
 ```http request
 GET /data?where[x.Name==John Smith]
 ```
-Notice double `=` sign in comparison. It is consistent with how Linq works in C#. Single equals (`=`) sign is used in selectors (`select[NewName=x.Property]`) only.
+Notice double `=` sign in comparison. It is consistent with how Linq works in C# - a single `=` never compares, it renames, and only inside `select[...]` (`select[NewName=x.Property]`).
+
+The compared value can stand on either side of the operator, so both of these are the same query:
+```http request
+GET /data?where[x.Id==1]
+```
+```http request
+GET /data?where[1==x.Id]
+```
+Comparison keeps the order it was written in, nothing is flipped behind your back: `where[10<x.Int]` selects entities with `Int` greater than `10`.
+
+Both sides of a comparison can be properties - a side starting with the entity letter is a path, anything else is the value to compare with:
+```http request
+GET /data?where[x.Password==x.PasswordRepeat]
+```
+The two properties have to be comparable with each other, `where[x.Name==x.Id]` reports that they are not.
 
 To filter by records that do not have value use null keyword:
 ```http request

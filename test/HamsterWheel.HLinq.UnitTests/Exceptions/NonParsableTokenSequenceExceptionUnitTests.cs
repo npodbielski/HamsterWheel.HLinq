@@ -12,7 +12,7 @@ public class NonParsableTokenSequenceExceptionUnitTests
     {
         //arrange
         var hlinqQueryString = "foo[].bar[]";
-        var expected =  $"HLinq query '{hlinqQueryString}' is invalid at character 0: '{hlinqQueryString}'. Was expecting for example: 'where[x.Name==Jan]'.";
+        var expected = $"HLinq query '{hlinqQueryString}' is invalid at character 0: '{hlinqQueryString}'. Was expecting for example: 'where[x.Name==Jan]'.";
 
         //act
         var actual = new NonParsableTokenSequenceException("foo[].bar[]",

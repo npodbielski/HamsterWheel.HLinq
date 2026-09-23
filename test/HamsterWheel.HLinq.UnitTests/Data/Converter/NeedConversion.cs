@@ -13,7 +13,7 @@ partial class DefaultConverterUnitTests
         //assert
         actual.Should().Be(false);
     }
-    
+
     [Fact]
     public void NeedConversion_WhenClassAndNullReturnsFalls()
     {

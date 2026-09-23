@@ -1,7 +1,7 @@
 using System.Reflection;
 using AutoFixture;
 using AutoFixture.Kernel;
-using AutoFixture.Xunit2;
+using AutoFixture.Xunit3;
 
 namespace HamsterWheel.HLinq.UnitTests.TestUtils.Fixtures.AutoData;
 

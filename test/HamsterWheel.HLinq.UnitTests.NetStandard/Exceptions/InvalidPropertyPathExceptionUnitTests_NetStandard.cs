@@ -11,7 +11,7 @@ public class InvalidPropertyPathExceptionUnitTests_NetStandard
     {
         //arrange
         var invalidProp = "Surname";
-        var expected =  $"Invalid property path '{invalidProp}' for entity '{nameof(Person)}'. Available properties at this point are: 'Name'";
+        var expected = $"Invalid property path '{invalidProp}' for entity '{nameof(Person)}'. Available properties at this point are: 'Name'";
 
         //act
         var actual = new InvalidPropertyPathException(typeof(Person), invalidProp, [nameof(Person.Name)]);

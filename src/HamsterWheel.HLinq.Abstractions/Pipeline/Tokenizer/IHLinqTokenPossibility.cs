@@ -17,6 +17,14 @@ public interface IHLinqTokenPossibility
     Type ForType { get; }
     string? Keyword { get; }
     bool MatchesPreviousTokens(List<IToken> previousTokens);
+
+    /// <summary>
+    ///     Whether this token may stand in the clause opened by <paramref name="currentClauseRoot" />
+    ///     (null: no clause root committed yet). The tokenizer keeps the clause it is in and asks this
+    ///     before adjacency, so a token that belongs to another clause never matches text at all.
+    /// </summary>
+    bool MatchesClauseRoot(Type? currentClauseRoot);
+
     MatchAt MatchAt(ReadOnlySpan<char> window, char? next);
     IToken Build(Range range);
 }

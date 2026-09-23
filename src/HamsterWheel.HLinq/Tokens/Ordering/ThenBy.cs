@@ -2,7 +2,7 @@ using HamsterWheel.HLinq.Pipeline.Tokenizer;
 
 namespace HamsterWheel.HLinq.Tokens.Ordering;
 
-public sealed class ThenBy : TokenBase
+public sealed class ThenBy : TokenBase, IClauseRootToken
 {
     public sealed class Possibility(IGrammar grammar) : TokenPossibility<ThenBy>(grammar, "thenBy")
     {

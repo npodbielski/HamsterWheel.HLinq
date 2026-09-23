@@ -2,7 +2,7 @@ using HamsterWheel.HLinq.Pipeline.Tokenizer;
 
 namespace HamsterWheel.HLinq.Tokens.Paging;
 
-public sealed class Skip : TokenBase
+public sealed class Skip : TokenBase, IClauseRootToken
 {
     public sealed class Possibility(IGrammar grammar) : TokenPossibility<Skip>(grammar, "skip")
     {

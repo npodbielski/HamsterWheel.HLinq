@@ -19,16 +19,16 @@ public class HLinqClientQueryBuilder<T> : ResponseHLinqClientQueryBuilder<T[]>
                 Query.Append("select[").Append(me).Append(']');
                 break;
             case NewExpression ne:
-            {
-                var m = ne.Members;
-                if (m is not null)
                 {
-                    AddDotIfNecessary();
-                    Query.Append("select[").Append(ne.ToString().Split('(', ')')[1]).Append(']');
-                }
+                    var m = ne.Members;
+                    if (m is not null)
+                    {
+                        AddDotIfNecessary();
+                        Query.Append("select[").Append(ne.ToString().Split('(', ')')[1]).Append(']');
+                    }
 
-                break;
-            }
+                    break;
+                }
         }
 
         return Next<TResult>(this);

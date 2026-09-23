@@ -2,7 +2,7 @@ using HamsterWheel.HLinq.Pipeline.Tokenizer;
 
 namespace HamsterWheel.HLinq.Tokens.Filtering;
 
-public sealed class Where : TokenBase
+public sealed class Where : TokenBase, IClauseRootToken
 {
     public sealed class Possibility(IGrammar grammar) : TokenPossibility<Where>(grammar, "where")
     {

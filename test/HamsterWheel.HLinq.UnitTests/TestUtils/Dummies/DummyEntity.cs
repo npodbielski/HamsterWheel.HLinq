@@ -35,7 +35,7 @@ public class DummyEntity(string name) : IDummy
     public TimeOnly? NullableTime { get; set; }
     public DateTime? NullableDateTime { get; set; }
     public DateTimeOffset? NullableDateTimeOffset { get; set; }
-    
+
     public NestedDummyEntity Nested { get; set; } = null!;
 }
 

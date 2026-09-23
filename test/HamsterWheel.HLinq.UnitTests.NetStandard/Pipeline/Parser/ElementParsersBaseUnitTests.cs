@@ -106,7 +106,7 @@ public class DummyOrderRoot : ITreeBranch
     public ITreeElement[] Children { get; } = [];
     public void Finish(IParsingContext context, IToken[] endingTokens)
     {
-        
+
     }
 }
 
@@ -117,6 +117,6 @@ public class DummySelectRoot : ITreeBranch
     public ITreeElement[] Children { get; } = [];
     public void Finish(IParsingContext context, IToken[] endingTokens)
     {
-        
-    }   
+
+    }
 }

@@ -7,26 +7,24 @@ public abstract class TokenPossibility(IGrammar grammar, string? keyword = null)
 {
     public MatchAt MatchAt(ReadOnlySpan<char> window, char? next) => Pattern.Match(window, next);
 
-    private TokenPattern? _pattern;
     private bool _delimitersFetched;
-    private char[]? _delimiters;
 
+    /// <summary>
+    ///     The characters the grammar allows directly after this token, derived from its adjacency
+    ///     rule. A free text token ends at them, and a keyword which is also a word
+    ///     (<see cref="Entity" />) completes only at one of them.
+    /// </summary>
     protected char[]? Delimiters
     {
         get
         {
-            if (Keyword is not null)
-            {
-                return null;
-            }
-
             if (_delimitersFetched)
             {
-                return _delimiters;
+                return field;
             }
 
             _delimitersFetched = true;
-            return _delimiters = Grammar.GetDelimiters(ForType);
+            return field = Grammar.GetDelimiters(ForType);
         }
     }
 
@@ -41,7 +39,7 @@ public abstract class TokenPossibility(IGrammar grammar, string? keyword = null)
     ///     everything else a <see cref="ValuePattern" /> - override <see cref="BuildPattern" />
     ///     for a custom text rule (i.e. <see cref="Patterns.RangeOperatorPattern" />).
     /// </summary>
-    protected TokenPattern Pattern => _pattern ??= BuildPattern();
+    protected TokenPattern Pattern => field ??= BuildPattern();
 
     protected virtual TokenPattern BuildPattern() =>
         Keyword is not null
@@ -52,13 +50,14 @@ public abstract class TokenPossibility(IGrammar grammar, string? keyword = null)
 
     public abstract bool MatchesPreviousTokens(List<IToken> previousTokens);
 
+    public abstract bool MatchesClauseRoot(Type? currentClauseRoot);
+
     protected virtual bool NextIsAllowedWhenKeywordMatch(char? next) => true;
 }
 
 public abstract class TokenPossibility<T>(IGrammar grammar, string? tokenString = null)
     : TokenPossibility(grammar, tokenString) where T : TokenBase, new()
 {
-    private IGrammarRule? _rule;
     public override Type ForType => typeof(T);
     public sealed override bool CanBeFirst => Rule.CanBeFirst;
 
@@ -69,8 +68,16 @@ public abstract class TokenPossibility<T>(IGrammar grammar, string? tokenString 
     public sealed override bool MatchesPreviousTokens(List<IToken> previousTokens) =>
         Rule.PreviousTokensMatch(previousTokens);
 
+    /// <summary>
+    ///     Clause scope comes from the same single rule as adjacency, for the same reason: a
+    ///     localization replacing this possibility must not be able to claim a clause the grammar
+    ///     did not give the token.
+    /// </summary>
+    public sealed override bool MatchesClauseRoot(Type? currentClauseRoot) =>
+        Rule.MatchesClauseRoot(currentClauseRoot);
+
     public sealed override IToken Build(Range range) => BuildImpl(range);
-    protected IGrammarRule Rule => _rule ??= Grammar.GetRuleFor<T>();
+    protected IGrammarRule Rule => field ??= Grammar.GetRuleFor<T>();
 
     protected virtual T BuildImpl(Range range)
     {

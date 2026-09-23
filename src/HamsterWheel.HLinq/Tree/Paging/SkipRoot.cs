@@ -54,7 +54,7 @@ public sealed partial class SkipRoot(IToken[] tokens) : TreeBranch(tokens), ITre
         {
             var numberAsString = skip.GetSkipNumber(hLinqQuery);
 
-            var skipNumber = converter.ConvertTo<int?>(numberAsString); 
+            var skipNumber = converter.ConvertTo<int?>(numberAsString);
 
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Skip),
                 typeParams: context.CurrentResultType);

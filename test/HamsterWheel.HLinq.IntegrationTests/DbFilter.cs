@@ -32,6 +32,56 @@ partial class DbDataTests
     }
 
     [Fact]
+    public async Task WhenReversedComparisonUsedOnDb_ThenCanFilter()
+    {
+        //act
+        var response = await fixture.Client.GetAsync("/demo/db?where[1<x.Id]");
+
+        //assert
+        var data = await response.Content.ReadFromJsonAsync<Person[]>();
+        data.Should().BeEquivalentTo(Persons.Where(x => 1 < x.Id).Take(HLinqOptions.DefaultMaxTakeRecords));
+    }
+
+    /// <summary>
+    ///     The two comparisons ending in `=`, asked of the database: they are translated by the
+    ///     provider, so a query like `where[x.Id&gt;=2]` has to survive more than the expression tree.
+    /// </summary>
+    [Fact]
+    public async Task WhenGreaterOrEqualUsedOnDb_ThenCanFilter()
+    {
+        //act
+        var response = await fixture.Client.GetAsync("/demo/db?where[x.Id>=2]");
+
+        //assert
+        var data = await response.Content.ReadFromJsonAsync<Person[]>();
+        data.Should().BeEquivalentTo(Persons.Where(x => x.Id >= 2).Take(HLinqOptions.DefaultMaxTakeRecords));
+    }
+
+    [Fact]
+    public async Task WhenLessOrEqualUsedOnDb_ThenCanFilter()
+    {
+        //act
+        var response = await fixture.Client.GetAsync("/demo/db?where[x.Id<=2]");
+
+        //assert
+        var data = await response.Content.ReadFromJsonAsync<Person[]>();
+        data.Should().BeEquivalentTo(Persons.Where(x => x.Id <= 2).Take(HLinqOptions.DefaultMaxTakeRecords));
+    }
+
+    [Fact]
+    public async Task WhenTwoPropertiesAreComparedOnDb_ThenCanFilter()
+    {
+        //act: the right-hand side is a path; it used to be read as the text to compare with, so this
+        //question was answered with "nothing" instead of "the records that have the same two values"
+        var response = await fixture.Client.GetAsync("/demo/db?where[x.FirstName==x.LastName]");
+
+        //assert
+        var data = await response.Content.ReadFromJsonAsync<Person[]>();
+        data.Should()
+            .BeEquivalentTo(Persons.Where(x => x.FirstName == x.LastName).Take(HLinqOptions.DefaultMaxTakeRecords));
+    }
+
+    [Fact]
     public async Task WhenStringContains_ThenCanFilter()
     {
         //act

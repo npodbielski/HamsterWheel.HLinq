@@ -28,6 +28,9 @@
     
     <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0' ">
         <Compile Remove="**\*.NetStandard.cs" />
+        <Compile Update="Pipeline\Tokenizer\Grammar.Exceptions.cs">
+          <DependentUpon>Grammar.cs</DependentUpon>
+        </Compile>
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">

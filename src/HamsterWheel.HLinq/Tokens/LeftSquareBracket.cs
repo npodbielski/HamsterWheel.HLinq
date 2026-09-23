@@ -4,6 +4,7 @@ namespace HamsterWheel.HLinq.Tokens;
 
 public sealed class LeftSquareBracket : TokenBase
 {
+    // ReSharper disable once UnusedType.Global -> it is used by the Grammar
     public sealed class Possibility(IGrammar grammar) : TokenPossibility<LeftSquareBracket>(grammar, "[")
     {
     }

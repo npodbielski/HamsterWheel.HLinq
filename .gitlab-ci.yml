@@ -3,6 +3,23 @@ include:
   - project: "ci/templates"
     ref: "main"
     file: "/buildah-image.yml"
+  # Shared NuGet pack + publish job (hidden .nuget-publish): project registry
+  # first, then nuget.org with --skip-duplicate and a fail-loud nuget_key.
+  - project: "ci/templates"
+    ref: "main"
+    file: "/nuget-publish.yml"
+  # Shared test + coverage-gate job (hidden .dotnet-test), one instance per
+  # test project below.
+  - project: "ci/templates"
+    ref: "main"
+    file: "/dotnet-test-coverage.yml"
+  # Shared style and inspection gates (hidden .dotnet-format, .code-inspection).
+  - project: "ci/templates"
+    ref: "main"
+    file: "/dotnet-format.yml"
+  - project: "ci/templates"
+    ref: "main"
+    file: "/dotnet-inspection.yml"
 
 stages:
   - build
@@ -16,7 +33,6 @@ variables:
   OBJECTS_DIRECTORY: 'obj'
   NUGET_PACKAGES_DIRECTORY: '.nuget'
   SOURCE_CODE_PATH: ''
-  TEST_CODE_PATH: '/builds/hamster-wheel/hlinq/test'
   FF_NETWORK_PER_BUILD: "true"
 
 cache:
@@ -39,34 +55,63 @@ build:
   script:
     - 'dotnet build --no-restore'
 
-tests:
+# One shared-gate instance per test project (.dotnet-test from ci/templates);
+# .dotnet keeps the group feed source + restore the suites need. The template
+# must sit directly in extends: hidden jobs from includes are not extendable
+# through intermediate local jobs.
+
+# 91.6% line as of migration, default gate 0.80
+tests-unit:
+  extends:
+    - .dotnet
+    - .dotnet-test
+  variables:
+    # measure this repo's libraries only: third-party and group-feed packages
+    # (Humanizer, AspNet/PgSql/Client) sit in the test output and drag the
+    # gate to ~0.25; Demo is the demo app, not a shipped library
+    COVERAGE_EXCLUDE_FILTER: "[*]*.Program [HamsterWheel.HLinq.Demo*]* [Humanizer]* [HamsterWheel.HLinq.AspNet]* [HamsterWheel.HLinq.PgSql]* [HamsterWheel.HLinq.Client]* [Testcontainers*]* [Docker.DotNet*]* [Microsoft.Net.Http.Client]*"
+    DOTNET_TEST_TARGET: test/HamsterWheel.HLinq.UnitTests
+
+# 86.4% line as of migration, default gate 0.80
+tests-netstandard:
+  extends:
+    - .dotnet
+    - .dotnet-test
+  variables:
+    COVERAGE_EXCLUDE_FILTER: "[*]*.Program [HamsterWheel.HLinq.Demo*]* [Humanizer]* [HamsterWheel.HLinq.AspNet]* [HamsterWheel.HLinq.PgSql]* [HamsterWheel.HLinq.Client]* [Testcontainers*]* [Docker.DotNet*]* [Microsoft.Net.Http.Client]*"
+    DOTNET_TEST_TARGET: test/HamsterWheel.HLinq.UnitTests.NetStandard
+
+tests-integration:
+  extends:
+    - .dotnet
+    - .dotnet-test
   services:
     - name: postgres
-  extends: .dotnet
   variables:
     FF_NETWORK_PER_BUILD: 1
     POSTGRES_PASSWORD: outflank-outage-undoing
     POSTGRES_DB: Demo
     POSTGRES_HOST: postgres
-  stage: test
-  script:
-    - 'dotnet tool install --local dotnet-coverage --create-manifest-if-needed'
-    - 'dotnet tool install --local dotnet-reportgenerator-globaltool'
-    - 'dotnet test --no-restore /p:CollectCoverage=true --collect:"XPlat Code Coverage" --logger:"junit;LogFileName=rspec.xml" /p:Exclude="[HamsterWheel.HLinq.Demo*]*"'
-    - 'dotnet tool run dotnet-coverage merge -o $TEST_CODE_PATH/merged.cobertura.xml -f cobertura $TEST_CODE_PATH/**/coverage.cobertura.xml'
-    - 'dotnet tool run reportgenerator -reports:$TEST_CODE_PATH/merged.cobertura.xml -targetdir:coveragereport -reporttypes:JsonSummary'
-    - 'cat coveragereport/Summary.json | grep linecoverage'
-  coverage: '/linecoverage":\s([\d\.]+?),/'
-  artifacts:
-    when: always
-    paths:
-      - $TEST_CODE_PATH/**/rspec.xml
-    reports:
-      junit:
-        - $TEST_CODE_PATH/**/rspec.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: $TEST_CODE_PATH/merged.cobertura.xml
+    COVERAGE_EXCLUDE_FILTER: "[*]*.Program [HamsterWheel.HLinq.Demo*]* [Humanizer]* [HamsterWheel.HLinq.AspNet]* [HamsterWheel.HLinq.PgSql]* [HamsterWheel.HLinq.Client]* [Testcontainers*]* [Docker.DotNet*]* [Microsoft.Net.Http.Client]*"
+    DOTNET_TEST_TARGET: test/HamsterWheel.HLinq.IntegrationTests
+
+format-hlinq:
+  # .dotnet: explicit restore with the group feed - without it `dotnet format`
+  # resolved from whatever the shared cache happened to hold and died silently
+  extends:
+    - .dotnet
+    - .dotnet-format
+  variables:
+    DOTNET_SOLUTION: HLinq.slnx
+
+inspect-hlinq:
+  # baseline probe: 0 errors (140 warnings, 350 notes in the SARIF),
+  # so the fleet-standard hard gate at error level is green from day one
+  extends:
+    - .dotnet
+    - .code-inspection
+  variables:
+    DOTNET_SOLUTION: HLinq.slnx
 
 package-alpha:
   stage: deploy
@@ -106,17 +151,18 @@ build-docker-image:
 
 package:
   stage: deploy
-  extends: .dotnet
+  # .dotnet keeps the group feed source + restore (CodeShare packages come
+  # from there); .nuget-publish owns pack and both pushes.
+  extends:
+    - .dotnet
+    - .nuget-publish
   rules:
     - if: $CI_COMMIT_BRANCH == "master"
       changes:
+        # src change OR a version bump: a bump-only merge must publish too,
+        # otherwise a patch bump after a failed 409 publish never ships
         - src/**/*
-  script:
-    - dotnet pack HLinq.slnx -c Release
-    # Configure GitLab package registry as a NuGet source
-    - dotnet nuget add source "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/nuget/index.json" --name gitlab --username gitlab-ci-token --password $CI_JOB_TOKEN --store-password-in-clear-text
-    # Push the package to the project's package registry
-    - dotnet nuget push "src/**/bin/Release/*.nupkg" --source gitlab
-    # Push the package to the Nuget.org feed
-    - dotnet nuget push "src/**/bin/Release/*.nupkg" --source https://api.nuget.org/v3/index.json --api-key $nuget_key
+        - Nuget.props
+  variables:
+    NUGET_PACK_TARGET: HLinq.slnx
   environment: production

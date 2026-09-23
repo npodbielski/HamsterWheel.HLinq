@@ -1,14 +1,17 @@
-using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Tokens;
 
 namespace HamsterWheel.HLinq.Pipeline.Tokenizer;
 
 /// <summary>
 ///     Single left-to-right walk over the query, no backtracking and no syntax peeking.
+///     The walk knows which clause it is in: possibilities are split per clause once, at construction,
+///     and committing a clause root (<see cref="IClauseRootToken" />) switches the walk to the
+///     possibilities of that clause - a token of another clause is never even asked. Adjacency is
+///     then the only question left for the possibilities of the current clause.
 ///     For each window (the text after the last committed token) the adjacency rule of every
-///     possibility (<see cref="IHLinqTokenPossibility.MatchesPreviousTokens" />) is evaluated
-///     once - it cannot change while the window grows - and every window growth then asks only
-///     its text rule (<see cref="IHLinqTokenPossibility.MatchAt" />). The first possibility
+///     remaining possibility (<see cref="IHLinqTokenPossibility.MatchesPreviousTokens" />) is
+///     evaluated once - it cannot change while the window grows - and every window growth then asks
+///     only its text rule (<see cref="IHLinqTokenPossibility.MatchAt" />). The first possibility
 ///     (in registration order) that completes at an offset commits its token and the walk jumps
 ///     to that offset; windows that match nothing throw. Ambiguity is resolved by the token
 ///     grammars themselves, never by the tokenizer looking at surrounding syntax.
@@ -17,12 +20,34 @@ public sealed partial class HLinqTokenizer : IHLinqTokenizer
 {
     private readonly IHLinqTokenPossibility[] _allPossibilities;
 
+    // possibilities that may stand in a clause opened by a given root token, built once: which clause
+    // a token belongs to cannot change while a query is tokenized, so the walk switches this array
+    // instead of asking every possibility where it is allowed - the fewer possibilities it asks, the
+    // less work the walk does
+    private readonly Dictionary<Type, IHLinqTokenPossibility[]> _possibilitiesByClauseRoot;
+
+    // possibilities allowed before any clause root was committed (the empty-clause context, which is
+    // also what the grammar self-check evaluates rules against)
+    private readonly IHLinqTokenPossibility[] _outsideOfAnyClause;
+
     private readonly IHLinqTokenPossibility[] _startingPossibilities;
 
     public HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPossibilities)
     {
         _allPossibilities = [.. tokenPossibilities];
-        _startingPossibilities = [.. _allPossibilities.Where(t => t.CanBeFirst)];
+
+        var clauseRoots = _allPossibilities
+            .Select(p => p.ForType)
+            .Where(t => typeof(IClauseRootToken).IsAssignableFrom(t))
+            .Distinct()
+            .ToArray();
+
+        _possibilitiesByClauseRoot = clauseRoots.ToDictionary(
+            root => root,
+            root => _allPossibilities.Where(p => p.MatchesClauseRoot(root)).ToArray());
+
+        _outsideOfAnyClause = [.. _allPossibilities.Where(p => p.MatchesClauseRoot(null))];
+        _startingPossibilities = [.. _outsideOfAnyClause.Where(t => t.CanBeFirst)];
     }
 
     public IToken[] Tokenize(string hLinqQuery)
@@ -36,6 +61,7 @@ public sealed partial class HLinqTokenizer : IHLinqTokenizer
         var previousTokenIndex = 0;
         var candidatesValid = false;
         var windowHasText = false;
+        var clausePossibilities = _outsideOfAnyClause;
 
         for (var index = 0; index < span.Length; index++)
         {
@@ -53,7 +79,7 @@ public sealed partial class HLinqTokenizer : IHLinqTokenizer
             if (!candidatesValid)
             {
                 candidateCount = 0;
-                foreach (var possibility in tokens.Count == 0 ? _startingPossibilities : _allPossibilities)
+                foreach (var possibility in tokens.Count == 0 ? _startingPossibilities : clausePossibilities)
                 {
                     if (possibility.MatchesPreviousTokens(tokens))
                     {
@@ -77,11 +103,13 @@ public sealed partial class HLinqTokenizer : IHLinqTokenizer
                 }
 
                 possible[possibleCount++] = candidates[candidate];
-                if (match.IsCompleted && winner is null)
+                if (!match.IsCompleted || winner is not null)
                 {
-                    winner = candidates[candidate];
-                    completeAt = match.CompleteAt;
+                    continue;
                 }
+
+                winner = candidates[candidate];
+                completeAt = match.CompleteAt;
             }
 
             if (winner is null)
@@ -94,10 +122,19 @@ public sealed partial class HLinqTokenizer : IHLinqTokenizer
                 throw new ZeroLengthCompletionException(winner.ForType.Name);
             }
 
-            // commit [previousTokenIndex, previousTokenIndex + completeAt) and continue the walk
-            // right behind the completed match - characters it did not cover open the next window
             var tokenEnd = previousTokenIndex + completeAt;
-            tokens.Add(winner.Build(GetRange(previousTokenIndex..tokenEnd)));
+            var token = winner.Build(GetRange(previousTokenIndex..tokenEnd));
+            tokens.Add(token);
+            if (token is IClauseRootToken clauseRoot)
+            {
+                if (!_possibilitiesByClauseRoot.TryGetValue(clauseRoot.GetType(), out var clause))
+                {
+                    clause = _allPossibilities;
+                }
+
+                clausePossibilities = clause;
+            }
+
             previousTokenIndex = tokenEnd;
             index = tokenEnd - 1;
             candidatesValid = false;
@@ -126,5 +163,4 @@ public sealed partial class HLinqTokenizer : IHLinqTokenizer
 
         return next;
     }
-
 }

@@ -383,40 +383,53 @@ partial class DefaultConverterUnitTests
         });
     }
 
-    [Fact]
-    public void ConvertTo_WhenWithDateTimeOffsetToString_ThenReturnsCorrectValue()
+    /// <summary>
+    ///     The string form of a <see cref="DateTimeOffset" /> is the serializer's: the fraction of a
+    ///     second without its trailing zeros, whole fraction dropped when it is zero. Reading the
+    ///     string back is asserted along with the exact text, because the point of the shorter form is
+    ///     that it names the same instant.
+    /// </summary>
+    [Theory]
+    [InlineData(1234567, "2026-01-01T12:00:00.1234567+02:00")]
+    [InlineData(1234560, "2026-01-01T12:00:00.123456+02:00")]
+    [InlineData(1234500, "2026-01-01T12:00:00.12345+02:00")]
+    [InlineData(1200000, "2026-01-01T12:00:00.12+02:00")]
+    [InlineData(0, "2026-01-01T12:00:00+02:00")]
+    public void ConvertTo_WhenWithDateTimeOffsetToString_ThenReturnsCorrectValue(long ticks, string expected)
     {
-        //arrange 
-        var dateTimeOffset = DateTimeOffset.UtcNow;
-        var expected = dateTimeOffset.ToString("O", CultureInfo.InvariantCulture);
-        //for some reason it returns different value depending if the last millisecond is 0 or not
-        // probably it is a bit different on .net core and .net standard
-        // "2025-12-11T11:06:02.2855140+00:00", but found "2025-12-11T11:06:02.285514+00:00".
-        expected = expected.Replace("0+", "+");
+        //arrange
+        var dateTimeOffset = new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.FromMinutes(120))
+            .AddTicks(ticks);
 
         //act
         var actual = _sut.ConvertTo(typeof(string), dateTimeOffset);
 
         //assert
         actual.Should().Be(expected);
+        DateTimeOffset.Parse((string)actual!, CultureInfo.InvariantCulture).Should().Be(dateTimeOffset);
     }
 
-    [Fact]
-    public void ConvertTo_WhenWithDateTimeToString_ThenReturnsCorrectValue()
+    /// <summary>
+    ///     A <see cref="DateTime" /> keeps all seven digits of its fraction where a
+    ///     <see cref="DateTimeOffset" /> trims them: the serializer writes the two differently. Both
+    ///     forms name the instant, which is what a query compares on.
+    /// </summary>
+    [Theory]
+    [InlineData(1234567, "2026-01-01T12:00:00.1234567Z")]
+    [InlineData(1234560, "2026-01-01T12:00:00.1234560Z")]
+    [InlineData(0, "2026-01-01T12:00:00.0000000Z")]
+    public void ConvertTo_WhenWithDateTimeToString_ThenReturnsCorrectValue(long ticks, string expected)
     {
-        //arrange 
-        var dateTime = DateTime.UtcNow;
-        var expected = dateTime.ToString("O", CultureInfo.InvariantCulture);
-        //for some reason it returns different value depending if the last millisecond is 0 or not
-        // probably it is a bit different on .net core and .net standard
-        // "2025-12-11T11:06:02.2855140+00:00", but found "2025-12-11T11:06:02.285514+00:00".
-        expected = expected.Replace("0+", "+");
+        //arrange
+        var dateTime = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc).AddTicks(ticks);
 
         //act
         var actual = _sut.ConvertTo(typeof(string), dateTime);
 
         //assert
         actual.Should().Be(expected);
+        DateTime.Parse((string)actual!, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal)
+            .Should().Be(dateTime);
     }
 
     [Fact]

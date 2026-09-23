@@ -22,9 +22,9 @@ public class GrammarSelfCheckUnitTests
     [Fact]
     public void Validate_WhenDefaultGrammar_ThenNoProblems()
     {
-        var grammar = TestServicesCollection.Provider.GetRequiredService<IGrammar>();
+        var grammar = TestServicesCollection.Provider.GetRequiredService<GrammarValidator>();
 
-        var act = () => grammar.Validate();
+        var act = grammar.Validate;
 
         act.Should().NotThrow();
     }
@@ -33,16 +33,18 @@ public class GrammarSelfCheckUnitTests
     public void Validate_WhenGrammarLocalized_ThenNoProblems()
     {
         var services = new ServiceCollection();
-        HamsterWheel.HLinq.HLinqCore.ConfigureServices(services, new HamsterWheel.HLinq.HLinqOptions());
+        HLinqCore.ConfigureServices(services, new HLinqOptions());
         var localized = services
             .Where(d => d.ServiceType == typeof(IHLinqTokenPossibility) &&
                         d.ImplementationType == typeof(Count.Possibility))
             .ToList();
         foreach (var descriptor in localized) services.Remove(descriptor);
         services.AddSingleton<IHLinqTokenPossibility, LocalizedCountPossibility>();
+        services.AddSingleton<GrammarValidator>();
         using var provider = services.BuildServiceProvider();
 
-        var act = () => provider.GetRequiredService<IGrammar>().Validate();
+        // ReSharper disable once AccessToDisposedClosure
+        var act = () => provider.GetRequiredService<GrammarValidator>().Validate();
 
         act.Should().NotThrow();
     }
@@ -53,7 +55,7 @@ public class GrammarSelfCheckUnitTests
         var grammar = TestServicesCollection.Provider.GetRequiredService<IGrammar>();
 
         grammar.GetDelimiters(typeof(NameOrValue)).Should()
-            .BeEquivalentTo(new[] { '=', '&', '|', ',', '!', '<', '>', ')', ']' });
+            .BeEquivalentTo(['=', '&', '|', ',', '!', '<', '>', ')', ']']);
     }
 
     [Fact]
@@ -62,7 +64,7 @@ public class GrammarSelfCheckUnitTests
         var grammar = TestServicesCollection.Provider.GetRequiredService<IGrammar>();
 
         grammar.GetDelimiters(typeof(PropertyName)).Should()
-            .BeEquivalentTo(new[] { '=', '&', '|', ',', '!', '<', '>', ')', ']', '.' });
+            .BeEquivalentTo(['=', '&', '|', ',', '!', '<', '>', ')', ']', '.']);
     }
 
     [Fact]
@@ -70,7 +72,7 @@ public class GrammarSelfCheckUnitTests
     {
         var grammar = TestServicesCollection.Provider.GetRequiredService<IGrammar>();
 
-        grammar.GetDelimiters(typeof(MethodName)).Should().BeEquivalentTo(new[] { '(' });
+        grammar.GetDelimiters(typeof(MethodName)).Should().BeEquivalentTo(['(']);
     }
 
     [Fact]

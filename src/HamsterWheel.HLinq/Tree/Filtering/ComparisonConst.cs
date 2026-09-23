@@ -38,7 +38,7 @@ public sealed class ComparisonConst(NameOrValue value) : TreeLeaf([value])
 
             var stringValue = element.Value.GetValue(context.HLinqQuery);
 
-            var value = defaultConverter.ConvertTo(propType,stringValue);
+            var value = defaultConverter.ConvertTo(propType, stringValue);
 
             return Expression.Constant(value, propType);
         }

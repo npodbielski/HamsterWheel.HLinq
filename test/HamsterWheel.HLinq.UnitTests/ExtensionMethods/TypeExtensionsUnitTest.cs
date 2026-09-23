@@ -37,7 +37,7 @@ public class TypeExtensionsUnitTests
         var expected = false;
 
         //act
-        var actual = typeof(Dictionary<int,int>).IsGenericOf(typeof(IList<>));
+        var actual = typeof(Dictionary<int, int>).IsGenericOf(typeof(IList<>));
 
         //assert
         actual.Should().Be(expected);

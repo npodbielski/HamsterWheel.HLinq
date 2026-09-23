@@ -15,7 +15,7 @@ partial class MemoryDataTests
         //assert
         response.Should().Be(Superhero.Superheroes.Length);
     }
-    
+
     [Theory]
     [InlineData(1)]
     [InlineData(2)]

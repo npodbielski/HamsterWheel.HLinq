@@ -26,6 +26,7 @@ internal static class HLinqCore
 
         //tokens
         services.AddSingleton<IGrammar, Grammar>();
+        services.AddSingleton<GrammarDependencies>();
         foreach (var tp in GetTypesFromAssemblyWithStatic<IHLinqTokenPossibility>())
         {
             services.AddSingleton(typeof(IHLinqTokenPossibility), tp);

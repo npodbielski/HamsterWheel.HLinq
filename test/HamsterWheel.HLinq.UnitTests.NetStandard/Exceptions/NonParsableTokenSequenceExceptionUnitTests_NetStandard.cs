@@ -15,7 +15,7 @@ public class NonParsableTokenSequenceExceptionUnitTests_NetStandard
         //arrange
         var hlinqQueryString = "foo[].bar[]";
         var example = "where[1=1]";
-        var expected =  $"HLinq query '{hlinqQueryString}' is invalid at character 0: '{hlinqQueryString}'. Was expecting for example: '{example}'.";
+        var expected = $"HLinq query '{hlinqQueryString}' is invalid at character 0: '{hlinqQueryString}'. Was expecting for example: '{example}'.";
         var elementParser = Substitute.For<IElementParser>();
         elementParser.ExampleTokens.Returns([new TokenExample(example)]);
 

@@ -1,4 +1,4 @@
-using AutoFixture.Xunit2;
+using AutoFixture.Xunit3;
 using FluentAssertions;
 using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;

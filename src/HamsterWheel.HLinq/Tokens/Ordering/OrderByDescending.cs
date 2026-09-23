@@ -2,7 +2,7 @@ using HamsterWheel.HLinq.Pipeline.Tokenizer;
 
 namespace HamsterWheel.HLinq.Tokens.Ordering;
 
-public sealed class OrderByDescending : TokenBase
+public sealed class OrderByDescending : TokenBase, IClauseRootToken
 {
     public sealed class Possibility(IGrammar grammar)
         : TokenPossibility<OrderByDescending>(grammar, "orderByDescending")

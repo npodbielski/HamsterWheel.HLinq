@@ -20,7 +20,7 @@ public partial class ExpressionBuilderUnitTests
         var tokens = _tokenizer.Tokenize(query);
         ITreeBranch tree = _parser.Parse(hlinqQuery, tokens);
         var actual =
-            _sut.GetProperty(typeof(DummyEntity), 
+            _sut.GetProperty(typeof(DummyEntity),
                 tree.GetAll<OrderByRoot>().First(), query).Expression;
         actual.Should().NotBeNull();
         actual.ToString().Should().Match("Param_0 => Param_0.Name");
@@ -29,7 +29,7 @@ public partial class ExpressionBuilderUnitTests
         propertySelect.Method.Invoke(null, [propertySelect.Target, entity])
             .Should().Be(entity.Name);
     }
-    
+
     [Fact]
     public void GetProperty_WhenBoolProp_ThenCanSelect()
     {
@@ -41,7 +41,7 @@ public partial class ExpressionBuilderUnitTests
         var tokens = _tokenizer.Tokenize(query);
         ITreeBranch tree = _parser.Parse(hlinqQuery, tokens);
         var actual =
-            _sut.GetProperty(typeof(DummyEntity), 
+            _sut.GetProperty(typeof(DummyEntity),
                 tree.GetAll<OrderByRoot>().First(), query).Expression;
         actual.Should().NotBeNull();
         actual.ToString().Should().Match("Param_0 => Param_0.Flag");
@@ -50,7 +50,7 @@ public partial class ExpressionBuilderUnitTests
         propertySelect.Method.Invoke(null, [propertySelect.Target, entity])
             .Should().Be(entity.Flag);
     }
-    
+
     [Fact]
     public void GetProperty_WhenEnumProp_ThenCanSelect()
     {
@@ -62,7 +62,7 @@ public partial class ExpressionBuilderUnitTests
         var tokens = _tokenizer.Tokenize(query);
         ITreeBranch tree = _parser.Parse(hlinqQuery, tokens);
         var actual =
-            _sut.GetProperty(typeof(DummyEntity), 
+            _sut.GetProperty(typeof(DummyEntity),
                 tree.GetAll<OrderByRoot>().First(), query).Expression;
         actual.Should().NotBeNull();
         actual.ToString().Should().Match("Param_0 => Param_0.Enum");
@@ -71,7 +71,7 @@ public partial class ExpressionBuilderUnitTests
         propertySelect.Method.Invoke(null, [propertySelect.Target, entity])
             .Should().Be(entity.Enum);
     }
-    
+
     [Fact]
     public void GetProperty_WhenNullableDateTimeOffsetProp_ThenCanSelect()
     {
@@ -83,7 +83,7 @@ public partial class ExpressionBuilderUnitTests
         var tokens = _tokenizer.Tokenize(query);
         ITreeBranch tree = _parser.Parse(hlinqQuery, tokens);
         var actual =
-            _sut.GetProperty(typeof(DummyEntity), 
+            _sut.GetProperty(typeof(DummyEntity),
                 tree.GetAll<OrderByRoot>().First(), query).Expression;
         actual.Should().NotBeNull();
         actual.ToString().Should().Match("Param_0 => Param_0.NullableDateTimeOffset");

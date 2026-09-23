@@ -5,7 +5,9 @@ namespace HamsterWheel.HLinq.Pipeline.Tokenizer;
 public class GrammarRule<T>(
     bool canBeFirst,
     Func<IReadOnlyList<IToken>, bool>[] previousTokensMatchers,
-    Func<char?, bool>? nextCharMatcher = null) : IGrammarRule
+    Func<char?, bool>? nextCharMatcher = null,
+    Type? insideClauseOf = null,
+    Type? outsideClauseOf = null) : IGrammarRule
 {
     public Type ForType { get; } = typeof(T);
     public bool IsFor<TToken>() => ForType == typeof(TToken);
@@ -32,4 +34,8 @@ public class GrammarRule<T>(
     }
 
     public bool NextCharMatch(char? next) => nextCharMatcher is null || nextCharMatcher(next);
+
+    public bool MatchesClauseRoot(Type? currentClauseRoot) =>
+        (insideClauseOf is null || insideClauseOf == currentClauseRoot)
+        && (outsideClauseOf is null || outsideClauseOf != currentClauseRoot);
 }

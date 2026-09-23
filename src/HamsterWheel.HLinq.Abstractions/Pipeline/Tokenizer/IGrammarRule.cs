@@ -16,4 +16,12 @@ public interface IGrammarRule
     Type ForType { get; }
     bool PreviousTokensMatch(IReadOnlyList<IToken> previousTokens);
     bool NextCharMatch(char? next);
+
+    /// <summary>
+    ///     Whether this token may stand in the clause opened by <paramref name="currentClauseRoot" />
+    ///     (null: nothing of the kind has been committed yet). Which clause a token belongs to is not
+    ///     adjacency - it is not about the token before it - so it is declared here rather than as a
+    ///     matcher, and the tokenizer knows the current clause without being asked to look for it.
+    /// </summary>
+    bool MatchesClauseRoot(Type? currentClauseRoot);
 }

@@ -79,7 +79,7 @@ public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tok
                            throw new PropertyAssignmentNameNotFoundException(element, context.HLinqQuery);
             var propertyInfo = props.Single(destinationType, propName) ??
                                throw new InvalidPropertyPathException(destinationType, propName,
-                                   [..destinationType.GetProperties().Select(p => p.Name)]);
+                                   [.. destinationType.GetProperties().Select(p => p.Name)]);
             if (element.Property is not null)
             {
                 var initializerContext = new InitializerPropertyAssignmentBuilderContext(context)

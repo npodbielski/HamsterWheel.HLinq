@@ -38,7 +38,11 @@ public class PipelineBenchmarks
     private readonly BenchEntity[] _data = Enumerable.Range(0, 100)
         .Select(i => new BenchEntity
         {
-            Id = i, Name = $"entity{i}", Int = i, Double = i / 3d, Date = new DateTime(2020, 1, 1).AddDays(i)
+            Id = i,
+            Name = $"entity{i}",
+            Int = i,
+            Double = i / 3d,
+            Date = new DateTime(2020, 1, 1).AddDays(i)
         })
         .ToArray();
 

@@ -11,7 +11,7 @@ public class EntityLeafUnitTests
     {
         //arrange
         var expected = "x";
-        var sut = new EntityLeaf(Entity.Build(new(0,1)));
+        var sut = new EntityLeaf(Entity.Build(new(0, 1)));
 
         //act
         var actual = sut.GetValue("x");

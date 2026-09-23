@@ -45,12 +45,12 @@ public class InvalidTokenCollectionExceptionUnitTests_NetStandard
     }
 
     [Fact]
-    public void Message_WhenWhereReverseComparison_ThenCorrectlyFormatsMessage()
+    public void Message_WhenWhereConditionExpected_ThenCorrectlyFormatsMessage()
     {
         //arrange
-        const string hlinqQueryString = "where[2=x.Int]";
+        const string hlinqQueryString = "where[Jan]";
         const string expected = $""" 
-                                 HLinq query '{hlinqQueryString}' is invalid at character 0: '2=x.Int'. Was expecting for example: 'x.Name==Jan'.
+                                 HLinq query '{hlinqQueryString}' is invalid at character 0: 'Jan]'. Was expecting for example: 'x.Name==Jan'.
                                  You can also try:
                                   - &&
                                   - ||
@@ -59,7 +59,7 @@ public class InvalidTokenCollectionExceptionUnitTests_NetStandard
 
         //act
         var e = new InvalidTokenCollectionException(hlinqQueryString, [
-                new TokenExample("2"), new TokenExample("="), new TokenExample("x.Int")
+                new TokenExample("Jan"), new TokenExample("]")
             ],
             [
                 new TokenExample("x"), new TokenExample("."), new TokenExample("Name"), new TokenExample("=="),

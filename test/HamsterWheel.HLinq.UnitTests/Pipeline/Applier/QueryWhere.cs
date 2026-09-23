@@ -1,6 +1,7 @@
-using AutoFixture.Xunit2;
+using AutoFixture.Xunit3;
 using FluentAssertions;
 using HamsterWheel.HLinq.Request;
+using HamsterWheel.HLinq.Tree.Filtering;
 using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
 using HamsterWheel.HLinq.UnitTests.TestUtils.Fixtures.AutoData;
 
@@ -268,6 +269,201 @@ partial class HLinqQueryApplierUnitTests
             .Skip(10)
             .Take(20)
         );
+    }
+
+    [Theory]
+    [AutoData]
+    public void Apply_WhenValueComparedWithIntReversed_ThenCanApply(DummyEntity[] entities)
+    {
+        //arrange
+        const string queryString = "where[100<x.Int]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
+        var tokens = _tokenizer.Tokenize(queryString);
+        _parser.Parse(hlinqQuery, tokens);
+        var queryable = entities.AsQueryable();
+
+        //act
+        var actual = _sut.Apply(queryable, hlinqQuery);
+
+        //assert
+        actual.Should().BeEquivalentTo(entities.Where(x => 100 < x.Int));
+    }
+
+    [Theory]
+    [InlineAutoData("John Doe")]
+    public void Apply_WhenValueComparedWithStringReversed_ThenCanApply(string name, DummyEntity entity)
+    {
+        //arrange
+        entity.Name = name;
+        var queryString = $"where[{name}==x.Name]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
+        var tokens = _tokenizer.Tokenize(queryString);
+        _parser.Parse(hlinqQuery, tokens);
+        var queryable = new[] { entity }.AsQueryable();
+
+        //act
+        var actual = _sut.Apply(queryable, hlinqQuery);
+
+        //assert
+        actual.Should().BeEquivalentTo(new[] { entity });
+    }
+
+    [Theory]
+    [AutoData]
+    public void Apply_WhenValueComparedWithDateReversed_ThenCanApply(DummyEntity[] entities)
+    {
+        //arrange
+        const string dateTimeFilter = "2025-12-01T00:00:00.000Z";
+        var queryString = $"where[{dateTimeFilter}<x.DateTime]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
+        var tokens = _tokenizer.Tokenize(queryString);
+        _parser.Parse(hlinqQuery, tokens);
+        var queryable = entities.AsQueryable();
+
+        //act
+        var actual = _sut.Apply(queryable, hlinqQuery);
+
+        //assert
+        actual.Should().BeEquivalentTo(entities.Where(x => DateTime.Parse(dateTimeFilter) < x.DateTime));
+    }
+
+    [Theory]
+    [AutoData]
+    public void Apply_WhenReversedComparisonAndAnotherCondition_ThenCanApply(DummyEntity[] entities)
+    {
+        //arrange
+        const string queryString = "where[100<x.Int&&x.Name==Jan]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
+        var tokens = _tokenizer.Tokenize(queryString);
+        _parser.Parse(hlinqQuery, tokens);
+        var queryable = entities.AsQueryable();
+
+        //act
+        var actual = _sut.Apply(queryable, hlinqQuery);
+
+        //assert
+        actual.Should().BeEquivalentTo(entities.Where(x => 100 < x.Int && x.Name == "Jan"));
+    }
+
+    [Theory]
+    [AutoData]
+    public void Apply_WhenReversedComparisonWithSelect_ThenCanApply(DummyEntity[] entities)
+    {
+        //arrange
+        const string queryString = "where[100<x.Int].select[x.Name]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
+        var tokens = _tokenizer.Tokenize(queryString);
+        _parser.Parse(hlinqQuery, tokens);
+        var queryable = entities.AsQueryable();
+
+        //act
+        var actual = _sut.Apply(queryable, hlinqQuery);
+
+        //assert
+        actual.Should().BeEquivalentTo(entities.Where(x => 100 < x.Int).Select(x => x.Name));
+    }
+
+    /// <summary>
+    ///     The comparisons that end in `=`: the tokenizer accepted them all along, but `>=` and `<=`
+    ///     had never been followed through to the expression they build and the rows they return.
+    /// </summary>
+    [Theory]
+    [AutoData]
+    public void Apply_WhenIntGreaterOrEqualThanValue_ThenCanApply(DummyEntity[] entities)
+    {
+        //arrange
+        const string queryString = "where[x.Int>=100]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
+        var tokens = _tokenizer.Tokenize(queryString);
+        _parser.Parse(hlinqQuery, tokens);
+        var queryable = entities.AsQueryable();
+
+        //act
+        var actual = _sut.Apply(queryable, hlinqQuery);
+
+        //assert
+        actual.Should().BeEquivalentTo(entities.Where(x => x.Int >= 100));
+    }
+
+    [Theory]
+    [AutoData]
+    public void Apply_WhenIntLessOrEqualThanValue_ThenCanApply(DummyEntity[] entities)
+    {
+        //arrange
+        const string queryString = "where[x.Int<=100]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
+        var tokens = _tokenizer.Tokenize(queryString);
+        _parser.Parse(hlinqQuery, tokens);
+        var queryable = entities.AsQueryable();
+
+        //act
+        var actual = _sut.Apply(queryable, hlinqQuery);
+
+        //assert
+        actual.Should().BeEquivalentTo(entities.Where(x => x.Int <= 100));
+    }
+
+    [Theory]
+    [AutoData]
+    public void Apply_WhenOnlyValuesAreCompared_ThenThrows(DummyEntity[] entities)
+    {
+        //arrange
+        const string queryString = "where[1==1]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
+        var tokens = _tokenizer.Tokenize(queryString);
+        _parser.Parse(hlinqQuery, tokens);
+        var queryable = entities.AsQueryable();
+
+        //act
+        var act = () => _sut.Apply(queryable, hlinqQuery);
+
+        //assert
+        act.Should().Throw<Condition.ConditionElementMustHaveLeftAndRightException>();
+    }
+
+    [Theory]
+    [AutoData]
+    public void Apply_WhenPropertiesOfDifferentTypesAreCompared_ThenThrows(DummyEntity[] entities)
+    {
+        //arrange
+        const string queryString = "where[x.Name==x.DateTime]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
+        var tokens = _tokenizer.Tokenize(queryString);
+        _parser.Parse(hlinqQuery, tokens);
+        var queryable = entities.AsQueryable();
+
+        //act
+        var act = () => _sut.Apply(queryable, hlinqQuery);
+
+        //assert
+        act.Should().Throw<Condition.ComparisonOperandTypesCannotBeComparedException>();
     }
 
     [Theory]

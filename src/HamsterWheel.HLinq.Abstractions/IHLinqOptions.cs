@@ -2,5 +2,5 @@ namespace HamsterWheel.HLinq;
 
 public interface IHLinqOptions
 {
-    int HttpDefaultMaxTakeRecords { get; } 
+    int HttpDefaultMaxTakeRecords { get; }
 }

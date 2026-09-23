@@ -10,6 +10,8 @@
 
     <ItemGroup>
         <PackageReference Include="BenchmarkDotNet"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common"/>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
     </ItemGroup>
 

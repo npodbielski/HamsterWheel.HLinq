@@ -1,10 +1,8 @@
 using System.Linq.Expressions;
-using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
-using HamsterWheel.HLinq.Tokens.Selecting;
 
 namespace HamsterWheel.HLinq.Tree.Filtering;
 
@@ -45,7 +43,9 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
         protected override Condition? BuildBranch(IParsingContext context) =>
             context.Tokens switch
             {
-                [NameOrValue, Assignment, NameOrValue, ..] => ThrowOnReverseComparison(context),
+                //a value on the left of a comparison (`where[10<x.Int]`): the comparison keeps the
+                //order it was written in, so it does not have to be mirrored to be understood
+                [NameOrValue, IComparisonToken, ..] => new Condition(),
                 [ILogicalOperatorToken conditionalLogicalOp, not LeftCircleBracket, ..] => new Condition(
                     conditionalLogicalOp),
                 [Entity, Dot, PropertyName, ..] => new Condition(),
@@ -53,15 +53,6 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
                 [MethodName, ..] => new Condition(),
                 _ => null
             };
-
-        private static Condition ThrowOnReverseComparison(IParsingContext context) =>
-            throw new InvalidTokenCollectionException(context.SourceQueryString,
-                context.Tokens,
-                ConditionExampleTokens,
-                [And.Empty],
-                [Or.Empty],
-                [MethodName.Empty]
-            );
     }
 
     public sealed class Converter(IConverterFactory converterFactory) : ElementToExpressionConverter<Condition>
@@ -93,6 +84,15 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
                         .Build(conditionBuilderContext, property);
                     right = conditionBuilderContext.ToExpression(condition.Right);
                 }
+                else if (condition.Right is Property reversedProperty)
+                {
+                    //the query compared a value with a property (`where[10<x.Int]`); the property is
+                    //what gives the compared type away, so it is built first
+                    var conditionBuilderContext = new ArithmeticComparisonConditionBuilderContext(context);
+                    right = converterFactory.GetToExpressionConverterFor<Property>()
+                        .Build(conditionBuilderContext, reversedProperty);
+                    left = conditionBuilderContext.ToExpression(condition.Left);
+                }
                 else if (condition.Left is EntityLeaf)
                 {
                     var conditionBuilderContext = new ArithmeticComparisonConditionBuilderContext(context)
@@ -108,17 +108,27 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
                     throw new ConditionElementMustHaveLeftAndRightException();
                 }
 
-                return condition.Comparison?.Comparison switch
+                var comparison = condition.Comparison?.Comparison ??
+                                 throw new ComparisonConditionMustHaveComparisonTokenException();
+
+                try
                 {
-                    null => throw new ComparisonConditionMustHaveComparisonTokenException(),
-                    Equality => Expression.Equal(left, right),
-                    GreaterOrEqualThan => Expression.GreaterThanOrEqual(left, right),
-                    GreaterThan => Expression.GreaterThan(left, right),
-                    Inequality => Expression.NotEqual(left, right),
-                    LessThan => Expression.LessThan(left, right),
-                    LessOrEqualThan => Expression.LessThanOrEqual(left, right),
-                    _ => throw new ArgumentOutOfRangeException()
-                };
+                    return comparison switch
+                    {
+                        Equality => Expression.Equal(left, right),
+                        GreaterOrEqualThan => Expression.GreaterThanOrEqual(left, right),
+                        GreaterThan => Expression.GreaterThan(left, right),
+                        Inequality => Expression.NotEqual(left, right),
+                        LessThan => Expression.LessThan(left, right),
+                        LessOrEqualThan => Expression.LessThanOrEqual(left, right),
+                        _ => throw new ComparisonConditionMustHaveComparisonTokenException()
+                    };
+                }
+                catch (Exception e) when (e is InvalidOperationException or ArgumentException)
+                {
+                    //the two sides have no comparison operator in common, i.e. `where[x.Name==x.Int]`
+                    throw new ComparisonOperandTypesCannotBeComparedException(left.Type, right.Type);
+                }
             }
 
             if (condition.IsFlagCheck)

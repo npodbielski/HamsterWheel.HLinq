@@ -276,7 +276,7 @@ partial class DefaultConverterUnitTests
             { DateTime.MaxValue, false },
             { DateTime.Now, true }
         };
-    
+
     public static TheoryData<DateTime, bool> DateTimeData =>
         new()
         {

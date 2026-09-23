@@ -1,3 +1,3 @@
 namespace HamsterWheel.HLinq.Tokens;
 
-public abstract class MemberAccess: TokenBase;
+public abstract class MemberAccess : TokenBase;

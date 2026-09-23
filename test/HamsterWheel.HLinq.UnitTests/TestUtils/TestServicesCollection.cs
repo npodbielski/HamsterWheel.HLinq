@@ -21,6 +21,7 @@ public class TestServicesCollection
     {
         var servicesCollection = new ServiceCollection();
         HLinqCore.ConfigureServices(servicesCollection, new HLinqOptions());
+        servicesCollection.AddSingleton<GrammarValidator>();
         return servicesCollection.BuildServiceProvider();
     }
 }

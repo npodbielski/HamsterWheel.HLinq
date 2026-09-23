@@ -51,7 +51,7 @@ public class HLinqQuery<T> : IHLinqQuery
 
         if (Children.All(t => t is not CountRoot) && Children.LastOrDefault() is not TakeRoot)
         {
-            Children = [..Children, new TakeRoot()];
+            Children = [.. Children, new TakeRoot()];
         }
 
         return QueryApplier?.Apply(queryable, this, token);

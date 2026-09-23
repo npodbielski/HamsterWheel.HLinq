@@ -2,7 +2,7 @@ using HamsterWheel.HLinq.Pipeline.Tokenizer;
 
 namespace HamsterWheel.HLinq.Tokens.Filtering;
 
-public sealed class RightCircleBracket: TokenBase
+public sealed class RightCircleBracket : TokenBase
 {
     public sealed class Possibility(IGrammar grammar) : TokenPossibility<RightCircleBracket>(grammar, ")")
     {

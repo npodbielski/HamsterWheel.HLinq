@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Linq.Expressions;
-using AutoFixture.Xunit2;
+using AutoFixture.Xunit3;
 using FluentAssertions;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tree.Filtering;

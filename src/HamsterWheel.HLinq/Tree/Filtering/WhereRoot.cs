@@ -26,7 +26,7 @@ public sealed class WhereRoot(IToken[] tokens) : TreeBranch(tokens), IWhereRoot
             };
 
         public override IToken[] ExampleTokens { get; } =
-            [Where.Empty, LeftSquareBracket.Empty, ..Condition.Parser.ConditionExampleTokens, RightSquareBracket.Empty];
+            [Where.Empty, LeftSquareBracket.Empty, .. Condition.Parser.ConditionExampleTokens, RightSquareBracket.Empty];
 
         protected override void FinishImpl(IParsingContext context)
         {

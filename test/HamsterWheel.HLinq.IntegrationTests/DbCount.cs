@@ -16,7 +16,7 @@ partial class DbDataTests
         //assert
         response.Should().Be(Persons.Count());
     }
-    
+
     [Theory]
     [InlineData(1)]
     [InlineData(2)]

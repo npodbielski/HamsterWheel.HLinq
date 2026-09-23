@@ -18,9 +18,9 @@ public class DemoFixture : IAsyncLifetime
 
     public HttpClient Client { get; private set; } = null!;
 
-    private DemoTestHost DemoTestHost { get; set; } = null!;
+    internal DemoTestHost DemoTestHost { get; set; } = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         PgSqlFixture = new PostGreSqlFixture(this, ConnectionString);
         await PgSqlFixture.InitializeAsync();
@@ -30,7 +30,7 @@ public class DemoFixture : IAsyncLifetime
         Client = DemoTestHost.CreateClient();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await DemoTestHost.DisposeAsync();
         await PgSqlFixture.DisposeAsync();
