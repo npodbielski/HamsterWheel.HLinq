@@ -85,6 +85,22 @@ partial class MemoryDataTests
         response.Should().BeEquivalentTo(Superhero.Superheroes.Where(x => x.RealName == null));
     }
 
+    [Theory]
+    [InlineData("where[x.Name==\"Wonder Woman\"]", 1)]
+    [InlineData("where[x.Name==\"Kowalski, Jan\"]", 0)]
+    public async Task WhenQuotedValueHoldsDelimiters_ThenCanFilter(string query, int expectedCount)
+    {
+        //act
+        var response = await fixture.Client.GetAsync($"/demo/memory?{query}");
+
+        //assert - a quoted value is filtered on, not rejected for containing a comma or a `]`
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var data =
+            await response.Content.ReadFromJsonAsync<Superhero[]>(ResponseHLinqClientQueryBuilder
+                .DefaultJsonSerializerOptions);
+        data.Should().HaveCount(expectedCount);
+    }
+
     [Fact]
     public async Task WhenGuidProperty_ThenCanFilter()
     {

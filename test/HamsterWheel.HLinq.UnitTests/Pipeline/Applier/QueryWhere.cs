@@ -315,6 +315,33 @@ partial class HLinqQueryApplierUnitTests
     }
 
     [Theory]
+    [InlineAutoData("Kowalski, Jan", "Kowalski, Jan", 1)]
+    [InlineAutoData("Kowalski, Jan", "Nowak, Adam", 0)]
+    [InlineAutoData("a..b", "a..b", 1)]
+    [InlineAutoData("a]b", "a]b", 1)]
+    public void Apply_WhenQuotedValueHoldsDelimiters_ThenCanApply(
+        string actualName, string searchedName, int expectedCount, DummyEntity entity)
+    {
+        //arrange
+        entity.Name = actualName;
+        var queryString = $"where[x.Name==\"{searchedName}\"]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
+        var tokens = _tokenizer.Tokenize(queryString);
+        _parser.Parse(hlinqQuery, tokens);
+        var queryable = new[] { entity }.AsQueryable();
+
+        //act
+        var actual = _sut.Apply(queryable, hlinqQuery);
+
+        //assert
+        actual.Should().BeOfType<object[]>();
+        ((object[])actual).Should().HaveCount(expectedCount);
+    }
+
+    [Theory]
     [AutoData]
     public void Apply_WhenValueComparedWithDateReversed_ThenCanApply(DummyEntity[] entities)
     {

@@ -1,4 +1,4 @@
-# Plan: Root-aware grammar (`=` renames in select, compares in where)
+# Plan: Root-aware grammar (a token knows the clause it stands in)
 
 Closes #1 (reverse comparison, `where[10<x.Int]`). Retires the `Assignment`
 next-character workaround. Ambiguous member names (#9) are designed in
@@ -6,9 +6,9 @@ next-character workaround. Ambiguous member names (#9) are designed in
 
 ## Goal
 
-Make the grammar aware of the clause (root) a token stands in, so one character can
-belong to different tokens in different clauses: `=` is the rename of
-`select[FullName=x.Name]` and the comparison of `where[x.Int=10]`. The tokenizer must
+Make the grammar aware of the clause (root) a token stands in, so a keyword can be legal in
+one clause and not in another: `=` is the rename of `select[FullName=x.Name]` and no token at
+all anywhere else, `==` compares in every clause except a select one. The tokenizer must
 not change shape — still one forward window walk, no backtracking, no peeking at
 syntax (AGENTS.md). A clause root is just another token in the token list the
 adjacency rules already receive; nothing looks ahead at surrounding syntax.
@@ -110,9 +110,9 @@ types, where it used to be an unmapped `InvalidOperationException` from `Express
 | query | before | after |
 |---|---|---|
 | `where[x.Name==test]`, `where[Name==5]`, `select[FullName=x.Name]` | works | works, unchanged |
-| `where[x.Int=10]` | tokenizer: unknown token | `Equality` — compares |
+| `where[x.Int=10]` | tokenizer: unknown token | tokenizer: unknown token, for the grammar reason of §3b instead of the `=`/`==` hack |
 | `where[2=x.Int]`, `where[10<x.Int]` | parser: reverse comparison is invalid | filters (closes #1) |
-| `where[1=1]` | `Assignment`, parser rejects | `Equality`, condition builder rejects it (two values, no property) with a message that says so |
+| `where[1=1]` | `Assignment`, parser rejects | tokenizer: unknown token (`=` is not a token in a where clause) |
 | `select[x.Name==test]` | tokenized, parser rejects | tokenizer: unknown token (no comparison inside select) |
 | `where[x.Name==x.Int]` | compared the text `x.Int` silently | two property paths compared; incompatible types report `ComparisonOperandTypesCannotBeComparedException` instead of an unmapped one |
 | `where[x.Int=>5]`, `where[x]`, `orderBy[x\r\n.Name]` | tokenizer: unknown token | read as values, rejected while parsing (as `where[x.Int> =5]` already was) |

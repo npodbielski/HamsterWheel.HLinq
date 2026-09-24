@@ -71,6 +71,9 @@ public static class TokenizerSnapshotData
             ("select[Directory=\\\\", nameof(HLinqTokenizer.UnknownTokenException), null),
             ("select[Directory=test,x.id]", null, [Select, LeftSquareBracket, NameOrValue("Directory"), Assignment, NameOrValue("test"), Comma, Entity(), Dot, Prop("id"), RightSquareBracket]),
             ("select[Directory=test]", null, [Select, LeftSquareBracket, NameOrValue("Directory"), Assignment, NameOrValue("test"), RightSquareBracket]),
+            //a value that starts with a quote is quoted: the comma is its text, the comma after the closing quote is the list separator
+            ("select[FullName=\"Kowalski, Jan\",x.Id]", null, [Select, LeftSquareBracket, NameOrValue("FullName"), Assignment, NameOrValue("\"Kowalski, Jan\""), Comma, Entity(), Dot, Prop("Id"), RightSquareBracket]),
+            ("select[FullName=\"Kowalski, Jan]", nameof(HLinqTokenizer.UnknownTokenException), null),
             ("select[Mode=x.Name]", null, [Select, LeftSquareBracket, NameOrValue("Mode"), Assignment, Entity(), Dot, Prop("Name"), RightSquareBracket]),
             ("select[Number=1.2323]", null, [Select, LeftSquareBracket, NameOrValue("Number"), Assignment, NameOrValue("1.2323"), RightSquareBracket]),
             ("select[Number=1]", null, [Select, LeftSquareBracket, NameOrValue("Number"), Assignment, NameOrValue("1"), RightSquareBracket]),
@@ -197,6 +200,16 @@ public static class TokenizerSnapshotData
             ("where[x.Name.NoMethod(n)]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Dot, MethodName("NoMethod"), LeftCircleBracket, NameOrValue("n"), RightCircleBracket, RightSquareBracket]),
             ("where[x.Name.StartsWith(t)]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Dot, MethodName("StartsWith"), LeftCircleBracket, NameOrValue("t"), RightCircleBracket, RightSquareBracket]),
             ("where[x.Name==']']", nameof(HLinqTokenizer.UnknownTokenException), null),
+            //a value that starts with a quote holds every delimiter until its closing quote - a name
+            //cannot hold a comma, a space, a `..` or a `]`, so the quotes decide it is a value
+            ("where[x.Name==\"a,b\"]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("\"a,b\""), RightSquareBracket]),
+            ("where[x.Name==\"a..b\"]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("\"a..b\""), RightSquareBracket]),
+            ("where[x.Name==\"a]b\"]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("\"a]b\""), RightSquareBracket]),
+            ("where[x.Name==\"a,b\"&&x.Int>5]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("\"a,b\""), And, Entity(), Dot, Prop("Int"), GreaterThan, NameOrValue("5"), RightSquareBracket]),
+            //a quote that opens a value and never closes it is not a token
+            ("where[x.Name==\"a,b]", nameof(HLinqTokenizer.UnknownTokenException), null),
+            //a quote that opens inside a value is text, as it always was
+            ("where[x.Name==say \"hi]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("say \"hi"), RightSquareBracket]),
             ("where[x.Name==x.Int]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, Entity(), Dot, Prop("Int"), RightSquareBracket]),
             ("where[x.Name==xander]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("xander"), RightSquareBracket]),
             ("where[x.Name==John Doe]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("John Doe"), RightSquareBracket]),

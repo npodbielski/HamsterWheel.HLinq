@@ -32,6 +32,8 @@ partial class MemoryDataTests
     [InlineData("select[x.Name==test]")]
     [InlineData("where[1=1]")]
     [InlineData("where[x.FirstName==x.Id]")]
+    //a quote that opens a value never closes, so the query holds no value to parse
+    [InlineData("where[x.Name==\"Kowalski, Jan]")]
     public async Task WhenMalformedQuery_ThenReturns400(string query)
     {
         //act

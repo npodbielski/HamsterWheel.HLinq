@@ -1,7 +1,7 @@
 # Plan: Member resolution (a query that matches two members picks one, and says which)
 
 Designs #9 (ambiguous property / method names). Follows from the root-aware grammar plan:
-`plans/root-aware-grammar.md` made the grammar say what a character means; this makes the
+`plans/done/root-aware-grammar.md` made the grammar say what a character means; this makes the
 reflection layer say which member a name means.
 
 ## Goal

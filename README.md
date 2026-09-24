@@ -246,6 +246,14 @@ Constant values do not need to be quoted. If you are looking for a person with t
 GET /data?where[x.firstName==John Doe]
 ```
 
+A value that holds a character the query language itself uses - `,`, `]`, `(`, `==`, `..` - is written in double quotes, and then everything between them is the value:
+```http request
+GET /data?where[x.Name==Kowalski, Jan]            // `,` ends a value, so this is not one query
+GET /data?where[x.Name=="Kowalski, Jan"]          // one value: Kowalski, Jan
+GET /data?select[FullName="Kowalski, Jan",x.Id]   // the comma in quotes is text, the next one ends the list item
+```
+Quotes say *value* and nothing else: a property name can never hold a comma or a space, because a C# identifier cannot, so a quote is what tells a value apart from a name. There is no escape character and no escaping rule - only a value that *starts* with `"` is quoted, which is why `where[x.Name==say "hi"]` still works, and a quote that opens a value and never closes it is a parse error.
+
 ### White space management
 White space is not important in HLinq. You can almost use any white space you want. It is mostly ignored by the parser, except for constant values provided by the user. 
 For example, leading or trailing white space before or after the root is allowed.
