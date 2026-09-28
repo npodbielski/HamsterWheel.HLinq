@@ -33,6 +33,8 @@ internal static class HLinqCore
         }
 
         services.AddSingleton<INullKeyword, NullKeyword>();
+        services.AddSingleton<ICultureParameterKeyword, CultureParameterKeyword>();
+        services.AddSingleton<IHLinqQueryParameters, HLinqQueryParameters>();
 
         //parsers
         foreach (var ep in GetTypesFromAssemblyWithStatic<IElementParser>())

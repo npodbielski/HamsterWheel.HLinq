@@ -17,6 +17,13 @@ public class HLinqQuery<T> : IHLinqQuery
     public ITreeElement[] Children { get; private set; } = [];
     public Type ItemType { get; } = typeof(T);
     public string SourceQueryString { get; internal init; } = null!;
+
+    /// <summary>
+    ///     The culture the request asked for, as it named it: the first value of the culture parameter,
+    ///     null when the request did not carry one. Read by the binder, so that it is known before a
+    ///     single clause is interpreted and no matter where in the request it stood.
+    /// </summary>
+    public string? Culture { get; internal init; }
     public bool NoChildren => Children.Length == 0;
 
     /// <summary>
@@ -70,27 +77,32 @@ public class HLinqQuery<T> : IHLinqQuery
     }
 
     /// <summary>
-    /// Used via Asp.Net controllers and Minimal APIs endpoint binders to parse query string into instance of <see cref="HLinqQuery{T}"/> 
+    /// Used via Asp.Net controllers and Minimal APIs endpoint binders to parse query string into instance of <see cref="HLinqQuery{T}"/>
+    /// Ordinary <c>name=value</c> parameters of the same request go out before the query is read, and the
+    /// culture of the request is read there, on either side of the clauses - see
+    /// <see cref="HLinqQueryParameters"/>.
     /// </summary>
     /// <param name="dependenciesBag">Instance of <see cref="HLinqBinderDependenciesBag"/> from DI</param>
     /// <param name="queryString">HTTP query string</param>
     /// <returns>Instance of <see cref="HLinqQuery{T}"/></returns>
     public static HLinqQuery<T> Parse(HLinqBinderDependenciesBag dependenciesBag, string queryString)
     {
-        queryString = HttpUtility.UrlDecode(queryString);
         if (queryString.StartsWith('?'))
         {
             queryString = queryString[1..];
         }
 
+        var request = dependenciesBag.QueryParameters.GetRequest(queryString);
+
         var hlinqQuery = new HLinqQuery<T>
         {
-            SourceQueryString = queryString,
+            SourceQueryString = request.Query,
+            Culture = request.Culture,
         };
         var parser = dependenciesBag.HLinqParser;
         var tokenizer = dependenciesBag.Tokenizer;
 
-        var tokens = tokenizer.Tokenize(queryString);
+        var tokens = tokenizer.Tokenize(request.Query);
 
         parser.Parse(hlinqQuery, tokens);
         hlinqQuery.QueryApplier = dependenciesBag.QueryApplier;

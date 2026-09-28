@@ -1,3 +1,4 @@
+using HamsterWheel.HLinq.Request;
 #if !NETSTANDARD
 using HamsterWheel.HLinq.AspNet;
 #endif
@@ -42,5 +43,7 @@ public class DummyHLinqServiceProviderFactory
 #else
         Options,
 #endif
-        Parser, Tokenizer, MethodsCache);
+        Parser, Tokenizer, MethodsCache,
+        //the tokenizer here is a substitute: nothing is parsed, so the grammar's keywords are not asked for
+        new HLinqQueryParameters([], new CultureParameterKeyword()));
 }

@@ -20,10 +20,21 @@ include:
   - project: "ci/templates"
     ref: "main"
     file: "/dotnet-inspection.yml"
+  # Release jobs (hidden .badges, .release): badge SVGs on the badge host, the
+  # git tag, the GitLab release and the public GitHub mirror.
+  - project: "ci/templates"
+    ref: "main"
+    file: "/release.yml"
+  # README gate (hidden .readme-check): badges referenced, versions in sync.
+  - project: "ci/templates"
+    ref: "main"
+    file: "/readme-check.yml"
 
 stages:
   - build
   - test
+  - badges
+  - release
   - publish
   - deploy
 
@@ -71,6 +82,7 @@ tests-unit:
     # gate to ~0.25; Demo is the demo app, not a shipped library
     COVERAGE_EXCLUDE_FILTER: "[*]*.Program [HamsterWheel.HLinq.Demo*]* [Humanizer]* [HamsterWheel.HLinq.AspNet]* [HamsterWheel.HLinq.PgSql]* [HamsterWheel.HLinq.Client]* [Testcontainers*]* [Docker.DotNet*]* [Microsoft.Net.Http.Client]*"
     DOTNET_TEST_TARGET: test/HamsterWheel.HLinq.UnitTests
+    TEST_RESULTS_DIR: ./test-results/unit
 
 # 86.4% line as of migration, default gate 0.80
 tests-netstandard:
@@ -80,6 +92,7 @@ tests-netstandard:
   variables:
     COVERAGE_EXCLUDE_FILTER: "[*]*.Program [HamsterWheel.HLinq.Demo*]* [Humanizer]* [HamsterWheel.HLinq.AspNet]* [HamsterWheel.HLinq.PgSql]* [HamsterWheel.HLinq.Client]* [Testcontainers*]* [Docker.DotNet*]* [Microsoft.Net.Http.Client]*"
     DOTNET_TEST_TARGET: test/HamsterWheel.HLinq.UnitTests.NetStandard
+    TEST_RESULTS_DIR: ./test-results/netstandard
 
 tests-integration:
   extends:
@@ -94,6 +107,51 @@ tests-integration:
     POSTGRES_HOST: postgres
     COVERAGE_EXCLUDE_FILTER: "[*]*.Program [HamsterWheel.HLinq.Demo*]* [Humanizer]* [HamsterWheel.HLinq.AspNet]* [HamsterWheel.HLinq.PgSql]* [HamsterWheel.HLinq.Client]* [Testcontainers*]* [Docker.DotNet*]* [Microsoft.Net.Http.Client]*"
     DOTNET_TEST_TARGET: test/HamsterWheel.HLinq.IntegrationTests
+    TEST_RESULTS_DIR: ./test-results/integration
+
+badges:
+  extends: .badges
+  stage: badges
+  allow_failure: true
+  variables:
+    BADGE_SLUG: hlinq
+    BADGES_SUITES: "unit=test-results/unit netstandard=test-results/netstandard integration=test-results/integration"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: on_success
+      variables:
+        BADGES_PIPELINE_STATE: passed
+
+badges-failed:
+  extends: .badges
+  stage: badges
+  allow_failure: true
+  variables:
+    BADGE_SLUG: hlinq
+    BADGES_SUITES: "unit=test-results/unit netstandard=test-results/netstandard integration=test-results/integration"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: on_failure
+      variables:
+        BADGES_PIPELINE_STATE: failed
+
+release:
+  extends: .release
+  stage: release
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+  variables:
+    GIT_DEPTH: "0"
+    BADGE_SLUG: hlinq
+    GITHUB_MIRROR_URL: "git@github.com:npodbielski/HamsterWheel.HLinq.git"
+
+readme-check:
+  extends: .readme-check
+  stage: test
+  variables:
+    BADGE_SLUG: hlinq
+    README_BADGES: "release,pipeline,tests,coverage-unit,coverage-netstandard,coverage-integration"
+    README_PACKAGE_PREFIXES: HamsterWheel.HLinq
 
 format-hlinq:
   # .dotnet: explicit restore with the group feed - without it `dotnet format`
@@ -156,6 +214,8 @@ package:
   extends:
     - .dotnet
     - .nuget-publish
+  needs:
+    - release
   rules:
     - if: $CI_COMMIT_BRANCH == "master"
       changes:

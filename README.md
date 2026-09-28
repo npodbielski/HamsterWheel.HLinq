@@ -1,4 +1,4 @@
-![Latest Release](https://internetexception.com/wp-content/uploads/hlinq-badges/release.svg) ![Status](https://internetexception.com/wp-content/uploads/hlinq-badges/pipeline.svg) ![Coverage](https://internetexception.com/wp-content/uploads/hlinq-badges/coverage.svg)
+![Latest Release](https://internetexception.com/wp-content/uploads/hlinq-badges/release.svg) ![Pipeline](https://internetexception.com/wp-content/uploads/hlinq-badges/pipeline.svg) ![Tests](https://internetexception.com/wp-content/uploads/hlinq-badges/tests.svg) ![Unit](https://internetexception.com/wp-content/uploads/hlinq-badges/coverage-unit.svg) ![Netstandard](https://internetexception.com/wp-content/uploads/hlinq-badges/coverage-netstandard.svg) ![Integration](https://internetexception.com/wp-content/uploads/hlinq-badges/coverage-integration.svg)
 
 
 # Introduction
@@ -63,7 +63,7 @@ Below you can find instructions how to get you started using HLinq on the server
 
 First, reference AspNet package:
 ```xml
-<PackageReference Include="HamsterWheel.HLinq.AspNet" Version="0.4.0" />
+<PackageReference Include="HamsterWheel.HLinq.AspNet" Version="0.12.0" />
 ```
 
 After that add initialization of HLinq:
@@ -103,7 +103,7 @@ First you need to install package and configure it inside the host. Those are si
 
 Reference AspNet package:
 ```xml
-<PackageReference Include="HamsterWheel.HLinq.AspNet" Version="0.4.0" />
+<PackageReference Include="HamsterWheel.HLinq.AspNet" Version="0.12.0" />
 ```
 
 Initialize HLinq:
@@ -285,6 +285,28 @@ Lets use demo endpoint `/demo/memory` that returns `SuperHero` type data.
 GET /demo/memory
 ```
 returns data as is, which one exception being the maximum limit of records returned (by default 1k).
+
+### Parameters of the request
+
+A request carries the clauses and the parameters of the endpoint in one query string. The parameters go out before HLinq reads it - `page`, `sort`, whatever the endpoint binds with `[FromQuery]` - HLinq neither applies them nor complains about them:
+```http request
+GET /demo/memory?page=2&where[x.Name==Superman]&sort=asc      OK, filters
+GET /demo/memory?page=2                                        OK, everything: no clause was asked
+```
+HLinq reads one parameter of its own: the culture. It is read from the request, so where it stood says nothing - a query is interpreted with one culture, whether the request named it before the clauses or after them - and the value is taken as the request wrote it, `pl` as readily as `pl-PL`:
+```http request
+GET /demo/memory?culture=pl-PL&where[x.Name==Superman]
+GET /demo/memory?where[x.Name==Superman].take[10]&culture=pl
+```
+A request that names the parameter several times is read as its first value and the rest are ignored. The word itself is replaceable per language, the way the keywords of a localized grammar are - `format=pl-PL`, `konwersja=pl-PL` - by registering an `ICultureParameterKeyword`.
+
+What is left in the string after the parameters are out has to be a query, and a bracket belongs to the query: `?wher[x.Name==Superman]&page=2` is refused instead of handing back the whole collection, and a clause cannot be dropped behind a parameter:
+```http request
+GET /demo/memory?where[x.Name==Superman].take[10]                   OK
+GET /demo/memory?where[x.Name==Superman]&take[10]                   error, `&` does not join clauses
+GET /demo/memory?where[x.Name==Superman]&culture=pl&take[10]        error, take is not dropped
+```
+The query language itself has no parameters, HLinq's own included: the tokenizer is handed the query alone, and `culture=pl-PL&where[x.Name==Superman]` is not a query to it. An `&` inside a clause - quoted or not - belongs to the clause and never splits it; a `%26` is a character of a value, not a separator.
 
 ### Paging
 

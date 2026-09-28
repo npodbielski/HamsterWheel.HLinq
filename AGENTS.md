@@ -5,6 +5,8 @@ Standard rules for AI coding agents (and humans) working in this repository.
 ## Git workflow
 
 - **Never merge a merge request without explicit approval** from the maintainer.
+  Badges, tags, releases and the public mirror are the pipeline's job (see
+  *Pipeline*); no release step is done by hand.
   Push the branch, open the MR with `glab`, monitor the pipeline until it is
   green — then stop and wait for review.
 - **Never push directly to `master`.** All changes go through merge requests
@@ -47,6 +49,23 @@ Flow: `feature branch` → MR → `master` (merged only after maintainer approva
 - `build` — `dotnet build HLinq.slnx` (libraries multi-target net10.0 + netstandard2.0)
 - `tests` — unit + integration tests (postgres CI service, `POSTGRES_HOST` env var)
 - `package-alpha` / `package` — pack & push from `alpha` / `master` branches
+- `badges` + `badges-failed` — publish the README's badge SVGs from the suites'
+  own report files. Two instances of one template job: the badge states the
+  pipeline outcome, a pipeline is `running` while its own jobs run, and a rules
+  list applies only its **first** match. `allow_failure` — a report must not
+  block a release, nor make its sibling instance look like a broken build.
+- `release` — tag, GitLab release and one synthetic commit on the public GitHub
+  mirror, for the version in `Nuget.props`. It runs on every green master
+  pipeline and publishes only the build its tag names, so commits that land
+  after a release wait for the next bump; `GIT_DEPTH: "0"` because the tag
+  anchor walks the merged history. `package` `needs:` this job: a version must
+  not reach nuget.org untagged.
+- `readme-check` — fails an MR whose README references a badge the pipeline does
+  not write, or whose own-package `Version=` snippets disagree with `Nuget.props`.
+- Each test job writes its own `TEST_RESULTS_DIR`. Jobs that share a directory
+  write the same `rspec.xml` / `coverage.cobertura.*.xml`, and a later job that
+  downloads every test job's artifacts into one workspace keeps only the last
+  extraction.
 
 ## Definition of done (before pushing)
 
