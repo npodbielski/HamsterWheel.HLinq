@@ -12,6 +12,7 @@ public sealed class InitializerConstantValue(IToken[] tokens) : TreeLeaf(tokens)
 {
     public NameOrValue ValueToken => Tokens.OfType<NameOrValue>().First();
 
+    // ReSharper disable once UnusedType.Global - Used by Parser
     public sealed class Parser : ElementParserBase<InitializerConstantValue>
     {
         public override IToken[] ExampleTokens { get; } = [NameOrValue.Empty];
@@ -23,6 +24,7 @@ public sealed class InitializerConstantValue(IToken[] tokens) : TreeLeaf(tokens)
                 : null;
     }
 
+    // ReSharper disable once UnusedType.Global - Used by Applier
     public sealed class Converter(IDefaultConverter defaultConverter)
         : ElementToExpressionConverter<InitializerConstantValue>
     {
@@ -31,7 +33,7 @@ public sealed class InitializerConstantValue(IToken[] tokens) : TreeLeaf(tokens)
             var propertyType = (context as InitializerPropertyAssignmentBuilderContext)?.InitializerPropertyType ??
                                throw new InitializerPropertyTypeNotInitializedException();
             var value = element.ValueToken.GetValue(context.HLinqQuery);
-            return Expression.Constant(defaultConverter.ConvertTo(propertyType, value));
+            return Expression.Constant(defaultConverter.ConvertTo(propertyType, value, context.Culture));
         }
 
         private class InitializerPropertyTypeNotInitializedException()

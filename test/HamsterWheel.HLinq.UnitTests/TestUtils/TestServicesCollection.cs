@@ -9,11 +9,12 @@ namespace HamsterWheel.HLinq.UnitTests.TestUtils;
 public class TestServicesCollection
 {
     public IServiceProvider Provider { get; } = CreateDefault();
-    private IElementParser[] CoreParsers => Provider.GetServices<IElementParser>().ToArray();
+    private IElementParser[] CoreParsers => [.. Provider.GetServices<IElementParser>()];
     public IElementParser[] Parsers => CoreParsers;
     public IConverterFactory ConverterFactory => Provider.GetRequiredService<IConverterFactory>();
     public HLinqBinderDependenciesBag BinderDependenciesBag => Provider.GetRequiredService<HLinqBinderDependenciesBag>();
-    public IHLinqTokenPossibility[] TokenPossibilities => Provider.GetServices<IHLinqTokenPossibility>().ToArray();
+    public IHLinqWord[] TokenWords => [.. Provider.GetServices<IHLinqWord>()];
+    public IHLinqTokenizer Tokenizer => Provider.GetRequiredService<IHLinqTokenizer>();
     public IMethodsCache MethodsCache => Provider.GetRequiredService<IMethodsCache>();
     public IPropertiesCache PropertiesCache => Provider.GetRequiredService<IPropertiesCache>();
 
@@ -21,7 +22,6 @@ public class TestServicesCollection
     {
         var servicesCollection = new ServiceCollection();
         HLinqCore.ConfigureServices(servicesCollection, new HLinqOptions());
-        servicesCollection.AddSingleton<GrammarValidator>();
         return servicesCollection.BuildServiceProvider();
     }
 }

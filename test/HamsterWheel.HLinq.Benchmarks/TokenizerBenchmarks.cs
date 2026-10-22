@@ -6,8 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace HamsterWheel.HLinq.Benchmarks;
 
 /// <summary>
-///     Tokenizer-only benchmarks. The baseline lives in benchmarks/; tokenizer changes
-///     re-run this and commit a diff of the tables.
+/// Tokenizer-only benchmarks. The baseline lives in benchmarks/; tokenizer changes
+/// re-run this and commit a diff of the tables.
 /// </summary>
 [ShortRunJob]
 [MemoryDiagnoser]

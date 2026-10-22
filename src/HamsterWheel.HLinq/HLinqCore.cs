@@ -16,20 +16,20 @@ namespace HamsterWheel.HLinq;
 internal static class HLinqCore
 {
     private static TypeInfo[] GetTypesFromAssemblyWithStatic<T>() =>
-        typeof(HLinqCore).Assembly.DefinedTypes
-            .Where(t => !t.IsAbstract && t.ImplementedInterfaces.Contains(typeof(T)))
-            .ToArray();
+    [
+        .. typeof(HLinqCore).Assembly.DefinedTypes
+            .Where(t => t is { IsAbstract: false, IsGenericTypeDefinition: false } &&
+                        t.ImplementedInterfaces.Contains(typeof(T)))
+    ];
 
     public static void ConfigureServices(IServiceCollection services, HLinqOptions options)
     {
         services.AddSingleton<IHLinqOptions>(options);
 
-        //tokens
         services.AddSingleton<IGrammar, Grammar>();
-        services.AddSingleton<GrammarDependencies>();
-        foreach (var tp in GetTypesFromAssemblyWithStatic<IHLinqTokenPossibility>())
+        foreach (var tp in GetTypesFromAssemblyWithStatic<IHLinqWord>())
         {
-            services.AddSingleton(typeof(IHLinqTokenPossibility), tp);
+            services.AddSingleton(typeof(IHLinqWord), tp);
         }
 
         services.AddSingleton<INullKeyword, NullKeyword>();

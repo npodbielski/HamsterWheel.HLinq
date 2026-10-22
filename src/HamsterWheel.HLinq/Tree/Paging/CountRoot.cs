@@ -1,3 +1,4 @@
+using System.Globalization;
 using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Reflection;
@@ -10,6 +11,7 @@ public sealed class CountRoot(IToken[] tokens) : TreeBranch(tokens)
 {
     public override bool NoChildren => true;
 
+    // ReSharper disable once UnusedType.Global - Used by Parser
     public sealed class Parser : ElementParserBase<CountRoot>
     {
         public override IToken[] ExampleTokens { get; } =
@@ -29,15 +31,16 @@ public sealed class CountRoot(IToken[] tokens) : TreeBranch(tokens)
         }
     }
 
+    // ReSharper disable once UnusedType.Global - Used by Applier
     public sealed class Applier(IMethodsCache methodsCache) : RootApplierBase<CountRoot>
     {
         protected override IQueryableContext ApplyImpl(IQueryableContext context, CountRoot where,
-            string hLinqQuery)
+            string hLinqQuery, CultureInfo culture)
         {
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Count),
                 infos => infos.Length == 1, context.CurrentResultType);
 
-            return new QueryableContext(null, typeof(int), (int)method.Invoke(null, [context.Queryable])!);
+            return context.Next(null, typeof(int), (int)method.Invoke(null, [context.Queryable])!);
         }
     }
 }

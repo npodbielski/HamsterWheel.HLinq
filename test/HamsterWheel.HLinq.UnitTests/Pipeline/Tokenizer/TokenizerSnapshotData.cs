@@ -214,6 +214,20 @@ public static class TokenizerSnapshotData
             ("where[x.Name==\"a,b]", nameof(HLinqTokenizer.UnknownTokenException), null),
             //a quote that opens inside a value is text, as it always was
             ("where[x.Name==say \"hi]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("say \"hi"), RightSquareBracket]),
+            //a quoted value closes at the quote after which a delimiter follows, so a quote the
+            //value is searched for is written as the pair that closes it - `"Rock""` is `Rock"`
+            ("where[x.Name==\"Rock\"\"]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("\"Rock\"\""), RightSquareBracket]),
+            ("where[x.Name==\"\"\"]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("\"\"\""), RightSquareBracket]),
+            //quotes inside a quoted value that a letter or a space follows are its text
+            ("where[x.Name==\"a\"b\"c\"]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("\"a\"b\"c\""), RightSquareBracket]),
+            ("where[x.Name==\"John \"The Rock\" Stone\"]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("\"John \"The Rock\" Stone\""), RightSquareBracket]),
+            //the closing quote is where a delimiter follows it, so a quoted value holding quotes
+            //still ends the clause and lets a conjunction continue it
+            ("where[x.Name==\"Rock\"&&x.Id==1]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("\"Rock\""), And, Entity(), Dot, Prop("Id"), Equality, NameOrValue("1"), RightSquareBracket]),
+            //a value ending in a quote continues the conjunction after the pair: the value
+            //commits at the second quote, the one the `&` of the conjunction follows
+            ("where[x.Name==\"Rock\"\"&&x.Id==1]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("\"Rock\"\""), And, Entity(), Dot, Prop("Id"), Equality, NameOrValue("1"), RightSquareBracket]),
+            ("where[x.Name==\"a\"\"b\"]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("\"a\"\"b\""), RightSquareBracket]),
             ("where[x.Name==x.Int]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, Entity(), Dot, Prop("Int"), RightSquareBracket]),
             ("where[x.Name==xander]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("xander"), RightSquareBracket]),
             ("where[x.Name==John Doe]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("John Doe"), RightSquareBracket]),

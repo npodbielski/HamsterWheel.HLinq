@@ -77,6 +77,48 @@ partial class HLinqTokenizerUnitTests
     }
 
     [Fact]
+    public void Tokenize_WhenStaticMethodIsLeftComparisonOperand_CanParse()
+    {
+        const string query = "where[Reverse(x.Name)==abc]";
+        var tokens = _sut.Tokenize(query);
+
+        tokens.Should().HaveSequenceOf(query, [
+            Where,
+            LeftSquareBracket,
+            MethodName("Reverse"),
+            LeftCircleBracket,
+            Entity(),
+            Dot,
+            Prop("Name"),
+            RightCircleBracket,
+            Equality,
+            NameOrValue("abc"),
+            RightSquareBracket
+        ]);
+    }
+
+    [Fact]
+    public void Tokenize_WhenStaticMethodIsRightComparisonOperand_CanParse()
+    {
+        const string query = "where[abc==Reverse(x.Name)]";
+        var tokens = _sut.Tokenize(query);
+
+        tokens.Should().HaveSequenceOf(query, [
+            Where,
+            LeftSquareBracket,
+            NameOrValue("abc"),
+            Equality,
+            MethodName("Reverse"),
+            LeftCircleBracket,
+            Entity(),
+            Dot,
+            Prop("Name"),
+            RightCircleBracket,
+            RightSquareBracket
+        ]);
+    }
+
+    [Fact]
     public void Tokenize_WhenHaveMethodWith2Params_CanParse()
     {
         const string query = "where[x.Name.Contains(test,StringComparison.InvariantCultureIgnoreCase)]";

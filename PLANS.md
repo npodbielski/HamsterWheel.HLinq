@@ -1,11 +1,15 @@
 # Plans
 
-Open plans in this repo (`plans/`); completed plans move to `plans/done/`.
+Open plans in this repo (`plans/`); completed plans move to `plans/done/`. A plan is complete when
+everything it designs is merged into `alpha` - a release is not part of a plan, and a plan does not wait
+for one.
 
 | Plan | Status |
 |---|---|
 | [`take[10..20]` range paging syntax](plans/done/take-range-syntax.md) | ✅ done - shipped in 0.7.0 (!17, !18, !19, closes #8) - note: S1 grammar sketch superseded by !20 (RangeOperator matches `10..` with its number) |
 | [Grammar rules & span-matching tokenizer](plans/done/grammar-rules.md) | ✅ done - closed #4 (+ #11) in 0.9.0 (!24) and 0.10.0 (!25); S5 follow-ups (#7, #5, #1) are separate plans |
 | [Root-aware grammar](plans/done/root-aware-grammar.md) | ✅ done - shipped in 0.11.0 (!32, closes #1): tokens are scoped to their clause, the `=` next-character workaround is gone, reverse comparison and property-vs-property comparison work - note: the revision where a single `=` also compared outside `select` was reverted before merge, see §3b |
-| [Culture info](plans/culture-info.md) | 🚧 in progress - quoting shipped in 0.11.1 (!35) and parameters beside clauses in !36; decided that the grammar stays culture-free (`,` is always the list separator, an ambiguous value is quoted) and a request carries its own culture - S1 styles, S3 quoted values reaching their type, S4 the switch still to build (#5, shared with #7) |
-| [Member resolution](plans/member-resolution.md) | 📝 designed - a name matching two members picks the better candidate and reports it (#9) |
+| [Culture info](plans/done/culture-info.md) | ✅ done - quoting in 0.11.1 (!35), parameters beside clauses in !36, the number grammar and quoted values reaching their type in 0.12.1, the culture of a request and the words of a language (!44, !47, and the pack `HamsterWheel.HLinq.Lang.Pl` with one `AddPolishToHLinq()` call): `CultureInfo` reaches the converters, any culture the runtime knows is a culture of a query, `gdzie` stands beside `where` - while the *shape* of the grammar stays culture-free (`,` is always the list separator, an ambiguous value is quoted) and the entity alias `x` is never translated (#5 closed; #7, the root alias and the grammar-derived error message each wait in a plan of their own) |
+| [Member resolution](plans/done/member-resolution.md) | ✅ done - in `alpha`: the ranking (!49), the report on `X-HLinq-Warning` and in the log (!52), the client repeating what a response warned about (!54) - one resolution step answers which member a name of a query means and says which rule decided (bindable at all, cheapest conversion, spelled as the query wrote it, declared rather than inherited, ordinal last), and the one answer no rule decided - the ordinal tie - is said out loud. Closes #9; the release that carries it is undated and was never part of the design |
+| [Provider packs: MySQL, MariaDB and SQLite](plans/done/issue-18-provider-packs.md) | ✅ done - in `alpha`: three packages, each with its own `Add...ToHLinq()` call (!65), and the surface a query reaches in each of them recorded by `ProviderFunctionSurfaceUnitTests` and written out per engine in `docs/db-functions/` (!67). Closes #18 and #13; the release that carries the packs is undated |
+| [Grouping](plans/grouping.md) | open - `groupBy[x.Status]` answers a dictionary of arrays, a `select` after it works on a row with `x.Key` added to what a name resolves to, and paging after it works on groups. Measured against the provider: the shape that translates is key-plus-rows in one projection, so the groups are made by the server - aggregates are a separate plan, the SQL is there and the syntax is not |

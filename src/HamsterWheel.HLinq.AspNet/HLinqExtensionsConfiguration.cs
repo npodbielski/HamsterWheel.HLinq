@@ -1,3 +1,4 @@
+using System.Globalization;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Tokenizer;
 using HamsterWheel.HLinq.Tokens;
@@ -8,10 +9,30 @@ public class HLinqExtensionsConfiguration
 {
     public List<Action<IServiceCollection>> CustomServices { get; } = [];
 
-    public void AddTokenPossibility<T>() where T : class, IHLinqTokenPossibility =>
-        CustomServices.Add(s => s.AddSingleton<IHLinqTokenPossibility, T>());
+    /// <summary>
+    /// Allows to add custom word to the grammar.
+    /// </summary>
+    public void AddWord<T>() where T : class, IHLinqWord =>
+        CustomServices.Add(s => s.AddSingleton<IHLinqWord, T>());
 
-    public void OverWriteTokenPossibility<TPossibility, TToken>() where TPossibility : class, IHLinqTokenPossibility
+    /// <summary>
+    /// The same word, named the way a request names its culture.
+    /// </summary>
+    public void AddTranslatedKeyword<TToken>(CultureInfo culture, string keyword) where TToken : TokenBase, new()
+        => CustomServices.Add(s =>
+            s.AddSingleton<IHLinqWord>(new KeywordWord<TToken>(keyword, culture)));
+
+    /// <summary>
+    /// The same word, named the way a request names its culture.
+    /// </summary>
+    public void AddTranslatedKeyword<TToken>(string culture, string keyword) where TToken : TokenBase, new() =>
+        AddTranslatedKeyword<TToken>(CultureInfo.GetCultureInfo(culture), keyword);
+
+    /// <summary>
+    /// A word taking the place of the word a token spells itself with, instead of standing next
+    /// to it: the word registered here is the only one left that spells the token, in every language.
+    /// </summary>
+    public void OverWriteWord<TWord, TToken>() where TWord : class, IHLinqWord
     {
         CustomServices.Add(s =>
         {
@@ -23,18 +44,12 @@ public class HLinqExtensionsConfiguration
                 }
 
                 var baseType = sd.ImplementationType?.BaseType;
-                return baseType?.GetGenericTypeDefinition() == typeof(TokenPossibility<>)
+                return baseType?.GetGenericTypeDefinition() == typeof(TokenWord<>)
                        && baseType.GenericTypeArguments[0] == typeof(TToken);
             });
             s.Remove(originalImplementation);
-            s.AddSingleton<IHLinqTokenPossibility, TPossibility>();
+            s.AddSingleton<IHLinqWord, TWord>();
         });
-    }
-
-    public void RemoveService<T>(IServiceCollection s) where T : class
-    {
-        var originalImplementation = s.First(sd => sd.ServiceType == typeof(T));
-        s.Remove(originalImplementation);
     }
 
     public void AddDbFunctions<T>() where T : class, IStaticMethodSource =>

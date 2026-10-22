@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace HamsterWheel.HLinq.Data.Converters;
 
 public class CustomTypeCombinationsConverter : IConfigurableValueConverter
@@ -25,8 +27,8 @@ public class CustomTypeCombinationsConverter : IConfigurableValueConverter
 #endif
         };
 
-    public bool CanConvert(object? value, Type to) =>
-        value is not null && CustomConversions.ContainsKey((value.GetType(), to));
-
-    public object? ConvertTo(object? value, Type to) => CustomConversions[(value!.GetType(), to)](value);
+    public (bool success, object? result) TryConvert(object? value, Type to, CultureInfo? culture = null) =>
+        value is not null && CustomConversions.TryGetValue((value.GetType(), to), out var convert)
+            ? (true, convert(value))
+            : (false, null);
 }

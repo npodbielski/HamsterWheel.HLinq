@@ -1,5 +1,6 @@
 using HamsterWheel.HLinq.AspNet.Binder;
 using HamsterWheel.HLinq.AspNet.ExceptionHandlers;
+using HamsterWheel.HLinq.Diagnostics;
 
 namespace HamsterWheel.HLinq.AspNet;
 
@@ -12,21 +13,23 @@ public static class AspNetInstaller
         configure?.Invoke(configuration);
 
         serviceCollection.AddExceptionHandler<HLinqQueryExceptionHandler>();
-        serviceCollection.AddSingleton<IHLinqOptions>(new HLinqOptions
+        var hlinqOptions = new HLinqOptions
         {
-            HttpDefaultMaxTakeRecords = configuration.HLinqOptions.HttpDefaultMaxTakeRecords
-        });
-        serviceCollection.AddControllers(options =>
-        {
-            options.ModelBinderProviders.Insert(0, new HLinqQueryBinderProvider());
-        });
+            HttpDefaultMaxTakeRecords = configuration.HLinqOptions.HttpDefaultMaxTakeRecords,
+            EmitWarnings = configuration.HLinqOptions.EmitWarnings
+        };
 
-        HLinqCore.ConfigureServices(serviceCollection, new HLinqOptions
-        {
-            HttpDefaultMaxTakeRecords = configuration.HLinqOptions.HttpDefaultMaxTakeRecords
-        });
+        serviceCollection.AddSingleton<IHLinqOptions>(hlinqOptions);
+        serviceCollection.AddHttpContextAccessor();
+        serviceCollection.AddScoped<IHLinqWarnings, HttpResponseWarnings>();
+        serviceCollection.AddControllers(options =>
+            options.ModelBinderProviders.Insert(0, new HLinqQueryBinderProvider()));
+
+        HLinqCore.ConfigureServices(serviceCollection, hlinqOptions);
 
         configuration.Extensions.InstallAll(serviceCollection);
+
+        serviceCollection.AddSingleton<IStartupFilter>(s => new HLinqGrammarFilter(s));
 
         return serviceCollection;
     }

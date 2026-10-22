@@ -10,10 +10,10 @@ using Microsoft.Extensions.DependencyInjection;
 namespace HamsterWheel.HLinq.UnitTests.Pipeline.Tokenizer;
 
 /// <summary>
-///     Grammar self-check: the grammar must describe itself consistently - one rule per token,
-///     every token reachable, no keyword swallowing a longer one, and delimiter sets exactly as
-///     the adjacency rules derive them. Runs against the effective registered possibilities, so
-///     a localized grammar (tokens replaced through <c>AddTokenPossibility</c>) validates too.
+/// Grammar self-check: the grammar must describe itself consistently - one rule per token,
+/// every token reachable, no keyword swallowing a longer one, and delimiter sets exactly as
+/// the adjacency rules derive them. Runs against the effective registered words, so
+/// a localized grammar (tokens replaced through <c>AddWord</c>) validates too.
 /// </summary>
 public class GrammarSelfCheckUnitTests
 {
@@ -22,9 +22,9 @@ public class GrammarSelfCheckUnitTests
     [Fact]
     public void Validate_WhenDefaultGrammar_ThenNoProblems()
     {
-        var grammar = TestServicesCollection.Provider.GetRequiredService<GrammarValidator>();
+        var tokenizer = TestServicesCollection.Tokenizer;
 
-        var act = grammar.Validate;
+        var act = () => GrammarValidator.Validate(tokenizer);
 
         act.Should().NotThrow();
     }
@@ -35,16 +35,15 @@ public class GrammarSelfCheckUnitTests
         var services = new ServiceCollection();
         HLinqCore.ConfigureServices(services, new HLinqOptions());
         var localized = services
-            .Where(d => d.ServiceType == typeof(IHLinqTokenPossibility) &&
-                        d.ImplementationType == typeof(Count.Possibility))
+            .Where(d => d.ServiceType == typeof(IHLinqWord) &&
+                        d.ImplementationType == typeof(Count.Word))
             .ToList();
         foreach (var descriptor in localized) services.Remove(descriptor);
-        services.AddSingleton<IHLinqTokenPossibility, LocalizedCountPossibility>();
-        services.AddSingleton<GrammarValidator>();
+        services.AddSingleton<IHLinqWord, LocalizedCountWord>();
         using var provider = services.BuildServiceProvider();
 
         // ReSharper disable once AccessToDisposedClosure
-        var act = () => provider.GetRequiredService<GrammarValidator>().Validate();
+        var act = () => GrammarValidator.Validate(TestServicesCollection.Tokenizer);
 
         act.Should().NotThrow();
     }
@@ -78,7 +77,7 @@ public class GrammarSelfCheckUnitTests
     [Fact]
     public void Equality_WhenDoubleEqualsAfterNameOrValue_ThenStaysEqualityNotTwoAssignments()
     {
-        var tokenizer = new HLinqTokenizer(TestServicesCollection.TokenPossibilities);
+        var tokenizer = TestServicesCollection.Tokenizer;
 
         var tokens = tokenizer.Tokenize("where[Name==5]");
 
@@ -92,6 +91,5 @@ public class GrammarSelfCheckUnitTests
         ]);
     }
 
-    private sealed class LocalizedCountPossibility(IGrammar grammar)
-        : TokenPossibility<Count>(grammar, "zlicz");
+    private sealed class LocalizedCountWord() : TokenWord<Count>("zlicz");
 }

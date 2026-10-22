@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using HamsterWheel.HLinq.Data.Converters;
+using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
@@ -13,24 +14,27 @@ namespace HamsterWheel.HLinq.Tree.Selecting;
 
 public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tokens)
 {
-    private Property? _property;
-    private InitializerPropertyName? _name;
     private string? _value;
 
     public bool NeedsObjectInitializer => NewPropName != null;
 
-    private Property? Property => _property ??= Children.OfType<Property>().FirstOrDefault();
+    private Property? Property => field ??= Children.OfType<Property>().FirstOrDefault();
 
     private InitializerPropertyName? NewPropName =>
-        _name ??= Children.OfType<InitializerPropertyName>().FirstOrDefault();
+        field ??= Children.OfType<InitializerPropertyName>().FirstOrDefault();
 
     private string GetValue(string hLinqQuery) =>
         _value ??= (Children.OfType<InitializerConstantValue>().FirstOrDefault() ??
                     throw new PropertyAssignmentValueCannotBeResolvedException()).ValueToken.GetValue(hLinqQuery);
 
+    // ReSharper disable once UnusedType.Global - Used by Parser
     public sealed class Parser : ElementParserBase<PropertyAssignment>
     {
-        protected override Type[] ValidParents { get; } = [typeof(SelectRoot)];
+        protected override Type[] ValidParents { get; } =
+        [
+            typeof(SelectRoot),
+            typeof(HamsterWheel.HLinq.Tree.Grouping.GroupByRoot)
+        ];
 
         public override IToken[] ExampleTokens { get; } = [Entity.Empty, Dot.Empty, PropertyName.Empty];
 
@@ -53,6 +57,7 @@ public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tok
         }
     }
 
+    // ReSharper disable once UnusedType.Global - Used by Applier
     public sealed class MemberBindingConverter(IPropertiesCache props, IDefaultConverter converter)
         : ElementToMemberAssignmentConverter<PropertyAssignment>
     {
@@ -66,7 +71,7 @@ public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tok
             }
 
             var path = element.Property.GetPath(context.HLinqQuery);
-            var expression = context.Builder.GetProperty(context.Type, context.Param, path).Member;
+            var expression = context.Builder.GetProperty(context.Type, context.Param, path, context).Member;
             var propertyName = element.NewPropName?.GetName(context.HLinqQuery) ?? expression.Member.Name;
             return new(propertyName, expression.Type);
         }
@@ -77,7 +82,9 @@ public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tok
             var propName = element.NewPropName?.GetName(context.HLinqQuery) ??
                            element.Property?.GetPath(context.HLinqQuery).LastOrDefault() ??
                            throw new PropertyAssignmentNameNotFoundException(element, context.HLinqQuery);
-            var propertyInfo = props.Single(destinationType, propName) ??
+            var resolution = props.Resolve(destinationType, propName);
+            resolution.Report(context);
+            var propertyInfo = resolution.Member ??
                                throw new InvalidPropertyPathException(destinationType, propName,
                                    [.. destinationType.GetProperties().Select(p => p.Name)]);
             if (element.Property is not null)
@@ -93,15 +100,14 @@ public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tok
             //if this is constant value assignment just assign it
             var value = TransformValueForType(context, element, propertyInfo);
             return Expression.Bind(propertyInfo,
-                Expression.Constant(converter.ConvertTo(propertyInfo.PropertyType, value)));
+                Expression.Constant(converter.ConvertTo(propertyInfo.PropertyType, value, context.Culture)));
         }
 
         private static string TransformValueForType(IBuilderContext context, PropertyAssignment element,
             PropertyInfo propertyInfo)
         {
             var value = element.GetValue(context.HLinqQuery);
-            if (propertyInfo.PropertyType == typeof(string) && value.IsDoubleQuoted() ||
-                propertyInfo.PropertyType == typeof(char) && value.IsSingleQuoted())
+            if (propertyInfo.PropertyType == typeof(char) && value.IsSingleQuoted())
             {
                 return value.UnQuote();
             }
@@ -138,6 +144,7 @@ public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tok
                 $"Could not find property with name of '{element.NewPropName?.GetName(hLinqQuery) ?? element.Property?.GetValue(hLinqQuery)}'");
     }
 
+    // ReSharper disable once UnusedType.Global - Used by Applier
     public class ExpressionConverter : ElementToExpressionConverter<PropertyAssignment>
     {
         protected override Expression Build(IBuilderContext context, PropertyAssignment element) =>

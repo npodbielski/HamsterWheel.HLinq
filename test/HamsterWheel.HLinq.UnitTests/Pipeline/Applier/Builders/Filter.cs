@@ -86,6 +86,74 @@ public partial class ExpressionBuilderUnitTests
     }
 
     [Fact]
+    public void GetFilter_WhenValueReturningStaticMethodIsLeftComparisonOperand_ThenReturnsLambda()
+    {
+        const string query = "where[Reverse(x.Name)==abc]";
+        var tokens = _tokenizer.Tokenize(query);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+
+        var actual =
+            (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
+                query);
+
+        actual.ToString().Should().Be("Param_0 => (null.Reverse(Param_0.Name) == \"abc\")");
+    }
+
+    [Fact]
+    public void GetFilter_WhenValueReturningStaticMethodIsRightComparisonOperand_ThenReturnsLambda()
+    {
+        const string query = "where[abc==Reverse(x.Name)]";
+        var tokens = _tokenizer.Tokenize(query);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+
+        var actual =
+            (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
+                query);
+
+        actual.ToString().Should().Be("Param_0 => (\"abc\" == null.Reverse(Param_0.Name))");
+    }
+
+    [Fact]
+    public void GetFilter_WhenBooleanStaticMethodIsComparedWithProperty_ThenReturnsLambda()
+    {
+        const string query = "where[ilike(x.Name,test)==x.Flag]";
+        var tokens = _tokenizer.Tokenize(query);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+
+        var actual =
+            (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
+                query);
+
+        actual.ToString().Should().Be("Param_0 => (null.ILike(Param_0.Name, \"test\") == Param_0.Flag)");
+    }
+
+    [Fact]
+    public void GetFilter_WhenFunctionComparesTwoProperties_ThenCanFilter()
+    {
+        const string query = "where[ilike(x.Name, x.Text)]";
+        var tokens = _tokenizer.Tokenize(query);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        var actual =
+            (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
+                query);
+        actual.Should().NotBeNull();
+        actual.ToString().Should().Be("Param_0 => null.ILike(Param_0.Name, Param_0.Text)");
+    }
+
+    [Fact]
+    public void GetFilter_WhenMethodTakesPropertyAfterComma_ThenCanFilter()
+    {
+        const string query = "where[x.Name.Contains(x.Text)]";
+        var tokens = _tokenizer.Tokenize(query);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        var actual =
+            (Expression<Func<DummyEntity, bool>>)_sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(),
+                query);
+        actual.Should().NotBeNull();
+        actual.ToString().Should().Be("Param_0 => Param_0.Name.Contains(Param_0.Text)");
+    }
+
+    [Fact]
     public void GetFilter_WhenStringPropertyEquals_ThenReturnsLambda()
     {
         const string query = "where[x.Name==test]";
@@ -792,5 +860,52 @@ public partial class ExpressionBuilderUnitTests
 
         //assert
         exception.WithMessage("Invalid static method in query*");
+    }
+
+    [Fact]
+    public void GetFilter_WhenComparisonStaticMethodDoesNotExist_ThenThrowsNamedStaticMethodException()
+    {
+        const string query = "where[NoMethod(x.Name)==abc]";
+        var tokens = _tokenizer.Tokenize(query);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        var action = () => _sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(), query);
+
+        var exception = action.Should().Throw<Method.InvalidStaticMethodException>();
+
+        exception.WithMessage("Invalid static method in query*");
+    }
+
+    [Fact]
+    public void GetFilter_WhenCallWritesMoreArgumentsThanItsWordTakes_ThenThrowsNamingWhatItWrote()
+    {
+        //arrange
+        const string query = "where[x.Name.Contains(abc, def, ghi)]";
+        var tokens = _tokenizer.Tokenize(query);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        var action = () => _sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(), query);
+
+        //act
+        var exception = action.Should().Throw<Method.InvalidMethodException>();
+
+        //assert
+        exception.Which.Message.Should()
+            .Contain("Query provided following argument(s): abc, def, ghi")
+            .And.Contain("Contains(String, StringComparison)");
+    }
+
+    [Fact]
+    public void GetFilter_WhenCallWritesArgumentOfATypeNoOverloadTakes_ThenThrowsNamingWhatItWrote()
+    {
+        //arrange
+        const string query = "where[x.Name.Contains(x.Int)]";
+        var tokens = _tokenizer.Tokenize(query);
+        ITreeBranch tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+        var action = () => _sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(), query);
+
+        //act
+        var exception = action.Should().Throw<Method.InvalidMethodException>();
+
+        //assert
+        exception.Which.Message.Should().Contain("'String.Name.Contains'. Query provided following argument(s): Int");
     }
 }

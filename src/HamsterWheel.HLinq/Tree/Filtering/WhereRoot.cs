@@ -1,3 +1,4 @@
+using System.Globalization;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
@@ -5,16 +6,18 @@ using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
+using HamsterWheel.HLinq.Tree.Grouping;
 
 namespace HamsterWheel.HLinq.Tree.Filtering;
 
 public sealed class WhereRoot(IToken[] tokens) : TreeBranch(tokens), IWhereRoot
 {
     /// <summary>
-    ///     This should never be accessed since <see cref="WhereRoot" /> is never nested in another parent
+    /// This should never be accessed since <see cref="WhereRoot" /> is never nested in another parent
     /// </summary>
     public ILogicalOperatorToken? LogicalOpToken => null;
 
+    // ReSharper disable once UnusedType.Global - Used by Parser
     public sealed class Parser : ElementParserBase<WhereRoot>
     {
         protected override WhereRoot? BuildBranch(IParsingContext context) =>
@@ -26,13 +29,16 @@ public sealed class WhereRoot(IToken[] tokens) : TreeBranch(tokens), IWhereRoot
             };
 
         public override IToken[] ExampleTokens { get; } =
-            [Where.Empty, LeftSquareBracket.Empty, .. Condition.Parser.ConditionExampleTokens, RightSquareBracket.Empty];
+        [
+            Where.Empty, LeftSquareBracket.Empty, .. Condition.Parser.ConditionExampleTokens, RightSquareBracket.Empty
+        ];
 
         protected override void FinishImpl(IParsingContext context)
         {
             if (context.Tokens is not [RightSquareBracket bracket, ..])
             {
-                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens, [RightSquareBracket.Empty]);
+                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
+                    [RightSquareBracket.Empty]);
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);
@@ -40,23 +46,31 @@ public sealed class WhereRoot(IToken[] tokens) : TreeBranch(tokens), IWhereRoot
         }
     }
 
+    // ReSharper disable once UnusedType.Global - Used by Applier
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache) : RootApplierBase<WhereRoot>
     {
         protected override IQueryableContext ApplyImpl(IQueryableContext context, WhereRoot where,
-            string hLinqQuery)
+            string hLinqQuery, CultureInfo culture)
         {
+            if (context.Grouping is not null)
+            {
+                GroupedResultPropertyValidator.CheckIfPropertyAvailable(where, hLinqQuery);
+            }
+
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Where),
                 infos => infos[1].ParameterType.IsGenericType &&
                          infos[1].ParameterType.GenericTypeArguments[0].GetGenericTypeDefinition() ==
                          typeof(Func<,>),
                 context.CurrentResultType);
 
-            var filter = builder.GetFilter(context.CurrentResultType, where, hLinqQuery);
+            var filter = builder.GetFilter(context.CurrentResultType, where, hLinqQuery, culture,
+                context.Warnings);
 
-            return new QueryableContext((IQueryable)method.Invoke(null, [context.Queryable, filter])!,
+            return context.Next((IQueryable)method.Invoke(null, [context.Queryable, filter])!,
                 context.CurrentResultType, context.Count);
         }
     }
 
+    // ReSharper disable once UnusedType.Global - Used by Applier
     public sealed class Converter : ConditionalLogicalOperationConverter<WhereRoot>;
 }

@@ -13,7 +13,7 @@ public class HLinqITreeBranchAssertions(ITreeBranch instance) :
     public AndConstraint<HLinqITreeBranchAssertions> HaveStructureOf(string query,
         IEnumerable<ExpectedTreeElement> expected)
     {
-        var expectedChildren = expected as ExpectedTreeElement[] ?? expected.ToArray();
+        var expectedChildren = expected as ExpectedTreeElement[] ?? [.. expected];
         Subject.Should().NotBeNull();
         Subject.Children.Should().HaveCount(expectedChildren.Length);
         for (var index = 0; index < Subject.Children.Length; index++)

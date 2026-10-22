@@ -12,7 +12,10 @@ public sealed class MethodsCache : IMethodsCache
 
     public MethodInfo[] AllInstance(Type type)
     {
-        if (_instanceMethodsCache.TryGetValue(type, out var methods)) return methods;
+        if (_instanceMethodsCache.TryGetValue(type, out var methods))
+        {
+            return methods;
+        }
 
         return _instanceMethodsCache[type] = type.GetMethods(BindingFlags.Instance | BindingFlags.Public);
     }
@@ -36,10 +39,15 @@ public sealed class MethodsCache : IMethodsCache
 
     public MethodInfo? GetStatic(Type type, string method, Func<ParameterInfo[], bool>? parameterBasedSelector)
     {
-        var methodInfos = AllStatic(type).Where(p => p.Name == method);
-        return parameterBasedSelector is not null
-            ? methodInfos.SingleOrDefault(m => parameterBasedSelector.Invoke(m.GetParameters()))
-            : methodInfos.FirstOrDefault();
+        var candidates = AllStatic(type).Where(p => p.Name == method);
+        if (parameterBasedSelector is not null)
+        {
+            candidates = candidates.Where(m => parameterBasedSelector.Invoke(m.GetParameters()));
+        }
+
+        //more than one overload can pass the selector: rather than refusing to choose, the ranking takes
+        //the one its own rules put first
+        return MemberRanking.RankMethods(type, method, [.. candidates], null).Member;
     }
 
     public MethodInfo GetStaticGeneric(Type type, string method,

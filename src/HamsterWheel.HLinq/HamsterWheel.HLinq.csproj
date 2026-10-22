@@ -31,6 +31,21 @@
         <Compile Update="Pipeline\Tokenizer\Grammar.Exceptions.cs">
           <DependentUpon>Grammar.cs</DependentUpon>
         </Compile>
+        <Compile Update="Pipeline\Tokenizer\HLinqTokenizer.Exceptions.cs">
+          <DependentUpon>HLinqTokenizer.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Tokenizer\HLinqTokenizer.Net90.cs">
+          <DependentUpon>HLinqTokenizer.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Tokenizer\HLinqTokenizer.NetStandard.cs">
+          <DependentUpon>HLinqTokenizer.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Tokenizer\HLinqTokenizer.Language.cs">
+          <DependentUpon>HLinqTokenizer.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Tokenizer\HLinqTokenizer.Word.cs">
+          <DependentUpon>HLinqTokenizer.cs</DependentUpon>
+        </Compile>
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">

@@ -7,10 +7,10 @@ using static HamsterWheel.HLinq.UnitTests.TestUtils.Assertions.ExpectedToken;
 namespace HamsterWheel.HLinq.UnitTests.Pipeline.Tokenizer;
 
 /// <summary>
-///     The clause a token stands in is part of its adjacency rule, so the same character is a
-///     different token per clause. These tests pin that scope: a rename exists only inside a select
-///     clause and a comparison only outside it, which is what lets both tokens spell themselves with
-///     their own characters; the exact streams of these queries live in the tokenizer corpus.
+/// The clause a token stands in is part of its adjacency rule, so the same character is a
+/// different token per clause. These tests pin that scope: a rename exists only inside a select
+/// clause and a comparison only outside it, which is what lets both tokens spell themselves with
+/// their own characters; the exact streams of these queries live in the tokenizer corpus.
 /// </summary>
 partial class HLinqTokenizerUnitTests
 {

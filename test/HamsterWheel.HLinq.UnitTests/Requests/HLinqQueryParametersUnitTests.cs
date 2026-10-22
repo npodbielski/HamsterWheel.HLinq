@@ -25,6 +25,22 @@ public class HLinqQueryParametersUnitTests
     }
 
     [Theory]
+    //`&&` is an operator of the query language, and a url that would read it as a separator of two
+    //parameters is answered as the one clause it was written as
+    [InlineData("where[x.Int>1&&x.Int<5]", "where[x.Int>1&&x.Int<5]")]
+    [InlineData("page=2&where[x.Int>1&&x.Int<5]&sort=asc", "where[x.Int>1&&x.Int<5]")]
+    [InlineData("where[ ( x.Int == 22 || x.Int == 1) && x.Int > 3 ]",
+        "where[ ( x.Int == 22 || x.Int == 1) && x.Int > 3 ]")]
+    [InlineData("where[Name==\"a&b\"]", "where[Name==\"a&b\"]")]
+    [InlineData("where[x.Int>1&&x.Int<5]&culture=pl", "where[x.Int>1&&x.Int<5]")]
+    public void Parse_WhenAClauseCarriesAnAmpersandOfItsOwn_ThenItSeparatesNothing(
+        string queryString,
+        string expectedQuery)
+    {
+        Parse(queryString).SourceQueryString.Should().Be(expectedQuery);
+    }
+
+    [Theory]
     [InlineData("wher[x.Int>1]&page=2")]
     [InlineData("ids[]=1&where[x.Int>10]")]
     [InlineData("page%3D2%26where[x.Int>10]")]

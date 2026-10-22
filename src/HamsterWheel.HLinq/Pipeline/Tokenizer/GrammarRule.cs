@@ -5,7 +5,8 @@ namespace HamsterWheel.HLinq.Pipeline.Tokenizer;
 public class GrammarRule<T>(
     bool canBeFirst,
     Func<IReadOnlyList<IToken>, bool>[] previousTokensMatchers,
-    Func<char?, bool>? nextCharMatcher = null,
+    char[]? nextCharsAllowed = null,
+    char[]? nextCharsRefused = null,
     Type? insideClauseOf = null,
     Type? outsideClauseOf = null) : IGrammarRule
 {
@@ -21,7 +22,7 @@ public class GrammarRule<T>(
             return CanBeFirst;
         }
 
-        //use loop to avoid allocation with lambda
+        // ReSharper disable once LoopCanBeConvertedToQuery - use loop to avoid allocation with lambda
         foreach (var matcher in PreviousTokensMatchers)
         {
             if (matcher(previousTokens))
@@ -33,7 +34,9 @@ public class GrammarRule<T>(
         return false;
     }
 
-    public bool NextCharMatch(char? next) => nextCharMatcher is null || nextCharMatcher(next);
+    public bool NextCharMatch(char? next) =>
+        (nextCharsAllowed is null || next is not null && nextCharsAllowed.Contains(next.Value))
+        && (nextCharsRefused is null || next is null || !nextCharsRefused.Contains(next.Value));
 
     public bool MatchesClauseRoot(Type? currentClauseRoot) =>
         (insideClauseOf is null || insideClauseOf == currentClauseRoot)

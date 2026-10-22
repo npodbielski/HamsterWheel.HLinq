@@ -1,7 +1,6 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Parser;
-using HamsterWheel.HLinq.Pipeline.Tokenizer;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.UnitTests.TestUtils;
@@ -344,10 +343,95 @@ public class HLinqParserUnitTests
     }
 
     [Fact]
+    public void Parse_WhenStaticMethodIsLeftComparisonOperand_ThenCanParse()
+    {
+        const string query = "where[Reverse(x.Name)==abc]";
+        var tokens = TestServicesCollection.Tokenizer.Tokenize(query);
+
+        var tree = _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
+
+        tree.Should().HaveStructureOf(query, [
+            WhereRoot(
+                ConditionElement(
+                    MethodElement(
+                        MethodName("Reverse"),
+                        Property(Entity(), ExpectedToken.Dot, Prop("Name"))),
+                    ComparisonOperation(ExpectedToken.Equality),
+                    ComparisonConstant(NameOrValue("abc"))
+                )
+            )
+        ]);
+    }
+
+    [Fact]
+    public void Parse_WhenStaticMethodCallComparesTwoProperties_ThenCanParse()
+    {
+        const string query = "where[ilike(x.Name, x.Text)]";
+        IToken[] tokens =
+        [
+            Where.Empty,
+            LeftSquareBracket.Empty,
+            MethodName.Empty,
+            LeftCircleBracket.Empty,
+            Entity.Empty,
+            Dot.Empty,
+            PropertyName.Empty,
+            Comma.Empty,
+            Entity.Empty,
+            Dot.Empty,
+            PropertyName.Empty,
+            RightCircleBracket.Empty,
+            RightSquareBracket.Empty
+        ];
+        var tree = _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
+        tree.Should().HaveStructureOf(query, [
+            WhereRoot(
+                ConditionElement(
+                    MethodElement(
+                        MethodName("ilike"),
+                        Property(
+                            Entity(""),
+                            ExpectedToken.Dot,
+                            Prop("")
+                        ),
+                        Property(
+                            ExpectedToken.Comma,
+                            Entity(""),
+                            ExpectedToken.Dot,
+                            Prop("")
+                        )
+                    )
+                )
+            )
+        ]);
+    }
+
+    [Fact]
+    public void Parse_WhenStaticMethodIsRightComparisonOperand_ThenCanParse()
+    {
+        const string query = "where[abc==Reverse(x.Name)]";
+        var tokens = TestServicesCollection.Tokenizer.Tokenize(query);
+
+        var tree = _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
+
+        tree.Should().HaveStructureOf(query, [
+            WhereRoot(
+                ConditionElement(
+                    ComparisonConstant(NameOrValue("abc")),
+                    ComparisonOperation(ExpectedToken.Equality),
+                    MethodElement(
+                        MethodName("Reverse"),
+                        Property(Entity(), ExpectedToken.Dot, Prop("Name")))
+                )
+            )
+        ]);
+    }
+
+    [Fact]
     public void Parse_WhenTwoConditions_ThenCanParse()
     {
         const string query = "where[x.Name.Contains(test)&&x.Id==77774169-BB9D-4DF9-A4A7-52019C4A445D]";
-        var tokens = new HLinqTokenizer(TestServicesCollection.TokenPossibilities).Tokenize(query);
+        var tokens = TestServicesCollection.Tokenizer.Tokenize(query);
 
         var tree = _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
 
@@ -379,7 +463,7 @@ public class HLinqParserUnitTests
     public void Parse_WhenTwoConditionGroups_ThenCanParse()
     {
         const string query = "where[(x.Age > 0 && x.Age < 100)||(x.Name.Contains(test))]";
-        var tokens = new HLinqTokenizer(TestServicesCollection.TokenPossibilities).Tokenize(query);
+        var tokens = TestServicesCollection.Tokenizer.Tokenize(query);
 
         var tree = _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
 
@@ -424,7 +508,7 @@ public class HLinqParserUnitTests
     public void Parse_WhenTakeRange_ThenCanParse()
     {
         const string query = "take[10..20]";
-        var tokens = new HLinqTokenizer(TestServicesCollection.TokenPossibilities).Tokenize(query);
+        var tokens = TestServicesCollection.Tokenizer.Tokenize(query);
 
         var tree = _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
 
@@ -439,7 +523,7 @@ public class HLinqParserUnitTests
     public void Parse_WhenTakeRangeOpenStart_ThenCanParse()
     {
         const string query = "take[..20]";
-        var tokens = new HLinqTokenizer(TestServicesCollection.TokenPossibilities).Tokenize(query);
+        var tokens = TestServicesCollection.Tokenizer.Tokenize(query);
 
         var tree = _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
 
@@ -454,7 +538,7 @@ public class HLinqParserUnitTests
     public void Parse_WhenTakeRangeOpenEnd_ThenCanParse()
     {
         const string query = "take[10..]";
-        var tokens = new HLinqTokenizer(TestServicesCollection.TokenPossibilities).Tokenize(query);
+        var tokens = TestServicesCollection.Tokenizer.Tokenize(query);
 
         var tree = _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
 
@@ -469,7 +553,7 @@ public class HLinqParserUnitTests
     public void Parse_WhenSkipThenTakeRange_ThenCanParse()
     {
         const string query = "skip[5].take[10..20]";
-        var tokens = new HLinqTokenizer(TestServicesCollection.TokenPossibilities).Tokenize(query);
+        var tokens = TestServicesCollection.Tokenizer.Tokenize(query);
 
         var tree = _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
 
@@ -489,7 +573,7 @@ public class HLinqParserUnitTests
         // only the open start side stays parsable - `take[a..b]` is rejected by the tokenizer
         // because the RangeOperator grammar reads `10..` together with a number
         const string query = "take[..b]";
-        var tokens = new HLinqTokenizer(TestServicesCollection.TokenPossibilities).Tokenize(query);
+        var tokens = TestServicesCollection.Tokenizer.Tokenize(query);
 
         var action = () => _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
 
@@ -506,7 +590,7 @@ public class HLinqParserUnitTests
     {
         var action = () =>
         {
-            var tokens = new HLinqTokenizer(TestServicesCollection.TokenPossibilities).Tokenize(query);
+            var tokens = TestServicesCollection.Tokenizer.Tokenize(query);
             _sut.TestParseEntryPoint<DummyEntity>(query, tokens);
         };
 

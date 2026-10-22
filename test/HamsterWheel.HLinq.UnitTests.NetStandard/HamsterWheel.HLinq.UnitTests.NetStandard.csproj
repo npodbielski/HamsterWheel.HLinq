@@ -83,6 +83,14 @@
             <Link>Pipeline/Applier/QueryCount.cs</Link>
             <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
         </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\QueryGroupBy.cs">
+            <Link>Pipeline/Applier/QueryGroupBy.cs</Link>
+            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\QueryTake.cs">
+            <Link>Pipeline/Applier/QueryTake.cs</Link>
+            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\QueryOrderBy.cs">
             <Link>Pipeline/Applier/QueryOrderBy.cs</Link>
             <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
@@ -124,6 +132,9 @@
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Tokenizer\TokenizerWhiteSpaceTests.cs">
             <Link>Pipeline/Tokenizer/TokenizerWhiteSpaceTests.cs</Link>
             <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Reflection\MemberResolutionUnitTests.cs">
+            <Link>Reflection\MemberResolutionUnitTests.cs</Link>
         </Compile>
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Reflection\MethodsCacheUnitTests.cs">
             <Link>Reflection\MethodsCacheUnitTests.cs</Link>

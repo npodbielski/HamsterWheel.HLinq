@@ -13,7 +13,7 @@ namespace HamsterWheel.HLinq.UnitTests.Pipeline.Applier;
 partial class HLinqQueryApplierUnitTests
 {
     private static DummyEntity[] Entities(int count) =>
-        Enumerable.Range(0, count).Select(i => new DummyEntity($"entity{i}")).ToArray();
+        [.. Enumerable.Range(0, count).Select(i => new DummyEntity($"entity{i}"))];
 
     private object Apply(string queryString, IQueryable<DummyEntity> queryable)
     {

@@ -1,11 +1,18 @@
+using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
+using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tree;
 using HamsterWheel.HLinq.Tree.Filtering;
 using HamsterWheel.HLinq.Tree.Selecting;
+using static System.Linq.Expressions.Expression;
+using static System.StringComparison;
+using static HamsterWheel.HLinq.Pipeline.Applier.Builders.BuilderContext;
+using static HamsterWheel.HLinq.Reflection.EfDbFunctionsMatcher;
+using static HamsterWheel.HLinq.Reflection.MemberRanking;
 
 namespace HamsterWheel.HLinq.Pipeline.Applier.Builders;
 
@@ -17,22 +24,29 @@ public sealed class ExpressionBuilder(
     IEnumerable<IStaticMethodSource> staticMethodSources)
     : IExpressionBuilder
 {
-    public LambdaExpression GetFilter(Type source, IWhereRoot query, string hLinqQuery)
+    public IParametersConverter GetParametersConverter() => parametersConverter;
+
+    public LambdaExpression GetFilter(Type source, IWhereRoot query, string hLinqQuery,
+        CultureInfo? culture = null, IHLinqWarnings? warnings = null)
     {
-        var context = BuilderContext.From(source, this, hLinqQuery);
+        var context = From(source, this, hLinqQuery, culture ?? CultureInfo.InvariantCulture, warnings);
         var body = BuildBody(context, query);
 
         var delegateType = typeof(Func<,>).MakeGenericType(source, typeof(bool));
 
-        return Expression.Lambda(delegateType, body, (IEnumerable<ParameterExpression>)[context.Param]);
+        return Lambda(delegateType, body, (IEnumerable<ParameterExpression>)[context.Param]);
     }
 
-    public (LambdaExpression Expression, Type PropType) GetProperty(Type source, ITreeRoot query, string hLinqQuery) =>
-        GetProperty(source, (ITreeBranch)query, hLinqQuery);
+    public (LambdaExpression Expression, Type PropType) GetProperty(Type source, ITreeRoot query,
+        string hLinqQuery, CultureInfo? culture = null, IHLinqWarnings? warnings = null) =>
+        GetProperty(source, (ITreeBranch)query, hLinqQuery, culture, warnings);
 
-    public (LambdaExpression Expression, Type ResultType) GetSelect(Type source, ISelectRoot query, string hLinqQuery)
+    public (LambdaExpression Expression, Type ResultType) GetSelect(Type source, ISelectRoot query,
+        string hLinqQuery, CultureInfo? culture = null, IHLinqWarnings? warnings = null,
+        IReadOnlyDictionary<string, MemberExpression>? groupMembers = null)
     {
-        var context = BuilderContext.From(source, this, hLinqQuery);
+        var context = From(source, this, hLinqQuery, culture ?? CultureInfo.InvariantCulture, warnings,
+            groupMembers);
         var expression = BuildBody(context, query);
         Expression body;
         Type resultType;
@@ -51,10 +65,17 @@ public sealed class ExpressionBuilder(
 
         var delegateType = typeof(Func<,>).MakeGenericType(source, resultType);
 
-        return (Expression.Lambda(delegateType, body, context.Param), resultType);
+        return (Lambda(delegateType, body, context.Param), resultType);
     }
 
-    public Expression BuildBody(IBuilderContext context, ITreeBranch root) => ToExpression(context, root);
+    public (LambdaExpression Expression, Type ResultType) GetProjection(Type source, IProjectionMembers query,
+        string hLinqQuery, CultureInfo? culture = null, IHLinqWarnings? warnings = null)
+    {
+        var context = From(source, this, hLinqQuery, culture ?? CultureInfo.InvariantCulture, warnings);
+        var body = BuildBody(context, query);
+        var delegateType = typeof(Func<,>).MakeGenericType(source, body.Type);
+        return (Lambda(delegateType, body, context.Param), body.Type);
+    }
 
     public Expression ToExpression<T>(IBuilderContext context, T element) where T : ITreeElement =>
         GetToExpressionConverter(element).Build(context, element);
@@ -63,101 +84,76 @@ public sealed class ExpressionBuilder(
         where T : ITreeElement =>
         GetToMemberBindingConverter(element).Build(context, element, destinationType);
 
-    public (MethodInfo method, IBindingParameterInfo[] parameters)[] GetMostProbableMethods(string? name,
+    public MemberResolution<MethodInfo> ResolveStaticMethod(string? name,
         (string value, MemberExpression? expression)[] parameters)
     {
         var staticMethods = staticMethodSources.SelectMany(s => s.Types)
             .Select(methods.AllStatic).SelectMany(m => m).ToArray();
 
-        IEnumerable<MethodInfo> allMethods = staticMethods;
-        if (name is not null)
+        return RankMethods(declaredOnType: null, name, Named(staticMethods, name), parameters,
+            EfFunctionParametersTransformer);
+    }
+
+    public MemberResolution<MethodInfo> ResolveMethod(Type propType, string name,
+        (string value, MemberExpression? expression)[] parameters) =>
+        RankMethods(propType, name, Named(methods.AllInstance(propType), name), parameters);
+
+    private static MethodInfo[] Named(MethodInfo[] candidates, string? name)
+    {
+        if (name is null)
         {
-            allMethods = staticMethods.Where(m => m.Name == name)
-                .Concat(staticMethods.Where(p => p.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)))
-                .Distinct();
+            return candidates;
         }
 
-        return FilterMethodsViaParameterValues(parameters, allMethods, EfFunctionParametersTransformer)
-            .Select(m => (m, StaticMethodSourceWrapper.MapEfDbFunctionParams(m.GetParameters()).ToArray()))
-            .ToArray();
-
-        ParameterInfo[] EfFunctionParametersTransformer(ParameterInfo[] infos) =>
-            EfDbFunctionsMatcher.IsEfDbFunction(infos) ? infos[1..] : infos;
-    }
-
-    public MethodInfo[] GetMostProbableMethods(Type propType, string name,
-        (string value, MemberExpression? expression)[] parameters)
-    {
-        var allInstance = methods.AllInstance(propType);
-        var methodInfos = allInstance.Where(m => m.Name == name)
-            .Concat(allInstance.Where(p => p.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase))).Distinct();
-
-        return FilterMethodsViaParameterValues(parameters, methodInfos);
-    }
-
-    private static MethodInfo[] FilterMethodsViaParameterValues(
-        (string value, MemberExpression? expression)[] parameters,
-        IEnumerable<MethodInfo> methodInfos, Func<ParameterInfo[], ParameterInfo[]>? parametersTransformer = null)
-    {
-        var methodsWithProbability = new List<(int probability, MethodInfo method)>();
-        foreach (var method in methodInfos)
+        //two sources can name the same type, and then the very same method arrives twice
+        var named = new List<MethodInfo>();
+        foreach (var candidate in candidates)
         {
-            var parameterIndex = 0;
-            var probability = 100;
-            var parameterInfos = parametersTransformer is not null
-                ? parametersTransformer(method.GetParameters())
-                : method.GetParameters();
-            if (parameterInfos.Length != parameters.Length)
+            if (candidate.Name.Equals(name, CurrentCultureIgnoreCase) && !named.Contains(candidate))
             {
-                continue;
-            }
-
-            foreach (var parameterInfo in parameterInfos)
-            {
-                var hlinqParameter = parameters[parameterIndex];
-                if (parameterInfo.ParameterType == typeof(char) && (hlinqParameter.value.Length == 1 ||
-                                                                    hlinqParameter.expression?.Member.ReflectedType ==
-                                                                    typeof(char)))
-                {
-                    probability = 0;
-                    break;
-                }
-
-                if (parameterInfo.ParameterType.IsEnum)
-                {
-                    var splits = hlinqParameter.value.Contains('.')
-                        ? hlinqParameter.value.Split('.')
-                        : [hlinqParameter.value];
-                    if (splits[0] == parameterInfo.ParameterType.Name &&
-                        Enum.GetNames(parameterInfo.ParameterType).Contains(splits[0]))
-                    {
-                        probability += 100 / parameters.Length;
-                    }
-                }
-
-                parameterIndex++;
-            }
-
-            if (probability > 0)
-            {
-                methodsWithProbability.Add((probability, method));
+                named.Add(candidate);
             }
         }
 
-        return methodsWithProbability.OrderBy(p => p.probability).Select(p => p.method).ToArray();
+        return [.. named];
     }
 
-    public IPropertyContext GetProperty(Type sourceType, Expression source, string[] path)
+    public IPropertyContext GetProperty(Type sourceType, Expression source, string[] path,
+        IBuilderContext? context = null)
     {
         var expression = source;
         var currentType = sourceType;
-        foreach (var prop in path)
+        var start = 0;
+
+        if (path.Length > 0 && context?.GroupMembers is { } groupMembers)
         {
-            var targetProp = props.Single(currentType, prop);
+            var own = props.Resolve(sourceType, path[0]).Member;
+            if (own is null && groupMembers.TryGetValue(path[0], out var groupMember))
+            {
+                expression = groupMember;
+                currentType = groupMember.Type;
+                start = 1;
+            }
+            else if (own is not null && groupMembers.ContainsKey(path[0]))
+            {
+                context.Warnings?.Report(new HLinqMemberWarning(
+                    HLinqMemberWarningReason.AmbiguousName,
+                    own.Name,
+                    own.DeclaringType?.ToString() ?? sourceType.ToString(),
+                    [$"{own.DeclaringType?.Name}.{own.Name}", $"group.{GroupingState.KeyName}"],
+                    context.HLinqQuery));
+            }
+        }
+
+        foreach (var prop in path.Skip(start))
+        {
+            var resolution = props.Resolve(currentType, prop);
+            resolution.Report(context);
+            var targetProp = resolution.Member;
             if (targetProp is null)
             {
                 throw new InvalidPropertyPathException(sourceType, path.JoinWithDot(),
-                    props.From(currentType).Select(p => p.Name.ToCamelCase()).ToArray());
+                    [.. props.From(currentType).Select(p => p.Name.ToCamelCase())]);
             }
 
             currentType = targetProp.PropertyType;
@@ -170,26 +166,119 @@ public sealed class ExpressionBuilder(
     public IElementToMemberAssignmentConverter GetToMemberBindingConverter<T>(T element) where T : ITreeElement =>
         converterFactory.GetToMemberAssignmentConverter(element.GetType());
 
-    private (LambdaExpression Expression, Type PropType) GetProperty(Type source, ITreeBranch query, string hLinqQuery)
+
+    public (LambdaExpression Expression, Type ResultType) GroupProjection(GroupingState state) =>
+        state.InnerKey is null
+            ? BuildGrouping(state, state.RowShape,
+                RowsOfGroup(state.GroupParam, state.RowType, state.RowSelector))
+            : BuildGrouping(state, NestedRowShape(state), NestedRows(state));
+
+    public GroupingState Nest(GroupingState state, LambdaExpression innerKey) =>
+        state with { InnerKey = innerKey };
+
+    private static Type NestedRowShape(GroupingState state) =>
+        typeof(Group<,>).MakeGenericType(state.InnerKey!.ReturnType, state.RowShape);
+
+    private MethodCallExpression NestedRows(GroupingState state)
     {
-        var context = BuilderContext.From(source, this, hLinqQuery);
+        var innerKey = state.InnerKey!;
+        var innerItemType = typeof(IGrouping<,>).MakeGenericType(innerKey.ReturnType, state.RowType);
+        var innerParam = Parameter(innerItemType, "inner");
+        var innerProjected = NestedRowShape(state);
+        var innerRows = RowsOfGroup(innerParam, state.RowType, state.RowSelector);
+        var innerBody = MemberInit(
+            New(innerProjected),
+            Bind(innerProjected.GetProperty(GroupingState.KeyName)!, Property(innerParam, GroupingState.KeyName)),
+            Bind(innerProjected.GetProperty(GroupingState.RowsName)!, innerRows));
+        var innerLambda = Lambda(typeof(Func<,>).MakeGenericType(innerItemType, innerProjected), innerBody,
+            innerParam);
+
+        var groupByMethod = typeof(Enumerable).GetMethods()
+            .Single(m => m.Name == nameof(Enumerable.GroupBy) && m.GetParameters().Length == 2
+                                                            && m.GetParameters()[1].ParameterType is
+                                                            { IsGenericType: true } keyFunc
+                                                            && keyFunc.GenericTypeArguments.Length == 2)
+            .MakeGenericMethod(state.RowType, innerKey.ReturnType);
+
+        var selectMethod = typeof(Enumerable).GetMethods()
+            .Single(m => m.Name == nameof(Enumerable.Select) && m.GetParameters().Length == 2
+                                                             && m.GetParameters()[1].ParameterType is
+                                                             { IsGenericType: true } func
+                                                             && func.GenericTypeArguments.Length == 2)
+            .MakeGenericMethod(innerItemType, innerProjected);
+
+        var toListMethod = typeof(Enumerable).GetMethods()
+            .Single(m => m.Name == nameof(Enumerable.ToList) && m.GetParameters().Length == 1)
+            .MakeGenericMethod(innerProjected);
+
+        var innerGrouping = Call(groupByMethod, state.GroupParam, innerKey);
+
+        return Call(toListMethod, Call(selectMethod, innerGrouping, innerLambda));
+    }
+
+    public (LambdaExpression Expression, Type ResultType) GroupRowSelector(GroupingState state,
+        ISelectRoot select, string hLinqQuery, CultureInfo culture, IHLinqWarnings? warnings)
+    {
+        var groupMembers = new Dictionary<string, MemberExpression>(StringComparer.OrdinalIgnoreCase)
+        {
+            [GroupingState.KeyName] = state.KeyMember
+        };
+
+        return GetSelect(state.RowType, select, hLinqQuery, culture, warnings, groupMembers);
+    }
+
+    private static MethodCallExpression RowsOfGroup(ParameterExpression groupParam, Type rowType,
+        LambdaExpression rowSelector)
+    {
+        var selectMethod = typeof(Enumerable).GetMethods()
+            .Single(m => m.Name == nameof(Enumerable.Select) && m.GetParameters().Length == 2
+                                                             && m.GetParameters()[1].ParameterType is
+                                                             { IsGenericType: true } func
+                                                             && func.GenericTypeArguments.Length == 2)
+            .MakeGenericMethod(rowType, rowSelector.ReturnType);
+
+        var toListMethod = typeof(Enumerable).GetMethods()
+            .Single(m => m.Name == nameof(Enumerable.ToList) && m.GetParameters().Length == 1)
+            .MakeGenericMethod(rowSelector.ReturnType);
+
+        return Call(toListMethod,
+            Call(selectMethod, groupParam, rowSelector));
+    }
+
+    private (LambdaExpression Expression, Type PropType) GetProperty(Type source, ITreeBranch query,
+        string hLinqQuery, CultureInfo? culture, IHLinqWarnings? warnings = null)
+    {
+        var context = From(source, this, hLinqQuery, culture ?? CultureInfo.InvariantCulture, warnings);
         var body = (MemberExpression)BuildBody(context, query);
 
         var propType = body.Type;
 
         var delegateType = typeof(Func<,>).MakeGenericType(source, propType);
 
-        return (Expression.Lambda(delegateType, body, (IEnumerable<ParameterExpression>)[context.Param]), propType);
+        return (Lambda(delegateType, body, (IEnumerable<ParameterExpression>)[context.Param]), propType);
     }
 
     private IElementToExpressionConverter GetToExpressionConverter<T>(T element) where T : ITreeElement =>
         converterFactory.GetToExpressionConverterFor(element.GetType());
 
+    private Expression BuildBody(IBuilderContext context, ITreeBranch root) => ToExpression(context, root);
+
     private static MemberExpression GetProperty(Expression source, PropertyInfo prop) =>
-        Expression.Property(source, prop);
+        Property(source, prop);
 
-    public IParametersConverter GetParametersConverter() => parametersConverter;
+    private static (LambdaExpression Expression, Type ResultType) BuildGrouping(GroupingState state, Type rowShape,
+        MethodCallExpression rows)
+    {
+        var projected = typeof(Group<,>).MakeGenericType(state.KeyType, rowShape);
+        var body = MemberInit(
+            New(projected),
+            Bind(projected.GetProperty(GroupingState.KeyName)!, state.KeyMember),
+            Bind(projected.GetProperty(GroupingState.RowsName)!, rows));
 
-    public class ExpectedMemberOrMemberInitExpressionException() : HLinqQueryException(
+        var delegateType = typeof(Func<,>).MakeGenericType(state.GroupingItemType, projected);
+        return (Lambda(delegateType, body, state.GroupParam), projected);
+    }
+
+    private class ExpectedMemberOrMemberInitExpressionException() : HLinqQueryException(
         $"At this point type of expression should be {nameof(MemberExpression)} or {nameof(MemberInitExpression)}.");
 }

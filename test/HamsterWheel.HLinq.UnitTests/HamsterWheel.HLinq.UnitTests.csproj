@@ -8,6 +8,11 @@
         <ProjectReference Include="..\..\demo\HamsterWheel.HLinq.Demo\HamsterWheel.HLinq.Demo.csproj" />
         <ProjectReference Include="..\..\src\HamsterWheel.HLinq.Client\HamsterWheel.HLinq.Client.csproj" />
         <ProjectReference Include="..\..\src\HamsterWheel.HLinq.PgSql\HamsterWheel.HLinq.PgSql.csproj" />
+        <ProjectReference Include="..\..\src\HamsterWheel.HLinq.SqlServer\HamsterWheel.HLinq.SqlServer.csproj" />
+        <ProjectReference Include="..\..\src\HamsterWheel.HLinq.MySql\HamsterWheel.HLinq.MySql.csproj" />
+        <ProjectReference Include="..\..\src\HamsterWheel.HLinq.MariaDb\HamsterWheel.HLinq.MariaDb.csproj" />
+        <ProjectReference Include="..\..\src\HamsterWheel.HLinq.Sqlite\HamsterWheel.HLinq.Sqlite.csproj" />
+        <ProjectReference Include="..\..\src\HamsterWheel.HLinq.Lang.Pl\HamsterWheel.HLinq.Lang.Pl.csproj" />
         <ProjectReference Include="..\..\src\HamsterWheel.HLinq\HamsterWheel.HLinq.csproj" />
     </ItemGroup>
   

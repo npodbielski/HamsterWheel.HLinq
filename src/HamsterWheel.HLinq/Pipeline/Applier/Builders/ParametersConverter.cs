@@ -5,62 +5,81 @@ namespace HamsterWheel.HLinq.Pipeline.Applier.Builders;
 
 public class ParametersConverter : IParametersConverter
 {
-    public Expression[] AttemptConversion((string value, MemberExpression? expression)[] hLinqParams,
-        IBindingParameterInfo[] parameterTypes)
+    public (bool converted, Expression[] expressions) TryConvert(
+        (string value, MemberExpression? expression)[] hLinqParams, IBindingParameterInfo[] parameterTypes)
     {
-        var expressions = new List<Expression>();
-        var i = 0;
-        foreach (var bindingParameterInfo in parameterTypes)
+        var mapped = new List<Expression>(parameterTypes.Length);
+        var argument = 0;
+        foreach (var binding in parameterTypes)
         {
-            if (bindingParameterInfo.UseConstant)
+            if (binding.UseConstant)
             {
-                expressions.Add(Expression.Constant(bindingParameterInfo.ConstantValue,
-                    bindingParameterInfo.ConstantType));
+                mapped.Add(Expression.Constant(binding.ConstantValue, binding.ConstantType));
                 continue;
             }
 
-            var type = bindingParameterInfo.Info.ParameterType;
-            var param = hLinqParams[i];
-            if (type == typeof(string))
+            //refuse if there are fewer arguments than parameters
+            if (argument == hLinqParams.Length)
             {
-                expressions.Add(param.expression is not null
-                    ? param.expression
-                    : Expression.Constant(DefaultConverter.Instance.ConvertTo<string>(param.value)));
-                i++;
-                continue;
-            }
-            if (type == typeof(char) && param.value.Length == 1)
-            {
-                expressions.Add(param.expression is not null
-                    ? param.expression
-                    : Expression.Constant(DefaultConverter.Instance.ConvertTo<char>(param.value)));
-                i++;
-                continue;
+                return (false, []);
             }
 
-            if (!type.IsEnum)
+            var filled = MapArgument(hLinqParams[argument], binding.Info.ParameterType);
+            if (filled is null)
             {
-                continue;
+                return (false, []);
             }
 
-            if (!param.value.Contains('.') && type.IsEnum && param.value.TryParseEnum(type) is (true, { } enumValue))
-            {
-                expressions.Add(Expression.Constant(enumValue));
-                i++;
-                continue;
-            }
-
-            var splits = param.value.Split('.');
-            if (!string.Equals(splits[0], type.Name, StringComparison.CurrentCultureIgnoreCase)
-                || splits[1].TryParseEnum(type) is not (convertible: true, enumValue: { } enumMember))
-            {
-                continue;
-            }
-
-            expressions.Add(Expression.Constant(enumMember));
-            i++;
+            mapped.Add(filled);
+            argument++;
         }
 
-        return expressions.ToArray();
+        //refuse if parameter count does not match
+        if (argument != hLinqParams.Length)
+        {
+            return (false, []);
+        }
+
+        return (true, [.. mapped]);
+    }
+
+    private static Expression? MapArgument((string value, MemberExpression? expression) hLinqParam,
+        Type parameterType)
+    {
+        //property value is just accessed (i.e. method call) so we just need to check if both match
+        if (hLinqParam.expression is { } property)
+        {
+            return parameterType.AcceptsArgumentOfType(property.Type) ? property : null;
+        }
+
+        if (parameterType == typeof(string))
+        {
+            return Expression.Constant(DefaultConverter.Instance.ConvertTo<string>(hLinqParam.value));
+        }
+
+        if (parameterType == typeof(char) && hLinqParam.value.Length == 1)
+        {
+            return Expression.Constant(DefaultConverter.Instance.ConvertTo<char>(hLinqParam.value));
+        }
+
+        return parameterType.IsEnum ? MapEnumMember(hLinqParam.value, parameterType) : null;
+    }
+
+    private static Expression? MapEnumMember(string value, Type enumType)
+    {
+        if (!value.Contains('.') && value.TryParseEnum(enumType) is (true, { } enumValue))
+        {
+            return Expression.Constant(enumValue);
+        }
+
+        var splits = value.Split('.');
+        if (splits.Length < 2
+            || !string.Equals(splits[0], enumType.Name, StringComparison.CurrentCultureIgnoreCase)
+            || splits[1].TryParseEnum(enumType) is not (convertible: true, enumValue: { } enumMember))
+        {
+            return null;
+        }
+
+        return Expression.Constant(enumMember);
     }
 }

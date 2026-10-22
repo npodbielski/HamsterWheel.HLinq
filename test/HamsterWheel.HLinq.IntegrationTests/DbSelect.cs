@@ -91,15 +91,17 @@ partial class DbDataTests
                 }).Take(100));
 
         //assert
-        response.Should().BeEquivalentTo(Persons.Select(x => new
-        {
-            x.Id,
-            x.FirstName,
-            x.Email,
-            x.IpAddress,
-            x.LastName,
-            Name = x.FirstName,
-            SurName = x.LastName
-        }).Take(100).ToArray());
+        response.Should().BeEquivalentTo([
+            .. Persons.Select(x => new
+            {
+                x.Id,
+                x.FirstName,
+                x.Email,
+                x.IpAddress,
+                x.LastName,
+                Name = x.FirstName,
+                SurName = x.LastName
+            }).Take(100)
+        ]);
     }
 }

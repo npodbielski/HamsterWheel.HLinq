@@ -1,16 +1,16 @@
 namespace HamsterWheel.HLinq.Pipeline.Tokenizer;
 
 /// <summary>
-///     Result of matching a token's text rule against the tokenizer window:
-///     <see cref="Discarded" /> - this text can never grow into the token (e.g. a letter
-///     inside a number), <see cref="Possible" /> - the text is a valid prefix and may still grow,
-///     <see cref="Complete" /> - the token is finished at <see cref="CompleteAt" />, a window
-///     relative exclusive offset: the tokenizer commits the token and continues the window walk
-///     at that offset, so characters a complete match does not cover start the next token
-///     without being rescanned (<c>orderBy</c> + <c>D</c> is the example: <c>orderBy</c> does
-///     not complete there, <c>orderByDescending</c> stays possible).
-///     There is no score and no ordering between possibilities: a window either completes a
-///     token or it does not.
+/// Result of matching a token's text rule against the tokenizer window:
+/// <see cref="Discarded" /> - this text can never grow into the token (e.g. a letter
+/// inside a number), <see cref="Possible" /> - the text is a valid prefix and may still grow,
+/// <see cref="Complete" /> - the token is finished at <see cref="CompleteAt" />, a window
+/// relative exclusive offset: the tokenizer commits the token and continues the window
+/// at that offset, so characters a complete match does not cover start the next token
+/// without being rescanned (<c>orderBy</c> + <c>D</c> is the example: <c>orderBy</c> does
+/// not complete there, <c>orderByDescending</c> stays possible).
+/// There is no score and no ordering between words: a window either completes a
+/// token or it does not.
 /// </summary>
 public readonly struct MatchAt : IEquatable<MatchAt>
 {

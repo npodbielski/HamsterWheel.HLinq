@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using FluentAssertions;
 using HamsterWheel.HLinq.Data;
+using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Tree.Filtering;
 using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
 
@@ -352,9 +353,9 @@ partial class DefaultConverterUnitTests
     public void ConvertTo_WhenCalledWithJsonStringToCustomTypeAndCustomSerializer_ThenCallsCustomSerializer()
     {
         //arrange
-        var fallbackConverter = new FallbackConverter();
+        var fallbackConverter = new TestsFallbackConverter();
         var sut = GetSut(fallbackConverter);
-        var value = "{ \"name\": \"test\" }";
+        const string value = "{ \"name\": \"test\" }";
 
         //act
         var actual = sut.ConvertTo(typeof(DummyEntity), value);
@@ -384,10 +385,10 @@ partial class DefaultConverterUnitTests
     }
 
     /// <summary>
-    ///     The string form of a <see cref="DateTimeOffset" /> is the serializer's: the fraction of a
-    ///     second without its trailing zeros, whole fraction dropped when it is zero. Reading the
-    ///     string back is asserted along with the exact text, because the point of the shorter form is
-    ///     that it names the same instant.
+    /// The string form of a <see cref="DateTimeOffset" /> is the serializer's: the fraction of a
+    /// second without its trailing zeros, whole fraction dropped when it is zero. Reading the
+    /// string back is asserted along with the exact text, because the point of the shorter form is
+    /// that it names the same instant.
     /// </summary>
     [Theory]
     [InlineData(1234567, "2026-01-01T12:00:00.1234567+02:00")]
@@ -410,14 +411,15 @@ partial class DefaultConverterUnitTests
     }
 
     /// <summary>
-    ///     A <see cref="DateTime" /> keeps all seven digits of its fraction where a
-    ///     <see cref="DateTimeOffset" /> trims them: the serializer writes the two differently. Both
-    ///     forms name the instant, which is what a query compares on.
+    /// The string form of a <see cref="DateTime" /> is the serializer's too: the fraction of a
+    /// second without its trailing zeros, whole fraction dropped when it is zero - the same text
+    /// a <see cref="DateTimeOffset" /> gets. Both forms name the instant, which is what a query
+    /// compares on.
     /// </summary>
     [Theory]
     [InlineData(1234567, "2026-01-01T12:00:00.1234567Z")]
-    [InlineData(1234560, "2026-01-01T12:00:00.1234560Z")]
-    [InlineData(0, "2026-01-01T12:00:00.0000000Z")]
+    [InlineData(1234560, "2026-01-01T12:00:00.123456Z")]
+    [InlineData(0, "2026-01-01T12:00:00Z")]
     public void ConvertTo_WhenWithDateTimeToString_ThenReturnsCorrectValue(long ticks, string expected)
     {
         //arrange
@@ -489,6 +491,223 @@ partial class DefaultConverterUnitTests
         {
             Name = source.Name
         });
+    }
+
+    [Theory]
+    //the quotes say the text is one value; which type reads it stays the property's, not the quotes'
+    [InlineData("\"5\"", 5)]
+    [InlineData("\"-2147483648\"", int.MinValue)]
+    [InlineData("\" 1 \"", 1)]
+    public void ConvertTo_WhenValueIsQuotedAndTargetIsInt_ThenReturnsTheNumber(string stringValue, int expected)
+    {
+        //act
+        var actual = _sut.ConvertTo(typeof(int), stringValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertTo_WhenValueIsQuotedAndTargetIsNullableInt_ThenReturnsTheNumber()
+    {
+        //act
+        var actual = _sut.ConvertTo(typeof(int?), "\"5\"");
+
+        //assert
+        actual.Should().Be(5);
+    }
+
+    [Theory]
+    [InlineData("\"1.5\"", 1.5)]
+    public void ConvertTo_WhenValueIsQuotedAndTargetIsDouble_ThenReturnsTheNumber(string stringValue, double expected)
+    {
+        //act
+        var actual = _sut.ConvertTo(typeof(double), stringValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertTo_WhenValueIsQuotedAndTargetIsDecimal_ThenReturnsTheNumber()
+    {
+        //act
+        var actual = _sut.ConvertTo(typeof(decimal), "\"1.5\"");
+
+        //assert
+        actual.Should().Be(1.5m);
+    }
+
+    [Fact]
+    public void ConvertTo_WhenValueIsQuotedAndTargetIsGuid_ThenReturnsTheGuid()
+    {
+        //act
+        var actual = _sut.ConvertTo(typeof(Guid), "\"846e7ce6-ef91-43b9-877f-98ad793beca1\"");
+
+        //assert
+        actual.Should().Be(Guid.Parse("846e7ce6-ef91-43b9-877f-98ad793beca1"));
+    }
+
+    [Fact]
+    public void ConvertTo_WhenValueIsQuotedAndTargetIsDateTime_ThenReturnsTheDateTime()
+    {
+        //act
+        var actual = _sut.ConvertTo(typeof(DateTime), "\"2020-01-01 00:00\"");
+
+        //assert - the space is a character of the value and the date is read as the invariant one
+        actual.Should().Be(new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+    }
+
+    [Theory]
+    [InlineData("\"abc\"")]
+    [InlineData("\"1.2.3\"")]
+    //the null keyword inside quotes is that word, and a word is not a number
+    [InlineData("\"null\"")]
+    public void ConvertTo_WhenQuotedValueIsNotTheType_ThenThrows(string stringValue)
+    {
+        //act
+        var convert = () => _sut.ConvertTo(typeof(int), stringValue);
+
+        //assert - the message names the text between the quotes, which is what was not a number
+        convert.Should().Throw<InvalidConstantStringToTypeConversionException>()
+            .And.Message.Should().Contain(stringValue.Trim('"')).And.Contain(nameof(Int32));
+    }
+
+    [Fact]
+    public void ConvertTo_WhenValueIsQuotedAndTargetIsChar_ThenReturnsThatCharacter()
+    {
+        //act
+        var actual = _sut.ConvertTo(typeof(char), "\"a\"");
+
+        //assert - double quotes are taken off before the type reads the text, so a `char` gets one
+        //character from a quoted value too
+        actual.Should().Be('a');
+    }
+
+    [Theory]
+    //what the culture calls a number: white space around it, a sign on either side, its own group
+    //separator (the invariant one groups with a comma), and for the floating point types an exponent
+    [InlineData(" 5 ", 5)]
+    [InlineData("+5", 5)]
+    [InlineData("5-", -5)]
+    [InlineData("1,2", 12)]
+    [InlineData("1,234", 1234)]
+    public void ConvertTo_WhenTargetIsInt_ThenReadsWhatTheCultureCallsANumber(string stringValue, int expected)
+    {
+        //act
+        var actual = _sut.ConvertTo(typeof(int), stringValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Theory]
+    //what the culture does not call a number: `Any` took a parenthesis for a minus and a currency
+    //symbol for nothing at all
+    [InlineData("(5)")]
+    [InlineData("\u00A45")]
+    [InlineData("5%")]
+    [InlineData("1 000")]
+    public void ConvertTo_WhenTargetIsIntAndTextIsNotItsNumber_ThenThrows(string stringValue)
+    {
+        //act
+        var convert = () => _sut.ConvertTo(typeof(int), stringValue);
+
+        //assert
+        convert.Should().Throw<InvalidConstantStringToTypeConversionException>();
+    }
+
+    [Theory]
+    [InlineData("1e3", 1000d)]
+    [InlineData("1.5e2", 150d)]
+    [InlineData("1.2", 1.2)]
+    public void ConvertTo_WhenTargetIsDouble_ThenExponentAndDotStayFine(string stringValue, double expected)
+    {
+        //act
+        var actual = _sut.ConvertTo(typeof(double), stringValue);
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("(1.5)")]
+    [InlineData("\u00A41.5")]
+    public void ConvertTo_WhenTargetIsDecimalAndTextCarriesSignOrCurrency_ThenThrows(string stringValue)
+    {
+        //act
+        var convert = () => _sut.ConvertTo(typeof(decimal), stringValue);
+
+        //assert
+        convert.Should().Throw<InvalidConstantStringToTypeConversionException>();
+    }
+
+    [Fact]
+    public void ConvertTo_WhenTargetIsByte_ThenReadsTheInvariantNumber()
+    {
+        //act - `byte` used to parse with the culture of the machine, so which queries worked depended
+        //on where the service ran
+        var actual = _sut.ConvertTo(typeof(byte), "2,5");
+
+        //assert
+        actual.Should().Be((byte)25);
+    }
+
+    [Theory]
+    //the culture the request named reads the text: the same characters are a different number where a
+    //comma groups thousands instead of separating the fraction
+    [InlineData("pl-PL", 1.2)]
+    [InlineData("en-US", 12)]
+    public void ConvertTo_WhenGivenACulture_ThenReadsTheValueInIt(string culture, decimal expected)
+    {
+        //act
+        var actual = _sut.ConvertTo(typeof(decimal), "\"1,2\"", CultureInfo.GetCultureInfo(culture));
+
+        //assert
+        actual.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertTo_WhenGivenACulture_ThenReadsTheDateInIt()
+    {
+        //act - the month of the value is spelled in Polish
+        var actual = _sut.ConvertTo(typeof(DateTime), "\"1 sty 2020\"", CultureInfo.GetCultureInfo("pl-PL"));
+
+        //assert
+        actual.Should().Be(new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Unspecified));
+    }
+
+    [Fact]
+    public void ConvertTo_WhenValueIsAnIntAndTargetIsEnum_ThenConvertsToTheMemberWithThatValue()
+    {
+        //act - the chain has to let the number reach the enum converter, and not read it as text first
+        var actual = _sut.ConvertTo(typeof(SecondEnum), 10);
+
+        //assert
+        actual.Should().Be(SecondEnum.Value1);
+    }
+
+    [Fact]
+    public void ConvertTo_WhenGivenNoCulture_ThenReadsTheValueInInvariantCulture()
+    {
+        //act - a request that named no culture reaches this converter as `null`, and `null` is the
+        //invariant culture, not the one the service runs in
+        var actual = _sut.ConvertTo(typeof(decimal), "\"1,2\"");
+
+        //assert
+        actual.Should().Be(12m);
+    }
+
+    [Theory]
+    [InlineData("pl-PL", 1.2)]
+    [InlineData("en-US", 12)]
+    public void ConvertToT_WhenGivenACulture_ThenReadsTheValueInIt(string culture, decimal expected)
+    {
+        //act
+        var actual = _sut.ConvertTo<decimal>("\"1,2\"", CultureInfo.GetCultureInfo(culture));
+
+        //assert
+        actual.Should().Be(expected);
     }
 
     public class InfiniteRecursionClass

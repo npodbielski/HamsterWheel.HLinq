@@ -1,4 +1,6 @@
+using System.Globalization;
 using FluentAssertions;
+using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Pipeline.Parser;
@@ -59,7 +61,7 @@ public class RootApplierBaseUnitTests_NetStandard
         var cancellationTokenSource = new CancellationTokenSource();
         var sut = new TestRootApplier();
         var action = () => sut.Apply(new TestDummyQueryableContext(), new TestDummySelectRoot(),
-            "select[x.name]", cancellationTokenSource.Token);
+            "select[x.name]", null, cancellationTokenSource.Token);
         cancellationTokenSource.Cancel();
 
         //act and assert
@@ -77,7 +79,7 @@ public class RootApplierBaseUnitTests_NetStandard
 
         //act
         var actual = sut.Apply(new TestDummyQueryableContext(), new TestDummySelectRoot(), "select[x.name]",
-            cancellationTokenSource.Token);
+            null, cancellationTokenSource.Token);
 
         //assert
         actual.Should().Be(expectedContext);
@@ -87,7 +89,7 @@ public class RootApplierBaseUnitTests_NetStandard
 public class TestRootApplier(IQueryableContext? expectedContext = null) : RootApplierBase<TestDummySelectRoot>
 {
     protected override IQueryableContext ApplyImpl(IQueryableContext context, TestDummySelectRoot selectRoot,
-        string hLinqQuery) =>
+        string hLinqQuery, CultureInfo culture) =>
         expectedContext ?? throw new NotImplementedException();
 }
 
@@ -118,6 +120,19 @@ public class TestDummyQueryableContext : IQueryableContext
     public IQueryable? Queryable { get; init; } = Enumerable.Empty<Person>().AsQueryable();
     public Type CurrentResultType { get; init; } = typeof(Person);
     public int? Count { get; init; } = 0;
+    public IHLinqWarnings? Warnings { get; init; }
+    public HamsterWheel.HLinq.Pipeline.Applier.GroupingState? Grouping { get; init; }
+
+    public IQueryableContext Next(IQueryable? queryable, Type currentResultType, int? count = null,
+        HamsterWheel.HLinq.Pipeline.Applier.GroupingState? grouping = null) =>
+        new TestDummyQueryableContext
+        {
+            Queryable = queryable,
+            CurrentResultType = currentResultType,
+            Count = count,
+            Warnings = Warnings,
+            Grouping = grouping ?? Grouping,
+        };
 }
 
 public class Person

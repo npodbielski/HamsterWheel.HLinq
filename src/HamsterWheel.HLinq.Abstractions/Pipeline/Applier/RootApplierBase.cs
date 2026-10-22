@@ -1,3 +1,4 @@
+using System.Globalization;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Parser;
 
@@ -8,14 +9,15 @@ public abstract class RootApplierBase<TRoot> : IElementApplier where TRoot : cla
     public bool CanApply(ITreeBranch root) => root is TRoot;
 
     public IQueryableContext Apply(IQueryableContext context, ITreeBranch root, string hLinqQuery,
-        CancellationToken cancellationToken = default)
+        CultureInfo? culture = null, CancellationToken cancellationToken = default)
     {
         var targetRoot = root as TRoot ?? throw new InvalidTypeOfTreeRoot<TRoot>(root);
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        return ApplyImpl(context, targetRoot, hLinqQuery);
+        return ApplyImpl(context, targetRoot, hLinqQuery, culture ?? CultureInfo.InvariantCulture);
     }
 
-    protected abstract IQueryableContext ApplyImpl(IQueryableContext context, TRoot root, string hLinqQuery);
+    protected abstract IQueryableContext ApplyImpl(IQueryableContext context, TRoot root, string hLinqQuery,
+        CultureInfo culture);
 }

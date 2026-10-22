@@ -15,7 +15,7 @@ public partial class ExpressionBuilderUnitTests
 {
     private readonly ExpressionBuilder _sut;
     private static readonly TestServicesCollection HLinqServices = new();
-    private readonly HLinqTokenizer _tokenizer = new(HLinqServices.TokenPossibilities);
+    private readonly IHLinqTokenizer _tokenizer = HLinqServices.Tokenizer;
     private readonly HLinqParser _parser = new(HLinqServices.Parsers);
     private readonly ParametersConverter _parametersConverter = new();
 
@@ -44,5 +44,8 @@ public static class DummyMethods
 {
     public static bool ILike(this DbFunctions _, string matchExpression, string pattern)
         => throw new InvalidOperationException("Dummy method should not be called!");
+
+    public static string Reverse(this DbFunctions _, string value) =>
+        throw new InvalidOperationException("Dummy method should not be called!");
 }
 #endif

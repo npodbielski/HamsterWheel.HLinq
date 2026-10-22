@@ -1,5 +1,6 @@
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
+using HamsterWheel.HLinq.Tokens.Grouping;
 using HamsterWheel.HLinq.Tokens.Ordering;
 using HamsterWheel.HLinq.Tokens.Paging;
 using HamsterWheel.HLinq.Tokens.Selecting;
@@ -13,6 +14,7 @@ public class ExpectedToken(Type type, string value)
 
     public static ExpectedToken Select => new(typeof(Select), "select");
     public static ExpectedToken Where => new(typeof(Where), "where");
+    public static ExpectedToken GroupBy => new(typeof(GroupBy), "groupBy");
     public static ExpectedToken LeftSquareBracket => new(typeof(LeftSquareBracket), "[");
     public static ExpectedToken RightSquareBracket => new(typeof(RightSquareBracket), "]");
     public static ExpectedToken LeftCircleBracket => new(typeof(LeftCircleBracket), "(");

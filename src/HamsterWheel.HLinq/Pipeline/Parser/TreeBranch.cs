@@ -12,7 +12,7 @@ public abstract class TreeBranch(IToken[] startingTokens) : ITreeBranch
     {
         if (context.Children.Count != 0)
         {
-            Children = context.Children.ToArray();
+            Children = [.. context.Children];
         }
 
         AddEndingTokens(endingTokens);
@@ -22,7 +22,7 @@ public abstract class TreeBranch(IToken[] startingTokens) : ITreeBranch
     {
         if (endingTokens.Length != 0)
         {
-            Tokens = Tokens.Concat(endingTokens).ToArray();
+            Tokens = [.. Tokens, .. endingTokens];
         }
     }
 

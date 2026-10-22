@@ -59,25 +59,28 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
     {
         protected override Expression Build(IBuilderContext context, Condition condition)
         {
-            if (condition.IsMethod)
-            {
-                var property = condition.GetChildOfType<Property>();
-                var methodCallContext = new MethodCallConditionBuilderContext(context);
-                if (property is not null)
-                {
-                    methodCallContext.ToExpression(property);
-                }
-
-                var expression = methodCallContext.ToExpression(GetMethod(condition));
-                return expression;
-            }
-
             if (condition.IsComparisonOrEqualityOp)
             {
                 Expression? left = null;
                 Expression? right = null;
 
-                if (condition.Left is Property property)
+                if (condition.Left is Method method)
+                {
+                    var conditionBuilderContext = new ArithmeticComparisonConditionBuilderContext(context);
+                    left = converterFactory.GetToExpressionConverterFor<Method>()
+                        .Build(conditionBuilderContext, method);
+                    conditionBuilderContext.ComparisonType = left.Type;
+                    right = conditionBuilderContext.ToExpression(condition.Right);
+                }
+                else if (condition.Right is Method reversedMethod)
+                {
+                    var conditionBuilderContext = new ArithmeticComparisonConditionBuilderContext(context);
+                    right = converterFactory.GetToExpressionConverterFor<Method>()
+                        .Build(conditionBuilderContext, reversedMethod);
+                    conditionBuilderContext.ComparisonType = right.Type;
+                    left = conditionBuilderContext.ToExpression(condition.Left);
+                }
+                else if (condition.Left is Property property)
                 {
                     var conditionBuilderContext = new ArithmeticComparisonConditionBuilderContext(context);
                     left = converterFactory.GetToExpressionConverterFor<Property>()
@@ -129,6 +132,18 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
                     //the two sides have no comparison operator in common, i.e. `where[x.Name==x.Int]`
                     throw new ComparisonOperandTypesCannotBeComparedException(left.Type, right.Type);
                 }
+            }
+
+            if (condition.IsMethod)
+            {
+                var property = condition.GetChildOfType<Property>();
+                var methodCallContext = new MethodCallConditionBuilderContext(context);
+                if (property is not null)
+                {
+                    methodCallContext.ToExpression(property);
+                }
+
+                return methodCallContext.ToExpression(GetMethod(condition));
             }
 
             if (condition.IsFlagCheck)

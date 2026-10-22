@@ -26,6 +26,21 @@ public partial class ExpressionBuilderUnitTests
     }
 
     [Fact]
+    public void GetSelect_WhenFunctionCall_ThenParserRejectsIt()
+    {
+        const string query = "select[Reverse(x.Name)]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = query
+        };
+        var tokens = _tokenizer.Tokenize(query);
+
+        var action = () => _parser.Parse(hlinqQuery, tokens);
+
+        action.Should().Throw<InvalidTokenCollectionException>();
+    }
+
+    [Fact]
     public void GetSelect_WhenSingleProp_ThenCanSelect()
     {
         const string query = "select[x.Name]";

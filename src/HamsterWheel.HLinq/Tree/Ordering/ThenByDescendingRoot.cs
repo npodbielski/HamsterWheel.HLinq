@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Linq.Expressions;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Applier;
@@ -7,11 +8,13 @@ using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Ordering;
+using HamsterWheel.HLinq.Tree.Grouping;
 
 namespace HamsterWheel.HLinq.Tree.Ordering;
 
 public sealed class ThenByDescendingRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 {
+    // ReSharper disable once UnusedType.Global - Used by Parser
     public sealed class Parser : ElementParserBase<ThenByDescendingRoot>
     {
         public override IToken[] ExampleTokens { get; } = ThenByDescendingRootExampleTokens;
@@ -48,22 +51,30 @@ public sealed class ThenByDescendingRoot(IToken[] tokens) : TreeBranch(tokens), 
                 ThenByDescendingRootExampleTokens);
     }
 
+    // ReSharper disable once UnusedType.Global - Used by Applier
     public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache)
         : RootApplierBase<ThenByDescendingRoot>
     {
         protected override IQueryableContext ApplyImpl(IQueryableContext context,
-            ThenByDescendingRoot orderBy, string hLinqQuery)
+            ThenByDescendingRoot orderBy, string hLinqQuery, CultureInfo culture)
         {
-            var selector = builder.GetProperty(context.CurrentResultType, orderBy, hLinqQuery);
+            if (context.Grouping is not null)
+            {
+                GroupedResultPropertyValidator.CheckIfPropertyAvailable(orderBy, hLinqQuery);
+            }
+
+            var selector = builder.GetProperty(context.CurrentResultType, orderBy, hLinqQuery, culture,
+                context.Warnings);
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.ThenByDescending),
                 infos => infos.Length == 2,
                 context.CurrentResultType, selector.PropType);
-            return new QueryableContext(
+            return context.Next(
                 (IOrderedQueryable)method.Invoke(null, [context.Queryable, selector.Expression])!,
                 context.CurrentResultType, context.Count);
         }
     }
 
+    // ReSharper disable once UnusedType.Global - Used by Applier
     public sealed class Converter : ElementToExpressionConverter<ThenByDescendingRoot>
     {
         protected override Expression Build(IBuilderContext context, ThenByDescendingRoot element) =>

@@ -8,6 +8,11 @@ include:
   - project: "ci/templates"
     ref: "main"
     file: "/nuget-publish.yml"
+  # Feed policy and release gate for projects publishing public packages
+  # (hidden .nuget-restore, .release-policy).
+  - project: "ci/templates"
+    ref: "main"
+    file: "/nuget-project.yml"
   # Shared test + coverage-gate job (hidden .dotnet-test), one instance per
   # test project below.
   - project: "ci/templates"
@@ -33,7 +38,6 @@ include:
 stages:
   - build
   - test
-  - badges
   - release
   - publish
   - deploy
@@ -43,6 +47,8 @@ image: mcr.microsoft.com/dotnet/sdk:10.0
 variables:
   OBJECTS_DIRECTORY: 'obj'
   NUGET_PACKAGES_DIRECTORY: '.nuget'
+  NUGET_RESTORE_TARGET: 'HLinq.slnx'
+  NUGET_FAMILY_FEED_URL: "${CI_API_V4_URL}/groups/69/-/packages/nuget/index.json"
   SOURCE_CODE_PATH: ''
   FF_NETWORK_PER_BUILD: "true"
 
@@ -56,9 +62,7 @@ cache:
 
 .dotnet:
   before_script:
-    # Configure GitLab package registry as a NuGet source
-    - 'dotnet nuget add source "${CI_API_V4_URL}/groups/69/-/packages/nuget/index.json" --name group --username gitlab-ci-token --password $CI_JOB_TOKEN --store-password-in-clear-text'
-    - 'dotnet restore HLinq.slnx --packages $NUGET_PACKAGES_DIRECTORY'
+    - !reference [.nuget-restore, script]
 
 build:
   stage: build
@@ -67,7 +71,7 @@ build:
     - 'dotnet build --no-restore'
 
 # One shared-gate instance per test project (.dotnet-test from ci/templates);
-# .dotnet keeps the group feed source + restore the suites need. The template
+# .dotnet keeps the feed policy + restore the suites need. The template
 # must sit directly in extends: hidden jobs from includes are not extendable
 # through intermediate local jobs.
 
@@ -80,7 +84,7 @@ tests-unit:
     # measure this repo's libraries only: third-party and group-feed packages
     # (Humanizer, AspNet/PgSql/Client) sit in the test output and drag the
     # gate to ~0.25; Demo is the demo app, not a shipped library
-    COVERAGE_EXCLUDE_FILTER: "[*]*.Program [HamsterWheel.HLinq.Demo*]* [Humanizer]* [HamsterWheel.HLinq.AspNet]* [HamsterWheel.HLinq.PgSql]* [HamsterWheel.HLinq.Client]* [Testcontainers*]* [Docker.DotNet*]* [Microsoft.Net.Http.Client]*"
+    COVERAGE_EXCLUDE_FILTER: "[*]*.Program [HamsterWheel.HLinq.Demo*]* [Humanizer]* [HamsterWheel.HLinq.AspNet]* [HamsterWheel.HLinq.PgSql]* [HamsterWheel.HLinq.Client]* [MySqlConnector]* [Testcontainers*]* [Docker.DotNet*]* [Microsoft.Net.Http.Client]*"
     DOTNET_TEST_TARGET: test/HamsterWheel.HLinq.UnitTests
     TEST_RESULTS_DIR: ./test-results/unit
 
@@ -90,7 +94,7 @@ tests-netstandard:
     - .dotnet
     - .dotnet-test
   variables:
-    COVERAGE_EXCLUDE_FILTER: "[*]*.Program [HamsterWheel.HLinq.Demo*]* [Humanizer]* [HamsterWheel.HLinq.AspNet]* [HamsterWheel.HLinq.PgSql]* [HamsterWheel.HLinq.Client]* [Testcontainers*]* [Docker.DotNet*]* [Microsoft.Net.Http.Client]*"
+    COVERAGE_EXCLUDE_FILTER: "[*]*.Program [HamsterWheel.HLinq.Demo*]* [Humanizer]* [HamsterWheel.HLinq.AspNet]* [HamsterWheel.HLinq.PgSql]* [HamsterWheel.HLinq.Client]* [MySqlConnector]* [Testcontainers*]* [Docker.DotNet*]* [Microsoft.Net.Http.Client]*"
     DOTNET_TEST_TARGET: test/HamsterWheel.HLinq.UnitTests.NetStandard
     TEST_RESULTS_DIR: ./test-results/netstandard
 
@@ -105,13 +109,12 @@ tests-integration:
     POSTGRES_PASSWORD: outflank-outage-undoing
     POSTGRES_DB: Demo
     POSTGRES_HOST: postgres
-    COVERAGE_EXCLUDE_FILTER: "[*]*.Program [HamsterWheel.HLinq.Demo*]* [Humanizer]* [HamsterWheel.HLinq.AspNet]* [HamsterWheel.HLinq.PgSql]* [HamsterWheel.HLinq.Client]* [Testcontainers*]* [Docker.DotNet*]* [Microsoft.Net.Http.Client]*"
+    COVERAGE_EXCLUDE_FILTER: "[*]*.Program [HamsterWheel.HLinq.Demo*]* [Humanizer]* [HamsterWheel.HLinq.AspNet]* [HamsterWheel.HLinq.PgSql]* [HamsterWheel.HLinq.Client]* [MySqlConnector]* [Testcontainers*]* [Docker.DotNet*]* [Microsoft.Net.Http.Client]*"
     DOTNET_TEST_TARGET: test/HamsterWheel.HLinq.IntegrationTests
     TEST_RESULTS_DIR: ./test-results/integration
 
 badges:
   extends: .badges
-  stage: badges
   allow_failure: true
   variables:
     BADGE_SLUG: hlinq
@@ -124,7 +127,6 @@ badges:
 
 badges-failed:
   extends: .badges
-  stage: badges
   allow_failure: true
   variables:
     BADGE_SLUG: hlinq
@@ -145,6 +147,10 @@ release:
     BADGE_SLUG: hlinq
     GITHUB_MIRROR_URL: "git@github.com:npodbielski/HamsterWheel.HLinq.git"
 
+release-policy:
+  extends: .release-policy
+  stage: test
+
 readme-check:
   extends: .readme-check
   stage: test
@@ -154,7 +160,7 @@ readme-check:
     README_PACKAGE_PREFIXES: HamsterWheel.HLinq
 
 format-hlinq:
-  # .dotnet: explicit restore with the group feed - without it `dotnet format`
+  # .dotnet: shared restore, feeds per branch policy - without it `dotnet format`
   # resolved from whatever the shared cache happened to hold and died silently
   extends:
     - .dotnet

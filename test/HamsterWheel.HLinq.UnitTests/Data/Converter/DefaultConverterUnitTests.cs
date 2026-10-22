@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using HamsterWheel.HLinq.Data;
 using HamsterWheel.HLinq.Data.Converters;
@@ -12,13 +13,14 @@ public partial class DefaultConverterUnitTests
         new(DefaultConverter.GetDefaultConverters(), new NullKeyword(), converter);
 }
 
-public class FallbackConverter : FallbackConverterBase
+public class TestsFallbackConverter : FallbackConverterBase
 {
     public bool Called { get; set; }
 
-    public override object? ConvertTo(object? value, Type to)
+    public override (bool success, object? result) TryConvert(object? value, Type to,
+        CultureInfo? culture = null)
     {
         Called = true;
-        return JsonSerializer.Deserialize(value!.ToString()!, to);
+        return (true, JsonSerializer.Deserialize(value!.ToString()!, to));
     }
 }

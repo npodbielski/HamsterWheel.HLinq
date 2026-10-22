@@ -1,3 +1,4 @@
+using System.Globalization;
 using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Applier;
@@ -13,6 +14,7 @@ public sealed partial class SkipRoot(IToken[] tokens) : TreeBranch(tokens), ITre
     private string GetSkipNumber(string query) =>
         (GetChildOfType<SkipOrTakeConstant>() ?? throw new MissingSkipValueException()).Value.GetValue(query);
 
+    // ReSharper disable once UnusedType.Global - Used by Parser
     public sealed class Parser : ElementParserBase<SkipRoot>
     {
         protected override SkipRoot? BuildBranch(IParsingContext context) =>
@@ -47,10 +49,11 @@ public sealed partial class SkipRoot(IToken[] tokens) : TreeBranch(tokens), ITre
         ];
     }
 
+    // ReSharper disable once UnusedType.Global - Used by Applier
     public sealed class Applier(IDefaultConverter converter, IMethodsCache methodsCache) : RootApplierBase<SkipRoot>
     {
         protected override IQueryableContext ApplyImpl(IQueryableContext context, SkipRoot skip,
-            string hLinqQuery)
+            string hLinqQuery, CultureInfo culture)
         {
             var numberAsString = skip.GetSkipNumber(hLinqQuery);
 
@@ -59,7 +62,7 @@ public sealed partial class SkipRoot(IToken[] tokens) : TreeBranch(tokens), ITre
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Skip),
                 typeParams: context.CurrentResultType);
 
-            return new QueryableContext((IQueryable)method.Invoke(null, [context.Queryable, skipNumber])!,
+            return context.Next((IQueryable)method.Invoke(null, [context.Queryable, skipNumber])!,
                 context.CurrentResultType, context.Count);
         }
     }

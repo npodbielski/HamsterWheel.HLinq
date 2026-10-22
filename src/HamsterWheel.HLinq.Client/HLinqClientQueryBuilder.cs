@@ -56,12 +56,7 @@ public class HLinqClientQueryBuilder<T> : ResponseHLinqClientQueryBuilder<T[]>
     }
 
     /// <summary>
-    ///     Adds a <c>take[start..end]</c> range, i.e. <c>Take(10..20)</c> builds <c>take[10..20]</c>
-    ///     (equivalent of <c>skip[10].take[10]</c>). An open end (<c>Take(10..)</c>) builds
-    ///     <c>take[10..]</c> which, like a bare <c>skip</c>, is not capped at the maximum take.
-    ///     Indexes counted from the end (<c>^</c>) are not supported. Note that C# cannot tell
-    ///     an open-ended <c>..</c> range apart from <c>0..0</c>, and a <c>0</c> end always builds
-    ///     an open end.
+    /// Takes a specified range of rows from a collection
     /// </summary>
     public UnorderedHLinqClientQueryBuilder<T> Take(Range range)
     {
@@ -89,5 +84,24 @@ public class HLinqClientQueryBuilder<T> : ResponseHLinqClientQueryBuilder<T[]>
         AddDotIfNecessary();
         Query.Append("count[]");
         return NextCounted(this);
+    }
+
+    /// <summary>
+    /// Groups the rows by one property: the answer is a list of Group(Key, Rows) entries, one per group. What follows the grouping works on groups - <c>Take</c> keeps groups, <c>Count</c>
+    /// answers how many groups there are - except a <c>Select</c> written directly after it, which
+    /// names the shape of the rows and may read <c>x.Key</c>, the key of the group a row is in.
+    /// </summary>
+    public GroupedHLinqClientQueryBuilder<TKey, T> GroupBy<TKey>(Expression<Func<T, TKey>> keySelector)
+        where TKey : notnull
+    {
+        if (keySelector.Body is not MemberExpression me)
+        {
+            throw new ArgumentException(
+                "groupBy takes a property of the entity, i.e. x => x.Status", nameof(keySelector));
+        }
+
+        AddDotIfNecessary();
+        Query.Append("groupBy[").Append(me).Append(']');
+        return new GroupedHLinqClientQueryBuilder<TKey, T>(JsonSerializerOptions, Query.ToString());
     }
 }

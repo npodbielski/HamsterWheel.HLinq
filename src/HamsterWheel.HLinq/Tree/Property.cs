@@ -13,7 +13,7 @@ namespace HamsterWheel.HLinq.Tree;
 public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamElement
 {
     public string[] GetPath(string hLinqQuery) =>
-        Tokens.OfType<PropertyName>().Select(t => t.GetValue(hLinqQuery)).ToArray();
+        [.. Tokens.OfType<PropertyName>().Select(t => t.GetValue(hLinqQuery))];
 
     public string GetValue(string hLinqQuery) => GetPath(hLinqQuery).JoinWithDot();
 
@@ -36,7 +36,12 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
                 index += 1;
             }
 
-            if (context.Tokens[index..] is [Entity, IComparisonToken, ..])
+            if (context.CurrentBranch is Method && context.Tokens[0] is Comma)
+            {
+                index += 1;
+            }
+
+            if (index == 0 && context.Tokens is [Entity, IComparisonToken, ..])
             {
                 return new Property(context.Tokens[..1]);
             }
@@ -65,7 +70,7 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
         protected override Expression Build(IBuilderContext context, Property element)
         {
             var path = element.GetPath(context.HLinqQuery);
-            var memberExpression = context.Builder.GetProperty(context.Type, context.Param, path).Member;
+            var memberExpression = context.Builder.GetProperty(context.Type, context.Param, path, context).Member;
             switch (context)
             {
                 case IArithmeticComparisonConditionBuilderContext conditionBuilderContext:

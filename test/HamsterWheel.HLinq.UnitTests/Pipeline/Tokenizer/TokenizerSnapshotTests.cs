@@ -5,17 +5,17 @@ using HamsterWheel.HLinq.UnitTests.TestUtils;
 namespace HamsterWheel.HLinq.UnitTests.Pipeline.Tokenizer;
 
 /// <summary>
-///     Differential tokenizer harness: pins the exact token stream (or throw type) of every query in
-///     <see cref="TokenizerSnapshotData" />, asserted with the same
-///     <c>HaveSequenceOf</c> style as the other tokenizer tests. The expectations are plain, manually
-///     maintained C# — renaming a token type, matcher or exception is a compile error, never a silent
-///     pass. Refactorings must keep the corpus untouched; when the
-///     tokenizer behavior changes by design, edit the affected entries (and review the diff) as part
-///     of that change. New syntax or features land together with their corpus entries.
+/// Differential tokenizer harness: pins the exact token stream (or throw type) of every query in
+/// <see cref="TokenizerSnapshotData" />, asserted with the same
+/// <c>HaveSequenceOf</c> style as the other tokenizer tests. The expectations are plain, manually
+/// maintained C# — renaming a token type, matcher or exception is a compile error, never a silent
+/// pass. Refactorings must keep the corpus untouched; when the
+/// tokenizer behavior changes by design, edit the affected entries (and review the diff) as part
+/// of that change. New syntax or features land together with their corpus entries.
 /// </summary>
 public class TokenizerSnapshotTests
 {
-    private readonly IHLinqTokenizer _sut = new HLinqTokenizer(TestServicesCollection.TokenPossibilities);
+    private readonly IHLinqTokenizer _sut = TestServicesCollection.Tokenizer;
     private static readonly TestServicesCollection TestServicesCollection = new();
 
     [Fact]

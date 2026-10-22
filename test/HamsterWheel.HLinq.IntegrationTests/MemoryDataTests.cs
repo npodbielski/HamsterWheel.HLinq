@@ -15,9 +15,9 @@ partial class MemoryDataTests
     {
         //the demo app runs a localized, extended grammar - the self-check must
         //pass for the effective (as-configured) token set, not just the default one
-        var grammar = fixture.DemoTestHost.Services.GetRequiredService<GrammarValidator>();
+        var tokenizer = fixture.DemoTestHost.Services.GetRequiredService<IHLinqTokenizer>();
 
-        var act = grammar.Validate;
+        var act = () => GrammarValidator.Validate(tokenizer);
 
         act.Should().NotThrow();
     }

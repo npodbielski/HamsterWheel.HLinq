@@ -1,67 +1,110 @@
+using System.Collections.Concurrent;
+using System.Globalization;
 using HamsterWheel.HLinq.Tokens;
 
 namespace HamsterWheel.HLinq.Pipeline.Tokenizer;
 
 /// <summary>
-///     Single left-to-right walk over the query, no backtracking and no syntax peeking.
-///     The walk knows which clause it is in: possibilities are split per clause once, at construction,
-///     and committing a clause root (<see cref="IClauseRootToken" />) switches the walk to the
-///     possibilities of that clause - a token of another clause is never even asked. Adjacency is
-///     then the only question left for the possibilities of the current clause.
-///     For each window (the text after the last committed token) the adjacency rule of every
-///     remaining possibility (<see cref="IHLinqTokenPossibility.MatchesPreviousTokens" />) is
-///     evaluated once - it cannot change while the window grows - and every window growth then asks
-///     only its text rule (<see cref="IHLinqTokenPossibility.MatchAt" />). The first possibility
-///     (in registration order) that completes at an offset commits its token and the walk jumps
-///     to that offset; windows that match nothing throw. Ambiguity is resolved by the token
-///     grammars themselves, never by the tokenizer looking at surrounding syntax.
+/// Processes query string and produces a sequence of tokens out of it. Tokenizer does not do backtracking. Just look ahead.
 /// </summary>
 public sealed partial class HLinqTokenizer : IHLinqTokenizer
 {
-    private readonly IHLinqTokenPossibility[] _allPossibilities;
+    private readonly Language _invariant;
+    private readonly Dictionary<string, Language> _byCulture;
 
-    // possibilities that may stand in a clause opened by a given root token, built once: which clause
-    // a token belongs to cannot change while a query is tokenized, so the walk switches this array
-    // instead of asking every possibility where it is allowed - the fewer possibilities it asks, the
-    // less work the walk does
-    private readonly Dictionary<Type, IHLinqTokenPossibility[]> _possibilitiesByClauseRoot;
+    private static readonly ConcurrentDictionary<Type, Func<Range, IToken>> Builders = new();
 
-    // possibilities allowed before any clause root was committed (the empty-clause context, which is
-    // also what the grammar self-check evaluates rules against)
-    private readonly IHLinqTokenPossibility[] _outsideOfAnyClause;
-
-    private readonly IHLinqTokenPossibility[] _startingPossibilities;
-
-    public HLinqTokenizer(IEnumerable<IHLinqTokenPossibility> tokenPossibilities)
+    public HLinqTokenizer(IEnumerable<IHLinqWord> tokenWords)
     {
-        _allPossibilities = [.. tokenPossibilities];
+        var words = tokenWords.ToArray();
 
-        var clauseRoots = _allPossibilities
-            .Select(p => p.ForType)
-            .Where(t => typeof(IClauseRootToken).IsAssignableFrom(t))
-            .Distinct()
-            .ToArray();
-
-        _possibilitiesByClauseRoot = clauseRoots.ToDictionary(
-            root => root,
-            root => _allPossibilities.Where(p => p.MatchesClauseRoot(root)).ToArray());
-
-        _outsideOfAnyClause = [.. _allPossibilities.Where(p => p.MatchesClauseRoot(null))];
-        _startingPossibilities = [.. _outsideOfAnyClause.Where(t => t.CanBeFirst)];
+        _invariant = LanguageOf([.. words.Where(p => p.Culture is null)]);
+        _byCulture = LanguagesOf(words);
     }
 
-    public IToken[] Tokenize(string hLinqQuery)
+    public IToken[] Tokenize(string hLinqQuery, CultureInfo? culture = null)
+    {
+        if (culture is null || _byCulture.Count == 0)
+        {
+            return Process(hLinqQuery, _invariant);
+        }
+
+        for (var name = culture.Name; name.Length > 0; name = NearestCultureName(name))
+        {
+            if (_byCulture.TryGetValue(name, out var language))
+            {
+                return Process(hLinqQuery, language);
+            }
+        }
+
+        return Process(hLinqQuery, _invariant);
+    }
+
+    internal Language[] GetLanguages() => [_invariant, .. _byCulture.Values];
+
+    private static Dictionary<string, Language> LanguagesOf(IHLinqWord[] words)
+    {
+        var languages = new Dictionary<string, Language>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var culture in words
+                     .Where(p => p.Culture is not null)
+                     .Select(p => p.Culture!.Name)
+                     .Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            languages[culture] = LanguageOf([
+                .. words.Where(p =>
+                    p.Culture is null
+                    || string.Equals(p.Culture.Name, culture, StringComparison.OrdinalIgnoreCase))
+            ]);
+        }
+
+        return languages;
+    }
+
+    private static Language LanguageOf(IHLinqWord[] words)
+    {
+        var grammar = new Grammar(words);
+
+        WordTranslation[] all =
+        [
+            .. words.Select(w => new WordTranslation(w, w.PatternFor(grammar),
+                grammar.GetRuleFor(w.ForType), BuilderFor(w.ForType)))
+        ];
+
+        var byClauseRoot = all
+            .Select(w => w.Word.ForType)
+            .Where(t => typeof(IClauseRootToken).IsAssignableFrom(t))
+            .Distinct()
+            .ToDictionary(root => root,
+                root => all.Where(w => w.Rule.MatchesClauseRoot(root)).ToArray());
+
+        var outsideOfAnyClause = all.Where(w => w.Rule.MatchesClauseRoot(null)).ToArray();
+
+        return new Language(grammar, all, byClauseRoot, outsideOfAnyClause,
+            [.. outsideOfAnyClause.Where(w => w.Rule.CanBeFirst)]);
+    }
+
+    private static string NearestCultureName(string culture)
+    {
+        var lastSubtag = culture.LastIndexOf('-');
+        return lastSubtag < 0 ? "" : culture[..lastSubtag];
+    }
+
+    private static IToken[] Process(string hLinqQuery, Language language)
     {
         var span = hLinqQuery.AsSpan();
+        var allWords = language.Words;
+        var byClauseRoot = language.ByClauseRoot;
+        var starting = language.Starting;
         List<IToken> tokens = [];
-        var candidates = new IHLinqTokenPossibility[_allPossibilities.Length];
+        var candidates = new WordTranslation[allWords.Length];
         var candidateCount = 0;
-        var possible = new IHLinqTokenPossibility[_allPossibilities.Length];
+        var possible = new WordTranslation[allWords.Length];
         var possibleCount = 0;
         var previousTokenIndex = 0;
         var candidatesValid = false;
         var windowHasText = false;
-        var clausePossibilities = _outsideOfAnyClause;
+        var clauseWords = language.OutsideOfAnyClause;
 
         for (var index = 0; index < span.Length; index++)
         {
@@ -79,11 +122,11 @@ public sealed partial class HLinqTokenizer : IHLinqTokenizer
             if (!candidatesValid)
             {
                 candidateCount = 0;
-                foreach (var possibility in tokens.Count == 0 ? _startingPossibilities : clausePossibilities)
+                foreach (var word in tokens.Count == 0 ? starting : clauseWords)
                 {
-                    if (possibility.MatchesPreviousTokens(tokens))
+                    if (word.Rule.PreviousTokensMatch(tokens))
                     {
-                        candidates[candidateCount++] = possibility;
+                        candidates[candidateCount++] = word;
                     }
                 }
 
@@ -92,11 +135,11 @@ public sealed partial class HLinqTokenizer : IHLinqTokenizer
 
             var next = NextNonWhiteSpace(span, index);
             possibleCount = 0;
-            IHLinqTokenPossibility? winner = null;
+            WordTranslation? winner = null;
             var completeAt = 0;
             for (var candidate = 0; candidate < candidateCount; candidate++)
             {
-                var match = candidates[candidate].MatchAt(window, next);
+                var match = candidates[candidate].Pattern.Match(window, next);
                 if (match.IsDiscarded)
                 {
                     continue;
@@ -119,7 +162,7 @@ public sealed partial class HLinqTokenizer : IHLinqTokenizer
 
             if (completeAt == 0)
             {
-                throw new ZeroLengthCompletionException(winner.ForType.Name);
+                throw new ZeroLengthCompletionException(winner.Word.ForType.Name);
             }
 
             var tokenEnd = previousTokenIndex + completeAt;
@@ -127,12 +170,12 @@ public sealed partial class HLinqTokenizer : IHLinqTokenizer
             tokens.Add(token);
             if (token is IClauseRootToken clauseRoot)
             {
-                if (!_possibilitiesByClauseRoot.TryGetValue(clauseRoot.GetType(), out var clause))
+                if (!byClauseRoot.TryGetValue(clauseRoot.GetType(), out var clause))
                 {
-                    clause = _allPossibilities;
+                    clause = allWords;
                 }
 
-                clausePossibilities = clause;
+                clauseWords = clause;
             }
 
             previousTokenIndex = tokenEnd;
@@ -145,7 +188,7 @@ public sealed partial class HLinqTokenizer : IHLinqTokenizer
         if (windowHasText)
         {
             throw new UnknownTokenException(hLinqQuery,
-                possible.Take(possibleCount).Select(npt => npt.Build(default)).ToArray());
+                [.. possible.Take(possibleCount).Select(w => w.Build(default))]);
         }
 
         return [.. tokens];
@@ -163,4 +206,10 @@ public sealed partial class HLinqTokenizer : IHLinqTokenizer
 
         return next;
     }
+
+    private static Func<Range, IToken> BuilderFor(Type tokenType) =>
+        Builders.GetOrAdd(tokenType, static type => (Func<Range, IToken>)typeof(TokenBase)
+            .GetMethod(nameof(TokenBase.Create))!
+            .MakeGenericMethod(type)
+            .CreateDelegate(typeof(Func<Range, IToken>)));
 }

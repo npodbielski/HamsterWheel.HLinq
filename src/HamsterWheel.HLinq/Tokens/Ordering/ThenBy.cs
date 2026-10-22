@@ -4,11 +4,11 @@ namespace HamsterWheel.HLinq.Tokens.Ordering;
 
 public sealed class ThenBy : TokenBase, IClauseRootToken
 {
-    public sealed class Possibility(IGrammar grammar) : TokenPossibility<ThenBy>(grammar, "thenBy")
+    public sealed class Word() : TokenWord<ThenBy>("thenBy")
     {
 
-        protected override bool NextIsAllowedWhenKeywordMatch(char? next) =>
-            Rule.NextCharMatch(next);
+        protected override bool NextIsAllowedWhenKeywordMatch(IGrammar grammar, char? next) =>
+            grammar.GetRuleFor(ForType).NextCharMatch(next);
     }
 
     public static ThenBy Build(Range range) => new() { Range = range };

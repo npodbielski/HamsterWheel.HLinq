@@ -1,4 +1,3 @@
-using BenchmarkDotNet.ConsoleArguments;
 using BenchmarkDotNet.Running;
 
 namespace HamsterWheel.HLinq.Benchmarks;

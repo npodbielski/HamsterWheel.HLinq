@@ -1,12 +1,8 @@
-using HamsterWheel.HLinq.Pipeline.Tokenizer;
-
 namespace HamsterWheel.HLinq.Tokens.Filtering;
 
 public sealed class Where : TokenBase, IClauseRootToken
 {
-    public sealed class Possibility(IGrammar grammar) : TokenPossibility<Where>(grammar, "where")
-    {
-    }
+    public sealed class Word() : TokenWord<Where>("where");
 
     public static Where Build(Range range) => new() { Range = range };
     public static Where Empty { get; } = new() { Range = default };

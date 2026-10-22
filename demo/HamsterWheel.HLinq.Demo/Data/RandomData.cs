@@ -62,7 +62,7 @@ public class RandomData
     public DateTimeOffset? NullableDateTimeOffset { get; set; } =
         RandomizerFactory.GetRandomizer(new FieldOptionsDateTime()).Generate();
 
-    public static RandomData[] Get() => _get ??= Enumerable.Range(0, 100).Select(_ => new RandomData()).ToArray();
+    public static RandomData[] Get() => _get ??= [.. Enumerable.Range(0, 100).Select(_ => new RandomData())];
 }
 
 public class NestedRandom

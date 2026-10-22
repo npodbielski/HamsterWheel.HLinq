@@ -1,4 +1,5 @@
 using FluentAssertions;
+using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.Tree.Ordering;
@@ -28,6 +29,21 @@ public partial class ExpressionBuilderUnitTests
         var entity = new DummyEntity("test");
         propertySelect.Method.Invoke(null, [propertySelect.Target, entity])
             .Should().Be(entity.Name);
+    }
+
+    [Fact]
+    public void GetProperty_WhenFunctionCall_ThenParserRejectsIt()
+    {
+        const string query = "orderBy[Reverse(x.Name)]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = query
+        };
+        var tokens = _tokenizer.Tokenize(query);
+
+        var action = () => _parser.Parse(hlinqQuery, tokens);
+
+        action.Should().Throw<InvalidTokenCollectionException>();
     }
 
     [Fact]

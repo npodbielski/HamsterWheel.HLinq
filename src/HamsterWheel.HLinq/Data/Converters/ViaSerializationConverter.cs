@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -13,20 +14,12 @@ public class ViaSerializationConverter : IConfigurableValueConverter
         Converters = { new JsonStringEnumConverter() }
     };
 
-    public bool CanConvert(object? value, Type to) => true;
-
-    public object? ConvertTo(object? value, Type targetType)
+    public (bool success, object? result) TryConvert(object? value, Type targetType,
+        CultureInfo? culture = null)
     {
-        string jsonString;
-        if (value is string str)
-        {
-            jsonString = str;
-        }
-        else
-        {
-            jsonString = JsonSerializer.Serialize(value, DefaultJsonSerializerOptions);
-        }
+        //last attempt to serialize value: via JSON
+        var jsonString = value as string ?? JsonSerializer.Serialize(value, DefaultJsonSerializerOptions);
 
-        return JsonSerializer.Deserialize(jsonString, targetType, DefaultJsonSerializerOptions);
+        return (true, JsonSerializer.Deserialize(jsonString, targetType, DefaultJsonSerializerOptions));
     }
 }

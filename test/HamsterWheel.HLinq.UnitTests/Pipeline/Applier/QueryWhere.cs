@@ -1,5 +1,6 @@
 using AutoFixture.Xunit3;
 using FluentAssertions;
+using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.Tree.Filtering;
 using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
@@ -52,6 +53,151 @@ partial class HLinqQueryApplierUnitTests
         actual.Should().BeEquivalentTo(entities
             .Where(x => x.DateTime > DateTime.Parse(dateTimeFilter))
         );
+    }
+
+    [Theory]
+    [AutoData]
+    public void Apply_WhenQuotedValueIsComparedToInt_ThenCanApply(DummyEntity[] entities)
+    {
+        //arrange
+        const string queryString = "where[x.Int>\"5\"]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
+        var tokens = _tokenizer.Tokenize(queryString);
+        _parser.Parse(hlinqQuery, tokens);
+        var queryable = entities.AsQueryable();
+
+        //act
+        var actual = _sut.Apply(queryable, hlinqQuery);
+
+        //assert - the quotes say this text is one value, they do not make it a string
+        actual.Should().BeEquivalentTo(entities.Where(x => x.Int > 5));
+    }
+
+    [Theory]
+    [AutoData]
+    public void Apply_WhenQuotedValueIsComparedToDateTime_ThenCanApply(DummyEntity[] entities)
+    {
+        //arrange
+        const string queryString = "where[x.DateTime>\"2025-12-01 00:00\"]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
+        var tokens = _tokenizer.Tokenize(queryString);
+        _parser.Parse(hlinqQuery, tokens);
+        var queryable = entities.AsQueryable();
+
+        //act
+        var actual = _sut.Apply(queryable, hlinqQuery);
+
+        //assert - the space and the colon are characters of the value, and the value is a date and time
+        actual.Should().BeEquivalentTo(entities
+            .Where(x => x.DateTime > new DateTime(2025, 12, 1, 0, 0, 0, DateTimeKind.Utc))
+        );
+    }
+
+    [Theory]
+    [InlineAutoData("Rock\"", "Rock\"", 1)]
+    [InlineAutoData("\"", "\"", 1)]
+    [InlineAutoData("John \"The Rock\" Stone", "John \"The Rock\" Stone", 1)]
+    [InlineAutoData("a\"b\"c", "a\"b\"c", 1)]
+    [InlineAutoData("Rock", "Rock\"", 0)]
+    public void Apply_WhenQuotedValueHoldsQuotes_ThenCanApply(
+        string actualName, string searchedName, int expectedCount, DummyEntity entity)
+    {
+        //arrange
+        entity.Name = actualName;
+        //a quote is part of the quoted value when no delimiter follows it, so the value is
+        //wrapped in plain quotes: `"Rock""` searches for `Rock"`, because the value can only
+        //end at the last of the two quotes, the one before `]`
+        var queryString = $"where[x.Name==\"{searchedName}\"]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
+        var tokens = _tokenizer.Tokenize(queryString);
+        _parser.Parse(hlinqQuery, tokens);
+        var queryable = new[] { entity }.AsQueryable();
+
+        //act
+        var actual = _sut.Apply(queryable, hlinqQuery);
+
+        //assert
+        actual.Should().BeOfType<object[]>();
+        ((object[])actual).Should().HaveCount(expectedCount);
+    }
+
+    [Theory]
+    [InlineAutoData("Rock\"", 1)]
+    [InlineAutoData("Rock", 0)]
+    public void Apply_WhenValueEndingInQuoteContinuesConjunction_ThenCanApply(
+        string actualName, int expectedCount, DummyEntity entity)
+    {
+        //arrange
+        entity.Name = actualName;
+        //the value commits at the second quote, the one the `&` of the conjunction follows
+        const string queryString = "where[x.Name==\"Rock\"\"&&x.Int==1]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
+        var tokens = _tokenizer.Tokenize(queryString);
+        _parser.Parse(hlinqQuery, tokens);
+        entity.Int = 1;
+        var queryable = new[] { entity }.AsQueryable();
+
+        //act
+        var actual = _sut.Apply(queryable, hlinqQuery);
+
+        //assert
+        actual.Should().BeOfType<object[]>();
+        ((object[])actual).Should().HaveCount(expectedCount);
+    }
+
+    [Theory]
+    [AutoData]
+    public void Apply_WhenQuotedValueIsTheNullKeyword_ThenItIsThatWord(DummyEntity[] entities)
+    {
+        //arrange
+        const string queryString = "where[x.NullableString==\"null\"]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
+        var tokens = _tokenizer.Tokenize(queryString);
+        _parser.Parse(hlinqQuery, tokens);
+        var queryable = entities.AsQueryable();
+
+        //act
+        var actual = _sut.Apply(queryable, hlinqQuery);
+
+        //assert - `null` without quotes asks for nothing, inside quotes it is the word
+        actual.Should().BeEquivalentTo(entities.Where(x => x.NullableString == "null"));
+    }
+
+    [Theory]
+    [AutoData]
+    public void Apply_WhenQuotedValueIsNotTheType_ThenThrows(DummyEntity[] entities)
+    {
+        //arrange
+        const string queryString = "where[x.Int>\"abc\"]";
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
+        var tokens = _tokenizer.Tokenize(queryString);
+        _parser.Parse(hlinqQuery, tokens);
+        var queryable = entities.AsQueryable();
+
+        //act
+        var apply = () => _sut.Apply(queryable, hlinqQuery);
+
+        //assert - quoting asks for the text to be read as an Int32, it does not exempt it from being one
+        apply.Should().Throw<InvalidConstantStringToTypeConversionException>()
+            .And.Message.Should().Contain("abc").And.Contain(nameof(Int32));
     }
 
     [Theory]
@@ -406,8 +552,8 @@ partial class HLinqQueryApplierUnitTests
     }
 
     /// <summary>
-    ///     The comparisons that end in `=`: the tokenizer accepted them all along, but `>=` and `<=`
-    ///     had never been followed through to the expression they build and the rows they return.
+    /// The comparisons that end in `=`: the tokenizer accepted them all along, but `>=` and `<=`
+    /// had never been followed through to the expression they build and the rows they return.
     /// </summary>
     [Theory]
     [AutoData]

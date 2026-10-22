@@ -1,6 +1,5 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.AspNet;
-using HamsterWheel.HLinq.Demo.Extensions.Translations.pl;
 using HamsterWheel.HLinq.Pipeline.Tokenizer;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Selecting;
@@ -11,7 +10,7 @@ namespace HamsterWheel.HLinq.UnitTests.AspNet;
 public class HLinqExtensionsConfigurationUnitTests
 {
     [Fact]
-    public void OverWriteTokenPossibility_WhenCalled_ThenOldServiceImplementationsIsNotAvailable()
+    public void OverWriteWord_WhenCalled_ThenOldServiceImplementationsIsNotAvailable()
     {
         //arrange
         var expected = "";
@@ -21,15 +20,17 @@ public class HLinqExtensionsConfigurationUnitTests
         HLinqCore.ConfigureServices(services, hLinqOptions);
 
         //act
-        config.OverWriteTokenPossibility<SelectPossibility, Select>();
+        config.OverWriteWord<SelectWord, Select>();
         config.CustomServices[0](services);
 
         //assert
-        var oldImplementations = services.Where(s => s.ServiceType == typeof(IHLinqTokenPossibility) && s.ImplementationType == typeof(TokenPossibility<Select>));
-        var implementations = services.Where(s => s.ServiceType == typeof(IHLinqTokenPossibility) && s.ImplementationType == typeof(SelectPossibility));
+        var oldImplementations = services.Where(s => s.ServiceType == typeof(IHLinqWord) && s.ImplementationType == typeof(TokenWord<Select>));
+        var implementations = services.Where(s => s.ServiceType == typeof(IHLinqWord) && s.ImplementationType == typeof(SelectWord));
         oldImplementations.Should().BeEmpty();
         implementations.Should().HaveCount(1)
             .And.Subject.First()
-            .ImplementationType.Should().Be(typeof(SelectPossibility));
+            .ImplementationType.Should().Be(typeof(SelectWord));
     }
+
+    private sealed class SelectWord() : TokenWord<Select>("wybierz");
 }

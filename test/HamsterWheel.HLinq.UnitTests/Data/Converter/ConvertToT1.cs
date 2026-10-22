@@ -1,4 +1,3 @@
-using System.Runtime.Serialization;
 using System.Text.Json;
 using FluentAssertions;
 using HamsterWheel.HLinq.Data;
@@ -354,7 +353,7 @@ partial class DefaultConverterUnitTests
     public void ConvertToT1_WhenCalledWithJsonStringToCustomTypeAndCustomSerializer_ThenCallsCustomSerializer()
     {
         //arrange
-        var fallbackConverter = new FallbackConverter();
+        var fallbackConverter = new TestsFallbackConverter();
         var sut = GetSut(fallbackConverter);
         var value = "{ \"name\": \"test\" }";
 
@@ -483,7 +482,7 @@ partial class DefaultConverterUnitTests
         byte expected = 11;
 
         //act
-        var actual = _sut.ConvertTo<byte>((int)11);
+        var actual = _sut.ConvertTo<byte>(11);
 
         //assert
         actual.Should().Be(expected);

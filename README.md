@@ -1,4 +1,4 @@
-![Latest Release](https://internetexception.com/wp-content/uploads/hlinq-badges/release.svg) ![Pipeline](https://internetexception.com/wp-content/uploads/hlinq-badges/pipeline.svg) ![Tests](https://internetexception.com/wp-content/uploads/hlinq-badges/tests.svg) ![Unit](https://internetexception.com/wp-content/uploads/hlinq-badges/coverage-unit.svg) ![Netstandard](https://internetexception.com/wp-content/uploads/hlinq-badges/coverage-netstandard.svg) ![Integration](https://internetexception.com/wp-content/uploads/hlinq-badges/coverage-integration.svg)
+![Latest Release](https://badges.podbielski.it/hlinq/release.svg) ![Pipeline](https://badges.podbielski.it/hlinq/pipeline.svg) ![Tests](https://badges.podbielski.it/hlinq/tests.svg) ![Unit](https://badges.podbielski.it/hlinq/coverage-unit.svg) ![Netstandard](https://badges.podbielski.it/hlinq/coverage-netstandard.svg) ![Integration](https://badges.podbielski.it/hlinq/coverage-integration.svg)
 
 
 # Introduction
@@ -17,6 +17,8 @@ This project contains of two main parts:
 - HamsterWheel.HLinq.Abstractions package that can be used to further develop extensions for HLinq and adding functionalities missing from main package
 - HamsterWheel.HLinq.AspNet package contains helpers for HLinq integration with Asp.NET core framework
 - HamsterWheel.HLinq.PgSql package with PostgreSql specific functions for use in HLinq queries
+- HamsterWheel.HLinq.MySql and HamsterWheel.HLinq.MariaDb packages with the Pomelo provider functions for use in HLinq queries
+- HamsterWheel.HLinq.Sqlite package with EF Core SQLite functions for use in HLinq queries
 - HamsterWheel.HLinq.Client package with fluent API for building HLinq queries on top of HttpClient
 
 
@@ -47,10 +49,13 @@ Navigation:
        - [EF DbFunctions](#ef-dbfunctions)
          - [PgSql](#pgsql)
      - [Selecting](#selecting)
+     - [Grouping](#grouping)
      - [Ordering](#ordering)
    - [Using the C# client](#using-the-c--client)
  - [Extensions](#extensions)
    - [Translations](#translations)
+      - [Using culture in a query](#using-culture-in-a-query)
+      - [Custom keywords](#custom-keywords)
    - [Custom filters](#custom-filters)
  - [Dynamic object transformation]
  - [Roadmap](#roadmap)
@@ -63,7 +68,7 @@ Below you can find instructions how to get you started using HLinq on the server
 
 First, reference AspNet package:
 ```xml
-<PackageReference Include="HamsterWheel.HLinq.AspNet" Version="0.12.0" />
+<PackageReference Include="HamsterWheel.HLinq.AspNet" Version="0.13.0" />
 ```
 
 After that add initialization of HLinq:
@@ -103,7 +108,7 @@ First you need to install package and configure it inside the host. Those are si
 
 Reference AspNet package:
 ```xml
-<PackageReference Include="HamsterWheel.HLinq.AspNet" Version="0.12.0" />
+<PackageReference Include="HamsterWheel.HLinq.AspNet" Version="0.13.0" />
 ```
 
 Initialize HLinq:
@@ -137,10 +142,22 @@ builder.Services.ConfigureHLinq(c => c.HLinqOptions.HttpDefaultMaxTakeRecords = 
 ### Adding EF DB Functions
 In Linq you can use DB functions from inside the C# code. Those functions are not evaluated on the .net side but translated in SQL and evaluated by the DB engine. HLinq allows you to use them, but it is not aware of your environment.
 To tell HLinq about your DB capabilities, you need to configure it inside `ConfigureHLinq` method call.
-For example, the following line adds PgSql specific functions to HLinq:
+For example, the following lines add the functions of a database to HLinq:
 ```csharp
-services.ConfigureHLinq(c => c.AddHLingToPgSql());
+services.ConfigureHLinq(c => c.AddPgSqlToHLinq());     // HamsterWheel.HLinq.PgSql
+services.ConfigureHLinq(c => c.AddSqlServerToHLinq()); // HamsterWheel.HLinq.SqlServer
+services.ConfigureHLinq(c => c.AddMySqlToHLinq());     // HamsterWheel.HLinq.MySql
+services.ConfigureHLinq(c => c.AddMariaDbToHLinq());   // HamsterWheel.HLinq.MariaDb
+services.ConfigureHLinq(c => c.AddSqliteToHLinq());    // HamsterWheel.HLinq.Sqlite
 ```
+A function returning bool is enough to filter on its own - `where[ILike(x.Name, %Bill%)]`, `where[IsDate(x.Name)]`
+A function answering with another type need to be compared with another value to be used in filter:
+- `where[DateDiffDay(x.From, x.To) > 7]`
+- `where[Reverse(x.Name) == ylliB]`
+
+You can use any property in such function, any number, any text, a single character, the member of an enum. As long at parameters type matches. HLinq will try its best to match them but it cannot convert "foobar" to `int`.
+
+Details of all available functions for each engine are here: [Db Functions Filters](docs/db-functions/README.md), [Postgres](docs/db-functions/postgres.md), [SQL Server](docs/db-functions/sql-server.md), [MySQL](docs/db-functions/mysql.md), [MariaDB](docs/db-functions/mariadb.md), [SQLite](docs/db-functions/sqlite.md). A pack is the list of what one database can do, not a promise about what a query may ask: a function its provider cannot translate fails at the database, as the same call written by hand in Linq does.
 
 # How to use on the client
 
@@ -167,7 +184,6 @@ GET /data?where[x.Name==John].skip[10].take[20].select[fullName=x.Name]
 ```
 
 Casing in root names is not important. For example, `WHERE` and `where` are equivalent. Or example even `wHeRe` is valid to harder to read.
-The same applies to property names, though JSON property names are preferred. So for example `x.firstName` is preferred when `x.FirstName` is also possible and it is a valid CLR property name.
 
 Roots order matters. For example, if you are querying `Person` type that have `FirstName` property, querying the API with `where[x.firstName==John].select[name=x.firstName]` will first filter the collection selecting all the persons with `firstName` being `John` and then will select only `firstName` property as new `name` property. Resulting json will be:
 ```json
@@ -252,9 +268,85 @@ GET /data?where[x.Name==Kowalski, Jan]            // `,` ends a value, so this i
 GET /data?where[x.Name=="Kowalski, Jan"]          // one value: Kowalski, Jan
 GET /data?select[FullName="Kowalski, Jan",x.Id]   // the comma in quotes is text, the next one ends the list item
 ```
-Quotes say *value* and nothing else: a property name can never hold a comma or a space, because a C# identifier cannot, so a quote is what tells a value apart from a name. There is no escape character and no escaping rule - only a value that *starts* with `"` is quoted, which is why `where[x.Name==say "hi"]` still works, and a quote that opens a value and never closes it is a parse error.
+
+Quotes can be used for values. Property name can never hold a comma or a space, because a C# identifier cannot - HLinq uses the same rules.
+Quotes does not change type of value. A quoted value is cast to the type it is compared to:
+
+```http request
+GET /data?where[x.Int==5]                     // five
+GET /data?where[x.Int=="5"]                   // also five
+GET /data?where[x.Date>="2020-01-01 00:00"]   // a date and time, the space being a character of the value
+```
+
+The one word quotes do change is `null`: unquoted it is nothing, quoted it is the text n-u-l-l.
+
+```http request
+GET /data?where[x.Name==null]        // records with no name
+GET /data?where[x.Name=="null"]      // records whose name is the word "null"
+```
+
+There is no escape character in HLinq currently. If your value that *starts* with `"` is quoted and ends on another element of the HLinq language like `]` or `||`.
+So if you want to search for some text including special characters:
+
+```csharp
+where[x.Name=="John Braces]"]   -> value: John Braces]
+where[x.Name=="a]b"]            -> value: a]b 
+where[x.Name=="Rock""&&x.Id==1] -> value: Rock"
+where[x.Name=="Rock""]          -> value: Rock"
+```
+
+HLinq only finishes value when it is outside of quotes and there is another keyword that is part of grammar. It means that quoting works and treats everything inside as part of the value. Ending of this value is not first `"` but `"]` or `"&` or similar part of grammar.
+
+### Members resolution
+
+Query root keywords does not matter. The same applies to property names, though JSON property names are preferred. So for example `x.firstName` is preferred when `x.FirstName` is also possible and it is a valid CLR property name.
+
+A name that several members of the type match is decided by HLinq based on how much of an effort it will take to use it.
+If the members can be bound at all?
+How hard is to convert query value to given type?
+How far is the name in the query from the actual name of member?
+Is it declared in entity type? Or inherited?
+If it is still ambigous an ordinal comparison decides.
+
+A type with both `Name` and `name` therefore answers `x.Name` with `Name` and `x.name` with `name` on every query, and a method overload taking an argument as the query wrote it wins over one that would have to convert it.
+
+If HLinq had to choose between two members, it will try to warn user that it was not clear from the query what should be used:
+
+```http request
+GET /demo/sidekicks?where[x.name==Bucky]
+
+HTTP/1.1 200 OK
+X-HLinq-Warning: reason="ambiguous-name", member="NAME", type="HamsterWheel.HLinq.Demo.Data.Sidekick", competitors="NAME, Name", query="where[x.name==Bucky]"
+```
+
+For properties it is `ambiguous-name` and `ambiguous-call` when two overloads being possible with the same arguments. `member` is name of member that was used to produce response. `competitors` is list of ambigous members. `type` the type the members belong to, and `query` the query as it was written.
+The header is a hint and nothing more. HLinq still answer with HTTP 200 OK. Also warnings stops at five lines, a sixth saying `more="true"` when the query was ambiguous about more members - rest is sent to the log. 
+If you want to disable warnings you can do so:
+
+```csharp
+builder.Services.AddOpenApi()
+    .ConfigureHLinq(c => c.HLinqOptions.EmitWarnings = false);
+```
+
+If you want to store warnings in your logs instead of sending them in HTTP header to the client you can do so:
+
+```csharp
+app.MapGet("/demo/sidekicks", (HLinqQuery<Sidekick> query, CancellationToken cancellationToken) =>
+{
+    var sidekicks = query.ApplyTo(Sidekick.Sidekicks.AsQueryable(), cancellationToken);
+
+    foreach (var warning in query.Warnings.Reported)
+    {
+        logger.LogWarning("HLinq chose {Member} of {Type} of {Competitors}", warning.Member, warning.Type,
+            string.Join(", ", warning.Competitors));
+    }
+
+    return sidekicks;
+});
+```
 
 ### White space management
+
 White space is not important in HLinq. You can almost use any white space you want. It is mostly ignored by the parser, except for constant values provided by the user. 
 For example, leading or trailing white space before or after the root is allowed.
 ```csharp
@@ -307,6 +399,25 @@ GET /demo/memory?where[x.Name==Superman]&take[10]                   error, `&` d
 GET /demo/memory?where[x.Name==Superman]&culture=pl&take[10]        error, take is not dropped
 ```
 The query language itself has no parameters, HLinq's own included: the tokenizer is handed the query alone, and `culture=pl-PL&where[x.Name==Superman]` is not a query to it. An `&` inside a clause - quoted or not - belongs to the clause and never splits it; a `%26` is a character of a value, not a separator.
+
+### Setting query culture
+
+It is possible to user to set query culture. By default query is interpreted with `CultureInfo.InvariantCulture`. If you want HLinq to interpret values differently you need to set it explicitly to different value:
+
+```http request
+GET /demo/random?where[x.Decimal>"1,2"]                   twelve: here a comma groups thousands
+GET /demo/random?culture=pl-PL&where[x.Decimal>"1,2"]     one and a fraction: there a comma is where the fraction starts
+```
+The same value is interpreted differently depending on query culture and it changes returned collection.
+
+HLinq does not limit number of supported cultures. If .net allows you to use one, HLinq too. `pl`, `pl-PL`, `de`, `en-GB` - all works as long as it is recongnized by .net.
+Of course invalid values does not work. `culture=test` is invalid and HTTP 400 is returned. 
+
+On the other hand if your runtime does not allow globalization (`InvariantGlobalization`), HLinq will refuse such queries entirelly.
+
+If `culture` is set by the user and HLinq is configured with translation - it is possible to use translated keywords inside the query.
+Keywords of the language - `where`, `select`, `take` can be localized and query will realize the same.
+On the other hand `null` keyword, the entity `x` - do not have their translations at all. You can refer to [Translations](#translations) for details.
 
 ### Paging
 
@@ -403,10 +514,16 @@ To filter by records that do not have value use null keyword:
 GET /data?where[x.Name==null]
 ```
 
-To filter by floating point numeric you can use `.` delimiter for fractions. It is consistent with `CultureInfo.InvariantCulture` numerical format, which HLinq is using by default.
+To filter by floating point numeric you can use `.` delimiter for fractions. It is consistent with `CultureInfo.InvariantCulture` numerical format, which is the default culture for a query.
+`.` separates the fraction, `,` groups thousands, so a `1,2` reaching a `decimal` is twelve - in another culture the same characters may be read as different value (1.2 in Polish)
+If you want to use different format for numeric values or dates [a request can specify different culture](#using-culture-in-a-query).
 ```http request
 GET /data?where[x.Number==1.2323]
 ```
+Numbers can also have white space around it (` 5 `) or have a sign on either side (`5-`)
+It is also allowed for the floating point types an be in exponent format (`1e3`).
+A currency symbol and a parenthesised negative numbers (i.e. `where[x.Number==(5)]` is not allowed
+.
 HLinq does not apply any precision for equality comparison, so due to floating point rounding errors you may get different results. To fix this you can use two values with `>` and `<` operators.
 ```http request
 GET /data?where[x.Number>1.2322&&x.Number<1.2324]
@@ -576,8 +693,60 @@ GET /demo/memory?select[Name=1]
 ```
 It can be useful when real property was filtered by select, but a client requires it, i.e., for serialization. It can be also used to achieve compatibility on the client when a server data model is changed without changing the actual code.
 
+A constant becomes a `string`, a number or a `bool`. Its type is decided by the way it is written: `Name=1` is a number, `Name=x` and `Name="x"` are text. That is all JSON has - there is no date in it, so `select[Date=2023-10-12]` answers with the text `2023-10-12`. If you need different type your client need to do a convertion.
+
 HLinq creates a new type on the fly to be serialized to JSON and returns it to the client. This means that other properties of the original type are not returned.
 Selecting is not an exclusive operation. You need to be specific by providing which properties you are interested in. You cannot exclude properties by excluding them from the query.
+
+### Grouping
+
+Grouping can be used to group rows under by one (or more) properties into collections that share the same value for particular property. 
+It is done by the `groupBy` root followed by a comma-separated list of property names - the key:
+```http request
+GET /data/persons?groupBy[x.Status]
+```
+This answers a list of `{Key, Rows}` entries, one per group:
+```json
+[ { "Key": "New", "Rows": [ {"id": 1, ...}, {"id": 2, ...} ] },
+  { "Key": "Paid", "Rows": [ {"id": 3, ...} ] } ]
+```
+Key of such group is the exact value of the property as returned from endpoint without doing any grouping at all.
+
+A `select` written directly after the `groupBy` names the shape of the rows under each key with one special property being the group key: `x.Key`:
+```http request
+GET /data/persons?groupBy[x.Status].select[x.Name]
+```
+answers `[{"Key": "New", "Rows": ["Ann", "Bob"]}, {"Key": "Paid", "Rows": ["Cat"]}]`, and `select[x.Key,x.Name]` repeats the key beside each row.
+Like any other member the key can be renamed: `select[MyKey=x.Key,x.Name]`. 
+
+If your entity already have `Key` or `key` property, without grouping, it will be hidden by the group key in `select` after `groupBy`. If you need to do further transformation with both properties, you need to rename your `key`:
+
+```http request
+GET /demo/memory?select[nyKey=x.key].groupBy[x.Status].select[x.key,x.myKey]
+```
+This will allow to row inside the grouping to have both properties: original `key` and group `key`.
+
+`take`, `skip`, `orderBy`, `where` and `count` written after a `groupBy` work on groups: 
+- `take[2]` keeps two groups
+- `count[]` answers how many groups there are.
+
+Only the key orders or filters groups (`orderBy[x.Key]`, `where[x.Key==Paid]`) is allowed.
+The rows of a group cannot be ordered or filtered by HLinq. This is DB engines limitation.
+If you need to have special ordering or filtering of rows inside the groups do that before the grouping.
+
+A composite key (`groupBy[x.Vendor,x.Status]`) groups by several properties at once - the answer is the same list of entries, with a key of several parts.
+
+A second `groupBy` groups the rows of every group, so the result holds groups under groups:
+```http request
+GET /data/persons?groupBy[x.Status].groupBy[x.Type]
+```
+returns `[{"Key": "New", "Rows": [{"Key": "A", "Rows": ["Ann"]}, {"Key": "B", "Rows": ["Bob"]}]}]`. A `select` after a `groupBy` selects columns of the last group. `take`, `where`, `orderBy` and `count` work on the first group.
+
+This is equivalent of a Linq query:
+```csharp
+personQueryable.GroupBy(x => x.Status)
+    .Select(g => new { Key = g.Key, Rows = g.Select(r => r.Name).ToList() });
+```
 
 ### Ordering
 If you need to fetch data in a specific order, you can use `orderBy` and `orderByDescending` roots.
@@ -639,6 +808,21 @@ var response = await fixture.Client.GetWithHLinq("/demo/db", q => q
     .Where(x => EF.Functions.ILike(x.FirstName, "Bill")));
 ```
 
+A grouping is built with `GroupBy`. It returns and deserialises the list of `Group(Key, Rows)` entries the server sends:
+```csharp
+var response = await fixture.Client.GetWithHLinq("/demo/db",
+    q => q.For<Person>().GroupBy(x => x.LastName).Select(x => x.FirstName).Take(100));
+```
+The result is a `List<Group<string, string>>` - groups of people first names that shares the same last name.
+What the grouping builder answers - `Take`, `Skip`, `Count` - works on groups; `OrderByKey` and `WhereKey` order and filter them by their key.
+
+HLinq client can log HLinq warnings to your application log sink. This is the case ambigous members, that could not decided by the query alone - HLinq engine had to decide.
+Those warnings are transported by HTTP header (`X-HLinq-Warning` ). This can be logged by HLinq client if it is handed logger object to `GetWithHLinq` method, automatically.
+This ways your application will be aware of those issues transported along the response.
+```csharpd
+var superheroes = await client.GetWithHLinq("/demo/memory", q => q.For<Superhero>(), logger);
+```
+
 # Extensions
 
 HLinq architecture allows for easy extension of many aspects of the library.
@@ -646,38 +830,78 @@ HLinq is designed around interfaces retrieved from DI container. If you do not l
 
 ## Translations
 
-For example, HLinq queries can be translated to different languages. Linq syntax is pseudo english. You can translate it to you own language by providing different implementations of `ITokenPossibility` interfaces.
-Almost each `ITokenPossibility` implementation poses `TokenValue` constant that represent this token in the query.
-If you want to change how `select` token is represented in the query, you can provide different implementation of `ITokenPossibility` interface. 
-Or even better use `TokenPossibility<T>` class. 
-In Polish, you would write `wybierz` instead of `select`, so new implementation would look like this:
+It is possible to translate HLinq queries to your own language. It is done by registering services for translated keywords:
+
 ```csharp
-public class SelectPossibility(IGrammar grammar) : TokenPossibility<Select>(grammar, "wybierz")
+builder.Services.ConfigureHLinq(c =>
 {
-    protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-        Rule.PreviousTokensMatch(previousTokens);
-}
+    c.Extensions.AddTranslatedKeyword<Where>("pl", "gdzie");
+    c.Extensions.AddTranslatedKeyword<Select>("pl", "wybierz");
+    c.Extensions.AddTranslatedKeyword<OrderByDescending>("pl", "sortujPoMalejaco");
+});
 ```
 
-Then add it to the DI container:
+Words are registered per culture as first parameter of `AddTranslatedKeyword` method.
+
+Some cultures, have predefined packages that bundles already translated keywords. In example my own native Polish language:
 ```csharp
-services.ConfigureHLinq(c => c.Extensions.AddTokenPossibility<SelectPossibility>());
+builder.Services.ConfigureHLinq(c => c.AddPolishToHLinq());
 ```
 
-This adds new `select` token characters in new language, `wybierz`. This works along the old syntax, so both are valid:
+`HamsterWheel.HLinq.Lang.Pl` enables to use Polish keywords: `gdzie`, `wybierz`, `grupujPo`, `wez`, `pomin`, `zlicz`, `sortujPo`,
+`sortujPoMalejaco`, `potemPo`, `potemPoMalejaco`. Important: without diacritics, because keyword can have only one representation in each language. Also query in a browser encodes most of the characters and `wez` is more readable then `we%C5%BA` of encoded `weź` word. 
+Some of keywords are deliberately not translatable. I.e.: `null`. If you want to change it implement your own `INullKeyword` interface.
+
+### Using culture in a query
+
+User can specify what culture should be used for specific query using `culture=pl`. This enables system to recognize translated keywords *and* specify which numeric and dates format should be used.
+For example:
+
+```http request
+GET /demo/db?culture=pl&gdzie[x.firstName==Nolan]     OK
+GET /demo/db?culture=pl&where[x.firstName==Nolan]     OK - the same endpoint answers both
+GET /demo/db?gdzie[x.firstName==Nolan]                400 - no culture named, so the invariant words
+```
+
+Important to note is that you cannot mix keywords from multiple languages. You can use in single query:
+- invariant laguage only, which is English really, when no "culture" parameter is specified
+- your own laguage *AND* invariant, when "culture" is specified
+
+A keyword is matched case-insensitively: `gdzie[x.Name=Jan]` and `Gdzie[x.Naem=Jan]` is the same query.
+Even the alias of the entity is a keyword: registering `AddTranslatedKeyword<Entity>("pl", "towar")` is possible and then you can use it in a query `gdzie[towar.firstName==Nolan]`.
+
+The `culture` query parameter itself is not possible to be translated.
+
+### Custom keywords
+
+Each HLinq keyword can be replaced by whatever you like. Just put it in the container like any other
+service:
+
+```csharp
+public class SelectWord()
+    : TokenWord<Select>("wybierz", CultureInfo.GetCultureInfo("pl"));
+
+services.ConfigureHLinq(c => c.Extensions.AddWord<SelectWord>());
+```
+
+If you want to override generic keyword like `select`. Use `InvariantCulture` instead.
+
+```csharp
+public class SelectWord() : TokenWord<Select>("s", CultureInfo.InvariantCulture);
+```
+
 ```http request
 GET /demo/db?wybierz[x.Name]
 ```
 ```http request
-GET /demo/db?select[x.Name]
+GET /demo/db?s[x.Name]
 ```
 
-If you want to replace the token instead, use:
+To replace the word instead of localizing it, overwrite it - and `select[x.Name]` becomes an error:
+
 ```csharp
-services.ConfigureHLinq(c => c.Extensions.OverWriteTokenPossibility<SelectPossibility, Select>());
+services.ConfigureHLinq(c => c.Extensions.OverWriteWord<SelectWord, Select>());
 ```
-
-This will cause `select[x.Name]` to be invalid and an attempt to use it will result in HTTP 400 error with the following response:
 ```json
 {
   "title": "HLinq query 'select[x.Name]' is invalid and not finished properly.",
@@ -685,21 +909,12 @@ This will cause `select[x.Name]` to be invalid and an attempt to use it will res
 }
 ```
 
-It is worth to mention that HLinq does not require Ascii characters only. You can use any characters you want. Translation does not have to be only letters. For example, for sorting/ordering you may choose more expressive Unicode characters:
-- ↓ for orderByDescending
-- ↑ for oderBy
+A word needs no letters, and a translation does not have to be a word: for sorting you may choose the
+arrows themselves, `↓` for `orderByDescending` and `↑` for `orderBy`.
 
-Then `orderBy` token possibility can look like this:
 ```csharp
-public class OrderByDescendingPossibility(IGrammar grammar) : TokenPossibility<OrderByDescending>(grammar, "↓")
-{
-    protected override bool PreviousTokensMatch(List<IToken> previousTokens) =>
-        Rule.PreviousTokensMatch(previousTokens);
-
-    protected override OrderByDescending BuildImpl(Range range) => new(range);
-}
+public class DescendingWord() : TokenWord<OrderByDescending>("↓");
 ```
-And to order you call your API with:
 ```http request
 GET /demo/db?↓[x.firstName]
 ```
@@ -811,11 +1026,11 @@ collection.Where(x => x.Enum == RandomEnum.One).Select(c => new { c.Name, c.Enum
 
 
 # Roadmap
-- [ ] Add support for grouping
+- [x] Add support for grouping - `groupBy[key]` answers one entry per key with the rows under it, see [Grouping](#grouping)
 - [ ] Add support for nested counts `[NumberOfAddresses=x.Addresses.Count[]]`
 - [ ] Add support for nested type selects: `select[Addresses=select[a.Street,a.City]]`
 - [ ] Add support for methods in select: `select[reverse(x.Name)]`
-- [ ] Add support for other than bool methods in filters: `where[Distance(x.DateOfBirth, 2025-10-05)<=10]`
+- [x] Add support for other than bool methods in filters: `where[DateDiffDay(x.DateOfBirth, x.DateOfDeath)>36500]` - a function answering with a value is compared with what it returned, see [Db functions in a query](docs/db-functions/README.md)
 - [ ] Add support for property operation in select: `select[FullName=x.Name+' '+x.Surname]`
-- [ ] Add support for other DBs
-- [ ] Add support for changing grammar rules 
+- [x] Add support for other DBs - SQL Server, MySQL, MariaDB and SQLite packs beside Postgres, each installed by its own `Add...ToHLinq()` call
+- [x] Add support for changing grammar rules - the language is extended by registering words (pattern + adjacency rule), validated at startup, see the grammar design in AGENTS.md 

@@ -1,10 +1,8 @@
 using System.Reflection;
 using BenchmarkDotNet.Attributes;
-using HamsterWheel.HLinq.Pipeline;
 using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Pipeline.Tokenizer;
-using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Request;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -21,8 +19,8 @@ public class BenchEntity
 }
 
 /// <summary>
-///     Tokenize / tokenize+parse / tokenize+parse+apply over an in-memory list, showing the
-///     tokenizer's share of the whole pipeline. Baseline in benchmarks/.
+/// Tokenize / tokenize+parse / tokenize+parse+apply over an in-memory list, showing the
+/// tokenizer's share of the whole pipeline. Baseline in benchmarks/.
 /// </summary>
 [ShortRunJob]
 [MemoryDiagnoser]
@@ -35,16 +33,18 @@ public class PipelineBenchmarks
         "orderBy[x.Name].take[0..10]"
     ];
 
-    private readonly BenchEntity[] _data = Enumerable.Range(0, 100)
-        .Select(i => new BenchEntity
-        {
-            Id = i,
-            Name = $"entity{i}",
-            Int = i,
-            Double = i / 3d,
-            Date = new DateTime(2020, 1, 1).AddDays(i)
-        })
-        .ToArray();
+    private readonly BenchEntity[] _data =
+    [
+        .. Enumerable.Range(0, 100)
+            .Select(i => new BenchEntity
+            {
+                Id = i,
+                Name = $"entity{i}",
+                Int = i,
+                Double = i / 3d,
+                Date = new DateTime(2020, 1, 1).AddDays(i)
+            })
+    ];
 
     private IHLinqQueryApplier _applier = null!;
     private IHLinqParser _parser = null!;

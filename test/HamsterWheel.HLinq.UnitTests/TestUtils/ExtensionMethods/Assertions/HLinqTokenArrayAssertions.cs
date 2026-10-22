@@ -13,7 +13,7 @@ public class HLinqTokenArrayAssertions(IToken[] instance) :
     public AndConstraint<HLinqTokenArrayAssertions> HaveSequenceOf(string query,
         IEnumerable<ExpectedToken> expected, bool assertTokensValues = true)
     {
-        var expectedTokens = expected as ExpectedToken[] ?? expected.ToArray();
+        var expectedTokens = expected as ExpectedToken[] ?? [.. expected];
         Subject.Length.Should().Be(expectedTokens.Length,
             " of query that was '{0}' with tokens:\r\n- {1}\r\n instead found tokens\r\n- {2}\r\n ",
             string.Join("", Subject.Select(t => t.GetValue(query))),

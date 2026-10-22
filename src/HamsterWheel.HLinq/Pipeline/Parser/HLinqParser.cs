@@ -5,9 +5,9 @@ namespace HamsterWheel.HLinq.Pipeline.Parser;
 
 public sealed class HLinqParser(IEnumerable<IElementParser> allParsers) : IHLinqParser
 {
-    private IElementParser[] Parsers => allParsers.ToArray();
+    private IElementParser[] Parsers => [.. allParsers];
 
-    private IElementParser[] RootParsers { get; } = allParsers.Where(p => p.IsRoot).ToArray();
+    private IElementParser[] RootParsers { get; } = [.. allParsers.Where(p => p.IsRoot)];
 
     public IHLinqQuery Parse(IHLinqQuery query, IToken[] tokens)
     {

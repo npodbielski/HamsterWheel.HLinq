@@ -1,5 +1,4 @@
 using System.Globalization;
-using HamsterWheel.HLinq.Exceptions;
 
 namespace HamsterWheel.HLinq.Data.Converters;
 
@@ -182,18 +181,8 @@ public class FromConvertibleConverter : IConfigurableValueConverter
             }
         };
 
-    public bool CanConvert(object? value, Type to) =>
-        value switch
-        {
-            IConvertible when ConvertibleMethods.TryGetValue(to, out _) => true,
-            _ => false
-        };
-
-    public object ConvertTo(object? value, Type to) =>
-        value switch
-        {
-            IConvertible convertible when ConvertibleMethods.TryGetValue(to, out var convertibleFunc) =>
-                convertibleFunc(convertible),
-            _ => throw new InvalidConstantStringToTypeConversionException(value, to)
-        };
+    public (bool success, object? result) TryConvert(object? value, Type to, CultureInfo? culture = null) =>
+        value is IConvertible convertible && ConvertibleMethods.TryGetValue(to, out var convert)
+            ? (true, convert(convertible))
+            : (false, null);
 }

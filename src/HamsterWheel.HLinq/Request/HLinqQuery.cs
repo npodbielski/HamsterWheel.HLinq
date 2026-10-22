@@ -1,10 +1,13 @@
+using System.Globalization;
 using System.Reflection;
-using System.Web;
+using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Exceptions;
+using HamsterWheel.HLinq.Pipeline;
 using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tree.Filtering;
+using HamsterWheel.HLinq.Tree.Grouping;
 using HamsterWheel.HLinq.Tree.Paging;
 using HamsterWheel.HLinq.Tree.Selecting;
 using Microsoft.AspNetCore.Http;
@@ -17,13 +20,15 @@ public class HLinqQuery<T> : IHLinqQuery
     public ITreeElement[] Children { get; private set; } = [];
     public Type ItemType { get; } = typeof(T);
     public string SourceQueryString { get; internal init; } = null!;
+    public IHLinqWarnings Warnings { get; set; } = new HLinqWarnings();
 
     /// <summary>
-    ///     The culture the request asked for, as it named it: the first value of the culture parameter,
-    ///     null when the request did not carry one. Read by the binder, so that it is known before a
-    ///     single clause is interpreted and no matter where in the request it stood.
+    /// The culture the request asked for, as it named it: the first value of the culture parameter,
+    /// null when the request did not carry one. Read by the binder, so that it is known before a
+    /// single clause is interpreted and no matter where in the request it stood.
     /// </summary>
     public string? Culture { get; internal init; }
+
     public bool NoChildren => Children.Length == 0;
 
     /// <summary>
@@ -35,7 +40,7 @@ public class HLinqQuery<T> : IHLinqQuery
     internal IHLinqOptions? Options { get; set; }
 
     /// <summary>
-    ///     If query is valid this should always be empty. If not then we should have an error in <see cref="Finish" />
+    /// If query is valid this should always be empty. If not then we should have an error in <see cref="Finish" />
     /// </summary>
     IToken[] ITreeElement.Tokens => [];
 
@@ -43,10 +48,11 @@ public class HLinqQuery<T> : IHLinqQuery
     {
         if (context.Tokens.Length > 0)
         {
-            throw new NonParsableTokenSequenceException(context.SourceQueryString, context.Tokens, [new WhereRoot.Parser(), new SelectRoot.Parser()]);
+            throw new NonParsableTokenSequenceException(context.SourceQueryString, context.Tokens,
+                [new WhereRoot.Parser(), new SelectRoot.Parser(), new GroupByRoot.Parser()]);
         }
 
-        Children = context.Current.Children.ToArray();
+        Children = [.. context.Current.Children];
     }
 
     public object? ApplyTo(IQueryable<T> queryable, CancellationToken token = default)
@@ -73,7 +79,9 @@ public class HLinqQuery<T> : IHLinqQuery
     public static async ValueTask<HLinqQuery<T>> BindAsync(HttpContext context, ParameterInfo parameter)
     {
         var queryString = context.Request.QueryString.Value ?? "";
-        return Parse(context.RequestServices.GetRequiredService<HLinqBinderDependenciesBag>(), queryString);
+        var query = Parse(context.RequestServices.GetRequiredService<HLinqBinderDependenciesBag>(), queryString);
+        query.Warnings = context.RequestServices.GetService<IHLinqWarnings>() ?? query.Warnings;
+        return query;
     }
 
     /// <summary>
@@ -102,11 +110,28 @@ public class HLinqQuery<T> : IHLinqQuery
         var parser = dependenciesBag.HLinqParser;
         var tokenizer = dependenciesBag.Tokenizer;
 
-        var tokens = tokenizer.Tokenize(request.Query);
+        var tokens = tokenizer.Tokenize(request.Query, ReadCulture(request.Culture));
 
         parser.Parse(hlinqQuery, tokens);
         hlinqQuery.QueryApplier = dependenciesBag.QueryApplier;
         hlinqQuery.Options = dependenciesBag.Options;
         return hlinqQuery;
+    }
+
+    private static CultureInfo? ReadCulture(string? culture)
+    {
+        if (string.IsNullOrEmpty(culture))
+        {
+            return null;
+        }
+
+        try
+        {
+            return CultureInfo.GetCultureInfo(culture);
+        }
+        catch (CultureNotFoundException)
+        {
+            return null;
+        }
     }
 }

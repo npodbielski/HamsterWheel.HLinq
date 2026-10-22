@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 
 namespace HamsterWheel.HLinq.Tree.Filtering;
@@ -9,27 +10,33 @@ public class StaticMethodToExpressionConverter : IStaticMethodToExpressionConver
     {
         var name = method.GetName(context.HLinqQuery);
         var parameters = method.Children.OfType<IMethodParamElement>()
-            .Select(p => (p.GetValue(context.HLinqQuery),
-                p is Property property ? context.ToExpression(property) as MemberExpression : null))
+            .Select(p => (value: p.GetValue(context.HLinqQuery),
+                expression: p is Property property ? context.ToExpression(property) as MemberExpression : null))
             .ToArray();
-        var methods = context.Builder.GetMostProbableMethods(name, parameters);
+        var resolution = context.Builder.ResolveStaticMethod(name, parameters);
+        resolution.Report(context);
 
-        MethodCallExpression? methodCallExpression = null;
-        foreach (var info in methods)
+        foreach (var candidate in resolution.Competitors)
         {
-            var expressions =
-                parametersConverter.AttemptConversion(parameters, info.parameters.ToArray());
+            var (converted, expressions) = parametersConverter.TryConvert(parameters,
+                StaticMethodSourceWrapper.MapEfDbFunctionParams(candidate.GetParameters()));
+            if (!converted)
+            {
+                continue;
+            }
+
             try
             {
-                methodCallExpression = Expression.Call(null, info.method, expressions);
+                return Expression.Call(null, candidate, expressions);
             }
             catch (ArgumentException)
             {
-                //swallow the exception and try to bind another method from the list
+                //Expression.Call can still refuse to bind the candidate the ranking put first, and then
+                //the one below it is tried
             }
         }
 
-        return methodCallExpression ??
-               throw new Method.InvalidStaticMethodException(name, methods.Select(m => m.method.Name).ToArray());
+        throw new Method.InvalidStaticMethodException(name, [.. parameters.Select(p => p.value)],
+            [.. resolution.Competitors]);
     }
 }

@@ -1,9 +1,7 @@
 using HamsterWheel.HLinq.Tokens;
-using static HamsterWheel.HLinq.Pipeline.Tokenizer.Grammar;
 
 namespace HamsterWheel.HLinq.Pipeline.Tokenizer;
 
-public class GrammarRootRule<T>() :
-    GrammarRule<T>(true, [static pt => pt is [.., RightSquareBracket, Dot]],
-        nextCharMatcher: static c => c == LastCharOfLeftSquareBracketKeyword)
+public class GrammarRootRule<T>(char[] delimiters) :
+    GrammarRule<T>(true, [static pt => pt is [.., RightSquareBracket, Dot]], nextCharsAllowed: delimiters)
     where T : IClauseRootToken;

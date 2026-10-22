@@ -1,15 +1,21 @@
+using System.Globalization;
 using System.Linq.Expressions;
+using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Pipeline.Parser;
 
 namespace HamsterWheel.HLinq.Pipeline.Applier.Builders;
 
-public sealed record InitializerPropertyAssignmentBuilderContext(IBuilderContext BuilderContext) : IInitializerPropertyAssignmentBuilderContext
+public sealed record InitializerPropertyAssignmentBuilderContext(IBuilderContext BuilderContext)
+    : IInitializerPropertyAssignmentBuilderContext
 {
     public Type? InitializerPropertyType { get; set; }
     public ParameterExpression Param { get; } = BuilderContext.Param;
     public Type Type { get; } = BuilderContext.Type;
     public IExpressionBuilder Builder { get; } = BuilderContext.Builder;
     public string HLinqQuery { get; } = BuilderContext.HLinqQuery;
+    public CultureInfo Culture { get; } = BuilderContext.Culture;
+    public IHLinqWarnings? Warnings { get; } = BuilderContext.Warnings;
+    public IReadOnlyDictionary<string, MemberExpression>? GroupMembers { get; } = BuilderContext.GroupMembers;
 
     public Expression ToExpression(ITreeElement element) => BuilderContext.Builder.ToExpression(this, element);
 

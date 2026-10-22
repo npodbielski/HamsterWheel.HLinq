@@ -23,6 +23,8 @@ public class ResponseHLinqClientQueryBuilder<T> : ResponseHLinqClientQueryBuilde
     protected ResponseHLinqClientQueryBuilder(JsonSerializerOptions? options = null) =>
         _jsonSerializerOptions = options ?? DefaultJsonSerializerOptions;
 
+    protected JsonSerializerOptions JsonSerializerOptions => _jsonSerializerOptions;
+
     public string BuildAndEncode() => UrlEncoder.Default.Encode(Build());
 
     public string Build() => Query.ToString();
@@ -41,6 +43,13 @@ public class ResponseHLinqClientQueryBuilder<T> : ResponseHLinqClientQueryBuilde
     protected static OrderedHLinqClientQueryBuilder<TNext>
         NextOrdered<TNext>(ResponseHLinqClientQueryBuilder<T> previous) =>
         new()
+        {
+            Query = previous.Query
+        };
+
+    protected static ResponseHLinqClientQueryBuilder<TNext> NextResponse<TNext>(
+        ResponseHLinqClientQueryBuilder<T> previous) =>
+        new(previous._jsonSerializerOptions)
         {
             Query = previous.Query
         };

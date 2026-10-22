@@ -1,3 +1,4 @@
+using HamsterWheel.HLinq.Diagnostics;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace HamsterWheel.HLinq.AspNet.Binder;
@@ -17,6 +18,8 @@ public class WebHLinqQueryBinder(HLinqBinderDependenciesBag dependenciesBag) : H
         var httpQueryString = bindingContext.HttpContext.Request.QueryString;
         var queryString = httpQueryString.ToString();
         var query = BindQuery(queryString, bindingContext.ModelType);
+        query.Warnings = bindingContext.HttpContext.RequestServices.GetService<IHLinqWarnings>()
+                         ?? query.Warnings;
 
         bindingContext.Result = ModelBindingResult.Success(query);
 

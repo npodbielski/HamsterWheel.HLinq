@@ -17,6 +17,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\HamsterWheel.HLinq.AspNet\HamsterWheel.HLinq.AspNet.csproj" />
         <ProjectReference Include="..\..\src\HamsterWheel.HLinq.PgSql\HamsterWheel.HLinq.PgSql.csproj" />
+        <ProjectReference Include="..\..\src\HamsterWheel.HLinq.Lang.Pl\HamsterWheel.HLinq.Lang.Pl.csproj" />
     </ItemGroup>
 
     <ItemGroup>

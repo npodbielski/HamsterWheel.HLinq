@@ -21,6 +21,18 @@ public class HLinqClientQueryBuilderUnitTests
     }
 
     [Fact]
+    public void Build_WhenValuesAreWritten_ThenWritesThemInInvariantCultureAndAsksForNoOther()
+    {
+        //act - the client writes text a server reads in the invariant culture unless its own request
+        //agrees on another one, and the client does not agree on anything for the caller
+        var actual = _sut.Where(x => x.Balance == 1.5m).Build();
+
+        //assert
+        actual.Should().NotContain("culture");
+        actual.Should().Contain("1.5");
+    }
+
+    [Fact]
     public void Where_WhenCalledWithConditionGroup_ThenCanBuildQuery()
     {
         //arrange
@@ -135,5 +147,6 @@ public class HLinqClientQueryBuilderUnitTests
         public string LastName { get; set; } = null!;
         public string Email { get; set; } = null!;
         public string? IpAddress { get; set; }
+        public decimal Balance { get; set; }
     }
 }

@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Linq.Expressions;
+using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Pipeline.Parser;
 
 namespace HamsterWheel.HLinq.Pipeline.Applier.Builders;
@@ -9,6 +11,9 @@ public sealed record ArithmeticComparisonConditionBuilderContext(IBuilderContext
     public Type Type { get; } = BuilderContext.Type;
     public IExpressionBuilder Builder { get; } = BuilderContext.Builder;
     public string HLinqQuery { get; } = BuilderContext.HLinqQuery;
+    public CultureInfo Culture { get; } = BuilderContext.Culture;
+    public IHLinqWarnings? Warnings { get; } = BuilderContext.Warnings;
+    public IReadOnlyDictionary<string, MemberExpression>? GroupMembers { get; } = BuilderContext.GroupMembers;
 
     public Type? ComparisonType { get; set; }
 

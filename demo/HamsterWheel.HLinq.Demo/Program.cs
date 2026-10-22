@@ -2,7 +2,8 @@ using System.Text.Json.Serialization;
 using HamsterWheel.HLinq.AspNet;
 using HamsterWheel.HLinq.Demo.Data;
 using HamsterWheel.HLinq.Demo.Extensions.Filters;
-using HamsterWheel.HLinq.Demo.Extensions.Translations.pl;
+using HamsterWheel.HLinq.Demo.Extensions.Translations.math;
+using HamsterWheel.HLinq.Lang.Pl;
 using HamsterWheel.HLinq.PgSql;
 using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.Tree.Filtering;
@@ -15,12 +16,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi()
     .ConfigureHLinq(c =>
     {
-        c.AddHLingToPgSql();
-        c.Extensions.AddTokenPossibility<SelectPossibility>();
-        c.Extensions.AddTokenPossibility<HamsterWheel.HLinq.Demo.Extensions.Translations.math.OrderByDescendingPossibility>();
+        c.AddPgSqlToHLinq();
+        c.AddPolishToHLinq();
+        c.Extensions.AddWord<OrderByDescendingWord>();
         c.Extensions.CustomServices.Add(s =>
         {
-            c.Extensions.RemoveService<IStaticMethodToExpressionConverter>(s);
+            s.RemoveService<IStaticMethodToExpressionConverter>();
             s.AddSingleton<IStaticMethodToExpressionConverter, CustomFilterConverter>();
         });
     })
@@ -43,6 +44,10 @@ app.UseHttpsRedirection();
 app.MapGet("/demo/memory",
     (HLinqQuery<Superhero> query, CancellationToken cancellationToken) =>
         query.ApplyTo(Superhero.Superheroes.AsQueryable(), cancellationToken)).WithName("demo-memory");
+
+app.MapGet("/demo/sidekicks",
+    (HLinqQuery<Sidekick> query, CancellationToken cancellationToken) =>
+        query.ApplyTo(Sidekick.Sidekicks.AsQueryable(), cancellationToken)).WithName("demo-sidekicks");
 
 app.MapGet("/demo/random",
     (HLinqQuery<RandomData> query, CancellationToken cancellationToken) =>

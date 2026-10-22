@@ -2,7 +2,7 @@
 
 Closes #1 (reverse comparison, `where[10<x.Int]`). Retires the `Assignment`
 next-character workaround. Ambiguous member names (#9) are designed in
-`plans/member-resolution.md`.
+`plans/done/member-resolution.md`.
 
 ## Goal
 
@@ -158,7 +158,7 @@ differently, which is the feature).
 
 ### S4 — Not here: ambiguous property and method names (#9)
 
-An out of `Plans`, designed in `plans/member-resolution.md`: a name that matches two members will
+An out of `Plans`, designed in `plans/done/member-resolution.md`: a name that matches two members will
 pick the better candidate and report the choice, not throw — an error would force new syntax on users
 whose queries work today.
 

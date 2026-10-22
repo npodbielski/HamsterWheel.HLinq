@@ -1,47 +1,46 @@
-using System.Collections.Concurrent;
-using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Tokens;
 
 namespace HamsterWheel.HLinq.Pipeline.Tokenizer;
 
-internal class GrammarValidator(IGrammar grammar, GrammarDependencies dependencies)
+/// <summary>
+/// Validates grammar for correctness: if token is possible to be produced, if tokens
+/// </summary>
+internal class GrammarValidator(IGrammar grammar, IHLinqWord[] allWords)
 {
-    private static readonly ConcurrentDictionary<Type, IToken> Markers = new();
+    private IGrammarRule RuleOf(IHLinqWord word) => grammar.GetRuleFor(word.ForType);
 
-    private Grammar Grammar => (Grammar)grammar;
-
-    private void ValidateReachability(IHLinqTokenPossibility[] possibilities, List<string> problems)
+    private void ValidateReachability(IHLinqWord[] words, List<string> problems)
     {
-        var reachable = new HashSet<Type>(possibilities
-            .Where(p => Grammar.Rules.First(r => r.ForType == p.ForType).CanBeFirst)
+        var reachable = new HashSet<Type>(words
+            .Where(p => grammar.Rules.First(r => r.ForType == p.ForType).CanBeFirst)
             .Select(p => p.ForType));
 
         var grew = true;
         while (grew)
         {
             grew = false;
-            foreach (var possibility in possibilities.Where(p => !reachable.Contains(p.ForType)).ToArray())
+            foreach (var word in words.Where(p => !reachable.Contains(p.ForType)).ToArray())
             {
-                if (!Contexts(reachable).Any(c => possibility.MatchesPreviousTokens(c)))
+                if (!Contexts(reachable).Any(c => RuleOf(word).PreviousTokensMatch(c)))
                 {
                     continue;
                 }
 
-                reachable.Add(possibility.ForType);
+                reachable.Add(word.ForType);
                 grew = true;
             }
         }
 
-        foreach (var unreachable in possibilities.Select(p => p.ForType).Where(t => !reachable.Contains(t)))
+        foreach (var unreachable in words.Select(p => p.ForType).Where(t => !reachable.Contains(t)))
         {
             problems.Add($"token '{unreachable.Name}' is unreachable from the start of a query");
         }
     }
 
-    private void ValidateKeywordCollisions(IHLinqTokenPossibility[] possibilities, List<string> problems)
+    private void ValidateKeywordCollisions(IHLinqWord[] words, List<string> problems)
     {
-        var keywords = possibilities.Where(p => p.Keyword is not null).ToArray();
-        var allContexts = Contexts([.. Grammar.Rules.Select(r => r.ForType)]).ToList();
+        var keywords = words.Where(p => p.Keyword is not null).ToArray();
+        var allContexts = Contexts([.. grammar.Rules.Select(r => r.ForType)]).ToList();
 
         foreach (var shorter in keywords)
         {
@@ -54,7 +53,8 @@ internal class GrammarValidator(IGrammar grammar, GrammarDependencies dependenci
                     continue;
                 }
 
-                var swallowed = shorter.MatchAt(shorter.Keyword.AsSpan(), longer.Keyword[shorter.Keyword.Length]);
+                var swallowed = shorter.PatternFor(grammar)
+                    .Match(shorter.Keyword.AsSpan(), longer.Keyword[shorter.Keyword.Length]);
                 //the shorter keyword does not finish before the longer one would continue
                 if (!swallowed.IsCompleted)
                 {
@@ -62,15 +62,16 @@ internal class GrammarValidator(IGrammar grammar, GrammarDependencies dependenci
                 }
 
                 //they never compete in the same place...
-                if (allContexts.All(c => !(shorter.MatchesPreviousTokens(c) && longer.MatchesPreviousTokens(c))))
+                if (allContexts.All(c =>
+                        !(RuleOf(shorter).PreviousTokensMatch(c) && RuleOf(longer).PreviousTokensMatch(c))))
                 {
                     continue;
                 }
 
                 //...nor in the same clause, which is how `=` (rename, select only) and `==` (compare,
                 //everywhere else) can both be keywords without either carrying a next-character rule
-                if (!GrammarValidator.ClauseRootsOf(possibilities)
-                        .Any(root => shorter.MatchesClauseRoot(root) && longer.MatchesClauseRoot(root)))
+                if (!ClauseRootsOf(words)
+                        .Any(root => RuleOf(shorter).MatchesClauseRoot(root) && RuleOf(longer).MatchesClauseRoot(root)))
                 {
                     continue;
                 }
@@ -84,13 +85,13 @@ internal class GrammarValidator(IGrammar grammar, GrammarDependencies dependenci
     }
 
     /// <summary>
-    ///     Every token list of up to two markers built from the given token types - enough to
-    ///     evaluate any adjacency matcher against a synthetic query ending in those types.
+    /// Every token list of up to two markers built from the given token types - enough to
+    /// evaluate any adjacency matcher against a synthetic query ending in those types.
     /// </summary>
     private static IEnumerable<List<IToken>> Contexts(HashSet<Type> tokenTypes)
     {
         yield return [];
-        var markers = tokenTypes.Select(MarkerOf).ToArray();
+        var markers = tokenTypes.Select(Grammar.MarkerOf).ToArray();
         foreach (var one in markers)
         {
             yield return [one];
@@ -106,46 +107,62 @@ internal class GrammarValidator(IGrammar grammar, GrammarDependencies dependenci
     }
 
     /// <summary>
-    ///     Validates the effective grammar - the rules together with the registered
-    ///     possibilities, so a localization replacing a token is validated as it will run.
-    ///     Throws <see cref="Exceptions.HLinqQueryException" /> listing every problem found:
-    ///     a token without exactly one rule, a token unreachable from the start of a query,
-    ///     or a keyword that swallows a longer keyword it can be confused with.
+    /// Every way this language is wrong: one rule per token, every token reachable from the start of
+    /// a query, no keyword swallowing a longer one it competes with in a place and clause they share.
+    /// Empty means the language can tokenize queries.
     /// </summary>
-    public void Validate()
+    private List<string> Problems()
     {
         var problems = new List<string>();
-        var possibilities = dependencies.TokenPossibilities.ToArray();
 
-        foreach (var duplicate in Grammar.Rules.GroupBy(r => r.ForType).Where(g => g.Count() > 1))
+        foreach (var duplicate in grammar.Rules.GroupBy(r => r.ForType).Where(g => g.Count() > 1))
         {
             problems.Add(
                 $"token '{duplicate.Key.Name}' has {duplicate.Count()} grammar rules, exactly one is expected");
         }
 
-        foreach (var possibility in possibilities)
+        foreach (var word in allWords)
         {
-            if (Grammar.Rules.All(r => r.ForType != possibility.ForType))
+            if (grammar.Rules.All(r => r.ForType != word.ForType))
             {
-                problems.Add($"token '{possibility.ForType.Name}' has no grammar rule");
+                problems.Add($"token '{word.ForType.Name}' has no grammar rule");
             }
         }
 
-        foreach (var rule in Grammar.Rules)
+        foreach (var rule in grammar.Rules)
         {
-            if (possibilities.All(p => p.ForType != rule.ForType))
+            if (allWords.All(p => p.ForType != rule.ForType))
             {
-                problems.Add($"grammar rule for '{rule.ForType.Name}' has no registered token possibility");
+                problems.Add($"grammar rule for '{rule.ForType.Name}' has no registered token word");
             }
         }
 
+        //reachability and collisions ask each word's rule, which only makes sense once every word
+        //has exactly one
         if (problems.Count > 0)
         {
-            throw new GrammarValidationException(problems);
+            return problems;
         }
 
-        ValidateReachability(possibilities, problems);
-        ValidateKeywordCollisions(possibilities, problems);
+        ValidateReachability(allWords, problems);
+        ValidateKeywordCollisions(allWords, problems);
+
+        return problems;
+    }
+
+    /// <summary>
+    /// The grammar of every language of this tokenizer - the invariant one and one per culture its
+    /// words name - checked in order, the problems of all of them collected into one answer.
+    /// </summary>
+    public static void Validate(IHLinqTokenizer tokenizer)
+    {
+        var validators = ((HLinqTokenizer)tokenizer).GetLanguages()
+            .Select(l => new GrammarValidator(l.Grammar, l.Grammar.Words));
+        var problems = new List<string>();
+        foreach (var validator in validators)
+        {
+            problems.AddRange(validator.Problems());
+        }
 
         if (problems.Count > 0)
         {
@@ -153,20 +170,9 @@ internal class GrammarValidator(IGrammar grammar, GrammarDependencies dependenci
         }
     }
 
-    /// <summary>
-    ///     The clauses a keyword can be asked about: no clause at all, and every clause root the
-    ///     registered tokens know. Two keywords that are never legal in one clause cannot compete
-    ///     over the same characters.
-    /// </summary>
-    private static IEnumerable<Type?> ClauseRootsOf(IHLinqTokenPossibility[] possibilities) =>
+    private static IEnumerable<Type?> ClauseRootsOf(IHLinqWord[] words) =>
         new[] { (Type?)null }
-            .Concat(possibilities.Select(p => p.ForType)
+            .Concat(words.Select(p => p.ForType)
                 .Where(t => typeof(IClauseRootToken).IsAssignableFrom(t)))
             .Distinct();
-
-    public static IToken MarkerOf(Type tokenType) =>
-        Markers.GetOrAdd(tokenType, t => (IToken)Activator.CreateInstance(t)!);
-
-    public sealed class UnknownTokenTypeException<T>()
-        : HLinqQueryException($"Unknown token type: '{typeof(T).Name}'. This token is not supported by HLinq grammar");
 }

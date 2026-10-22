@@ -44,6 +44,7 @@ public class DummyHLinqServiceProviderFactory
         Options,
 #endif
         Parser, Tokenizer, MethodsCache,
-        //the tokenizer here is a substitute: nothing is parsed, so the grammar's keywords are not asked for
+        //substitutes throughout: nothing is tokenized or parsed here, so the words of any language
+        //are ever asked for
         new HLinqQueryParameters([], new CultureParameterKeyword()));
 }

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>HamsterWheel.HLinq.Lang.Pl</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\HamsterWheel.HLinq.AspNet\HamsterWheel.HLinq.AspNet.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,17 +1,18 @@
 using System.Reflection;
+using HamsterWheel.HLinq.Reflection;
 
 namespace HamsterWheel.HLinq.Pipeline.Applier.Builders;
 
 public class StaticMethodSourceWrapper(IEnumerable<IStaticMethodSource> childSource) : IStaticMethodSource
 {
-    public Type[] Types { get; } = childSource.SelectMany(c => c.Types).ToArray();
+    public Type[] Types { get; } = [.. childSource.SelectMany(c => c.Types)];
 
     public static IBindingParameterInfo[] MapEfDbFunctionParams(ParameterInfo[] parameters)
     {
         var list = new List<IBindingParameterInfo>();
         foreach (var info in parameters)
         {
-            if (info is { Name: "_", ParameterType.Name: "DbFunctions" })
+            if (EfDbFunctionsMatcher.IsEfDbFunctionParameter(info))
             {
                 list.Add(new BindingParameterInfo
                 {
@@ -26,6 +27,6 @@ public class StaticMethodSourceWrapper(IEnumerable<IStaticMethodSource> childSou
             }
         }
 
-        return list.ToArray();
+        return [.. list];
     }
 }

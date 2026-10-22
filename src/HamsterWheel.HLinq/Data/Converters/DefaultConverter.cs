@@ -10,7 +10,7 @@ public class DefaultConverter(
     IFallbackConverter? fallbackSerializer = null) : IDefaultConverter
 {
     private readonly IConfigurableValueConverter[] _converters =
-        converters.Concat([fallbackSerializer]).Where(c => c is not null).OrderBy(c => c!.Priority).ToArray()!;
+        [.. converters.Concat([fallbackSerializer]).Where(c => c is not null).OrderBy(c => c!.Priority)!];
 
     internal static DefaultConverter Instance { get; } = new(GetDefaultConverters(), new NullKeyword());
 
@@ -37,30 +37,40 @@ public class DefaultConverter(
     }
 
     [return: NotNullIfNotNull(nameof(value))]
-    public T? ConvertTo<T>(object? value)
+    public T? ConvertTo<T>(object? value, CultureInfo? culture = null)
     {
         if (value is T typedValue and not string)
         {
             return typedValue;
         }
 
-        return (T?)ConvertTo(typeof(T), value);
+        return (T?)ConvertTo(typeof(T), value, culture);
     }
 
-    public object? ConvertTo(Type targetType, object? value)
+    public object? ConvertTo(Type targetType, object? value, CultureInfo? culture = null)
     {
+        value = ReadQuotedValue(value);
+
         if (targetType == typeof(bool) || targetType == typeof(bool?))
         {
             return ConvertToBoolean(value, targetType.IsNullable());
         }
 
-        if (_converters.FirstOrDefault(c => c.CanConvert(value, targetType)) is { } converter)
+        foreach (var converter in _converters)
         {
-            return converter.ConvertTo(value, targetType);
+            if (converter.TryConvert(value, targetType, culture) is (true, var result))
+            {
+                return result;
+            }
         }
 
         throw new InvalidConstantStringToTypeConversionException(value, targetType);
     }
+
+    private object? ReadQuotedValue(object? value) =>
+        value is string text && text.IsDoubleQuoted() && text.UnQuote() != nullKeyword.Value
+            ? text.UnQuote()
+            : value;
 
     public bool? ConvertToBoolean(object? arg, bool isNullable)
     {

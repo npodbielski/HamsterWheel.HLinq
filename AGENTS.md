@@ -9,10 +9,23 @@ Standard rules for AI coding agents (and humans) working in this repository.
   *Pipeline*); no release step is done by hand.
   Push the branch, open the MR with `glab`, monitor the pipeline until it is
   green — then stop and wait for review.
-- **Never push directly to `master`.** All changes go through merge requests
-  targeting `master`.
+- **Never push directly to `master` or `alpha`.** All changes go through merge
+  requests targeting `alpha`.
 
-Flow: `feature branch` → MR → `master` (merged only after maintainer approval).
+Flow: `feature branch` → MR → `alpha` → `master`. Both merges happen only after
+maintainer approval.
+
+- **`alpha` is the integration branch.** A merge into it packs the libraries with
+  an `-alpha-<job>` suffix (`package-alpha`) and pushes them to this project's
+  package registry, which is how a change is tested from another project — e.g.
+  Platform consumes `0.x.y-alpha-*` before the release exists. Nothing is
+  published to nuget.org, no tag is made.
+- **`master` is the release branch.** It moves only by merging `alpha` into it,
+  and that is what runs `release` and `package`: the tag, the GitLab release, the
+  GitHub mirror, and the packages for the registry and nuget.org.
+
+So a feature MR is against `alpha`, and releasing what `alpha` holds is a second,
+explicit `alpha` → `master` MR.
 
 ## Comments and documentation
 
@@ -41,7 +54,9 @@ Flow: `feature branch` → MR → `master` (merged only after maintainer approva
   - bugfix → patch: `0.6.0 → 0.6.1`
   - new feature, backward compatible → minor: `0.6.0 → 0.7.0`
 - Bump `VersionPrefix` in `Nuget.props` in a separate release commit
-  (`chore: bump version to x.y.z`). Merging to `master` publishes to the GitLab
+  (`chore: bump version to x.y.z`) — the release commit, not a feature branch:
+  the branch that adds a feature does not decide the version it ships in.
+  Merging to `master` publishes to the GitLab
   package registry and nuget.org (`package` job, `master` + `src/**` changes only).
 
 ## Pipeline
@@ -82,12 +97,12 @@ Flow: `feature branch` → MR → `master` (merged only after maintainer approva
 
 - **The tokenizer stays a single window walk: no backtracking, no peeking at
   syntax.** For each window (text after the last committed token),
-  `HLinqTokenizer` evaluates the grammar half of every possibility once
-  (`MatchesPreviousTokens` — adjacency cannot change while the window grows) and
-  the lexical half (`IHLinqTokenPossibility.MatchAt(window, next)` returning
-  `No` / `Possible` / `Complete(completeAt)`) at every character. The first
-  possibility completing at an offset commits its token and the walk jumps
-  behind the match; there are no scores, no ordering of possibilities and no
+  `HLinqTokenizer` evaluates the grammar half of every candidate word once
+  (`IGrammarRule.PreviousTokensMatch(tokens)` — adjacency cannot change while
+  the window grows) and the lexical half (`TokenPattern.Match(window, next)`
+  returning `No` / `Possible` / `Complete(completeAt)`) at every character. The
+  first word completing at an offset commits its token and the walk jumps
+  behind the match; there are no scores, no ordering of words and no
   rewinding — a window that matches nothing dies. Both halves are grammar:
   `TokenPattern` is the token's text rule (which characters a token consists of,
   i.e. `name = ALPHA *( ALPHA | DIGIT | "_" )`), `GrammarRule` is adjacency
@@ -98,14 +113,15 @@ Flow: `feature branch` → MR → `master` (merged only after maintainer approva
   `take[10..20]` and `take[10.2]` diverge without the tokenizer knowing either
   exists. If new syntax cannot be expressed this way, prefer a new token whose
   grammar absorbs the ambiguity — simplicity beats complexity.
-- **Clause scope is a property of the possibility list, not of adjacency.** The
+- **Clause scope is a property of the words of a language, not of adjacency.** The
   walk knows which clause it is in because committing a clause root
-  (`IClauseRootToken`) says so — possibilities are grouped per clause root once,
-  at tokenizer construction, and committing a root switches the group. A token
+  (`IClauseRootToken`) says so — the words of a language are grouped per clause
+  root once, when the language is built, and committing a root switches the
+  group. A token
   of another clause is therefore never asked anything. This is not lookahead:
   the clause is a committed fact, the same kind of fact adjacency reads. The
-  question a rule answers about the clause (`insideClauseOf:` /
-  `outsideClauseOf:`) is separate from its matchers — see the next rule.
+  question a rule answers about the clause (`MatchesClauseRoot`) is separate
+  from its matchers — see the next rule.
 - **One grammar rule per token, declared as adjacency matchers only.** The
   characters that end a free-text token (its delimiters) are *derived* from
   which tokens the rule allows to follow it — never declared separately, so a
@@ -115,9 +131,24 @@ Flow: `feature branch` → MR → `master` (merged only after maintainer approva
   clause, and deriving delimiters must stay clause-blind (`=` is a delimiter of
   `NameOrValue` in every clause, or floats and GUIDs in values break). Two
   tokens sharing a prefix (the `=` of `Assignment` and the `==` of `Equality`) are
-  kept apart by their clauses, not by a next-character rule. `IGrammar.Validate()`
-  self-checks the effective grammar (one rule per token, every token reachable,
+  kept apart by their clauses, not by a next-character rule. `GrammarValidator`
+  self-checks a grammar (one rule per token, every token reachable,
   no keyword swallowing a longer one it competes with *in a clause where both are
-  allowed*) against the registered possibilities, so localized grammars
-  (`AddTokenPossibility`) validate as they run; call it in tests when touching
-  grammar.
+  allowed*) against the words of one language, so a language with words of its
+  own (`AddTranslatedKeyword`, `AddWord`) is checked as it is built;
+  call it in tests when touching grammar.
+- **One grammar per language, one word object per token.** A language is the
+  words of one culture plus the invariant ones, and two cultures never share a
+  grammar: the characters that end a free-text token are *derived* from the words
+  that may follow it, so handing the invariant language a word of another culture
+  makes that word's first letter compete with the letters of a name. A word
+  is one object — which token it spells, with which keyword, of which culture
+  (`IHLinqWord`) — and answers no grammar question, so one object is
+  walked in every language it belongs to and nothing is instantiated per culture.
+  `HLinqTokenizer` builds a grammar per language from the words it is
+  handed, and each language carries the validator of its grammar;
+  `ValidateLanguages` checks them all and the API calls it as it starts
+  (`IStartupFilter` in the AspNet package): a table of words that does
+  not make a valid grammar stops the API instead of answering 500 to the first
+  query written in it. Deliberately not from `ConfigureHLinq` — there is no
+  container there, and only the words say which cultures there are.

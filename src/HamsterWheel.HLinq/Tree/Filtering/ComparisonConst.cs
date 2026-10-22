@@ -12,6 +12,7 @@ public sealed class ComparisonConst(NameOrValue value) : TreeLeaf([value])
 {
     private NameOrValue Value { get; } = value;
 
+    // ReSharper disable once UnusedType.Global - Used by Parser
     public sealed class Parser : ElementParserBase<ComparisonConst>
     {
         protected override Type[] ValidParents { get; } = [typeof(Condition)];
@@ -29,6 +30,7 @@ public sealed class ComparisonConst(NameOrValue value) : TreeLeaf([value])
         }
     }
 
+    // ReSharper disable once UnusedType.Global - Used by Applier
     public sealed class Converter(IDefaultConverter defaultConverter) : ElementToExpressionConverter<ComparisonConst>
     {
         protected override Expression Build(IBuilderContext context, ComparisonConst element)
@@ -38,7 +40,7 @@ public sealed class ComparisonConst(NameOrValue value) : TreeLeaf([value])
 
             var stringValue = element.Value.GetValue(context.HLinqQuery);
 
-            var value = defaultConverter.ConvertTo(propType, stringValue);
+            var value = defaultConverter.ConvertTo(propType, stringValue, context.Culture);
 
             return Expression.Constant(value, propType);
         }

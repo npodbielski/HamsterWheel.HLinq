@@ -5,8 +5,13 @@
   <Folder Name="/src/">
     <Project Path="src\HamsterWheel.HLinq.Abstractions\HamsterWheel.HLinq.Abstractions.csproj" Type="C#" />
     <Project Path="src\HamsterWheel.HLinq.AspNet\HamsterWheel.HLinq.AspNet.csproj" Type="C#" />
+    <Project Path="src\HamsterWheel.HLinq.SqlServer\HamsterWheel.HLinq.SqlServer.csproj" Type="C#" />
+    <Project Path="src\HamsterWheel.HLinq.Sqlite\HamsterWheel.HLinq.Sqlite.csproj" Type="C#" />
+    <Project Path="src\HamsterWheel.HLinq.MySql\HamsterWheel.HLinq.MySql.csproj" Type="C#" />
+    <Project Path="src\HamsterWheel.HLinq.MariaDb\HamsterWheel.HLinq.MariaDb.csproj" Type="C#" />
     <Project Path="src\HamsterWheel.HLinq.Client\HamsterWheel.HLinq.Client.csproj" Type="C#" />
     <Project Path="src\HamsterWheel.HLinq.PgSql\HamsterWheel.HLinq.PgSql.csproj" Type="C#" />
+    <Project Path="src\HamsterWheel.HLinq.Lang.Pl\HamsterWheel.HLinq.Lang.Pl.csproj" Type="C#" />
     <Project Path="src\HamsterWheel.HLinq\HamsterWheel.HLinq.csproj" Type="C#" />
   </Folder>
   <Folder Name="/tests/">

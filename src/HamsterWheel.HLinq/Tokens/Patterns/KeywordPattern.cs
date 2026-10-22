@@ -3,11 +3,7 @@ using HamsterWheel.HLinq.Pipeline.Tokenizer;
 namespace HamsterWheel.HLinq.Tokens.Patterns;
 
 /// <summary>
-///     A fixed keyword, matched case insensitively, i.e. <c>orderBy</c> or <c>==</c>.
-///     While the window is shorter than the keyword, the character after the window must be
-///     the next keyword character (case sensitively, so <c>orderBy</c> + <c>D</c> keeps
-///     <c>orderByDescending</c> alive and ends <c>orderBy</c>); the token completes only when
-///     <paramref name="nextIsAllowed"/> accepts the character after the full match.
+/// Keyword token pattern. It can be a root 'select' or operation '!='
 /// </summary>
 public sealed class KeywordPattern(string keyword, Func<char?, bool>? nextIsAllowed = null) : TokenPattern
 {

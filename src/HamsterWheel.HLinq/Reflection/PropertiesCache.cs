@@ -17,6 +17,8 @@ public sealed class PropertiesCache : IPropertiesCache
         return _cache[type] = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
     }
 
-    public PropertyInfo? Single(Type type, string prop) =>
-        From(type).FirstOrDefault(p => p.Name.Equals(prop, StringComparison.InvariantCultureIgnoreCase));
+    public PropertyInfo? Single(Type type, string prop) => Resolve(type, prop).Member;
+
+    public MemberResolution<PropertyInfo> Resolve(Type type, string prop) =>
+        MemberRanking.RankProperties(type, prop, From(type));
 }

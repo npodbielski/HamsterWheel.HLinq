@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using System.Reflection;
+using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 
@@ -12,37 +13,43 @@ public class PropertyMethodToExpressionConverter : IPropertyMethodToExpressionCo
     {
         var methodCallContext = context as IMethodCallConditionBuilderContext ??
                                 throw new PropertyMethodCallNeedsToHaveSourceExpressionException();
-        var expression = methodCallContext.MethodSource;
-        var propType = methodCallContext.MethodSource!.Type;
+        var source = methodCallContext.MethodSource ??
+                     throw new PropertyMethodCallNeedsToHaveSourceExpressionException();
+        var propType = source.Type;
         var name = method.GetName(context.HLinqQuery);
         var parameters = method.Children.OfType<IMethodParamElement>()
-            .Select(p => (p.GetValue(context.HLinqQuery),
-                p is Property property ? context.ToExpression(property) as MemberExpression : null))
+            .Select(p => (value: p.GetValue(context.HLinqQuery),
+                expression: p is Property property ? context.ToExpression(property) as MemberExpression : null))
             .ToArray();
-        var methods = context.Builder.GetMostProbableMethods(propType, name, parameters);
+        var resolution = context.Builder.ResolveMethod(propType, name, parameters);
+        resolution.Report(context);
 
-        MethodCallExpression? methodCallExpression = null;
-        foreach (var info in methods)
+        foreach (var candidate in resolution.Competitors)
         {
-            var expressions = parametersConverter.AttemptConversion(parameters,
-            [
-                .. info.GetParameters()
-                    .Select<ParameterInfo, IBindingParameterInfo>(m => new BindingParameterInfo
-                        { Info = m })
-            ]);
+            var (converted, expressions) = parametersConverter.TryConvert(parameters,
+                [
+                    .. candidate.GetParameters()
+                        .Select<ParameterInfo, IBindingParameterInfo>(m => new BindingParameterInfo
+                            { Info = m })
+                ]);
+            if (!converted)
+            {
+                continue;
+            }
+
             try
             {
-                methodCallExpression = Expression.Call(expression, info, expressions);
+                return Expression.Call(source, candidate, expressions);
             }
             catch (ArgumentException)
             {
-                //swallow the exception and try to bind another method from list of available
+                //Expression.Call can still refuse to bind the candidate the ranking put first, and then
+                //the one below it is tried
             }
         }
 
-        return methodCallExpression ?? throw new Method.InvalidMethodException(propType,
-            methodCallContext.MethodSource.Member.Name, name,
-            methods.Select(m => m.Name).ToArray());
+        throw new Method.InvalidMethodException(propType, source.Member.Name, name,
+            [.. parameters.Select(p => p.value)], [.. resolution.Competitors]);
     }
 
     private sealed class PropertyMethodCallNeedsToHaveSourceExpressionException()
