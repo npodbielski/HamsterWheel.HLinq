@@ -10,6 +10,7 @@ public sealed class MethodConstParam(IToken[] tokens) : TreeLeaf(tokens), IMetho
 
     public string GetValue(string hLinqQuery) => Value.GetValue(hLinqQuery);
 
+    // ReSharper disable once UnusedType.Global -> used by the Parser
     public sealed class Parser : ElementParserBase<MethodConstParam>
     {
         public override IToken[] ExampleTokens { get; } = [NameOrValue.Empty];

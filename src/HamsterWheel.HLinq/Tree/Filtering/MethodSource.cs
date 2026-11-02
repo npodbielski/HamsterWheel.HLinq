@@ -4,5 +4,6 @@ public enum MethodSource
 {
     Property,
     Constant,
-    Static
+    Static,
+    Entity
 }

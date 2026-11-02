@@ -6,6 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <OutputType>Library</OutputType>
         <RootNamespace>HamsterWheel.HLinq.Client</RootNamespace>
+        <Description>Fluent client for HLinq services: builds where, select, order, skip, take and group clauses on top of HttpClient and reads the warnings an HLinq endpoint answered with.</Description>
     </PropertyGroup>
 
     <ItemGroup>

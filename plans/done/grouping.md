@@ -1,6 +1,9 @@
-# Grouping: `groupBy[...]` - one entry per key, the rows under it
+# Plan: Grouping: `groupBy[...]` - one entry per key, the rows under it
 
-Addresses the first line of the README roadmap.
+✅ Done - implemented in `alpha` (!85 and its predecessors), released in 0.13.0. The first line of
+the README roadmap. What shipped differs from this plan in the response shape and in what clauses
+after a `groupBy` may order or filter; the *What shipped* section at the bottom records how, and
+why.
 
 ## What was decided
 
@@ -95,6 +98,30 @@ the open decisions.
 `groupBy` is a root token, so `HamsterWheel.HLinq.Lang.Pl` gets a word beside `gdzie` and `wybierz`
 (`grupujPo`, to be settled), and the grammar validator runs over the language as it is built. The
 client gains `GroupBy<TKey>(...)`, and the builder it returns deserialises a dictionary of arrays.
+
+## What shipped - the plan reviewed against the implementation
+
+- **The answer is a list of `{Key, Rows}` entries, not a dictionary.** The plan assumed
+  `{ "New": [row] }`; a dictionary needs a string key, which a composite key and a non-string key
+  do not have (open decision 2 answered itself by the shape chosen). `groupBy[x.Status]` answers
+  `[{"Key": "New", "Rows": [...]}, ...]`, the key is the exact value of the property, and a
+  composite key is an entry whose key has several parts.
+- **The entity's own `Key` is hidden by the group key** (open decision 1): in a `select` after a
+  `groupBy`, `x.Key` is the group key. A query that needs both renames the entity's own member
+  before the grouping - `select[myKey=x.key].groupBy[x.Status].select[x.key,x.myKey]`.
+- **Only the key orders or filters groups** - `orderBy[x.Key]`, `where[x.Key==Paid]`. Ordering or
+  filtering the *rows* inside a group is refused; the README says to do that before the grouping.
+  This is the provider's limit, not a chosen restriction.
+- **`count[]` after a `groupBy` counts groups** (open decision 3), and `take`/`skip` page groups -
+  applied inside the key-plus-rows projection, exactly as the measurement required.
+- **A second `groupBy` groups the rows of every group** (`groupBy[x.Status].groupBy[x.Type]` -
+  groups under groups, the inner key added to the grouping state, the projection nested); this was
+  not in the plan at all and came from the review of !85.
+- **Open decision 4** (a grouping with no `select` fetches every row): accepted as the honest
+  answer - `where` before `groupBy` is the documented way to keep a grouping small.
+- **The words and the client**: `HamsterWheel.HLinq.Lang.Pl` registers `grupujPo` beside `gdzie`
+  and `wybierz`; the client gained `GroupBy<TKey>(...)` and deserialises the `{Key, Rows}` list.
+- **Aggregates remain out** - they are `plans/group-aggregates.md`, as this plan predicted.
 
 ## Out of scope
 

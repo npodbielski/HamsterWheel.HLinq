@@ -4,6 +4,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
+        <Description>Linq to HTTP Query Language. Allows your api endpoints to be queried via HTTP Query String in a way that resembles EF Linq queries to your DB entities or any other backend supported by Linq. Exposes simple way to select, filter, order and group your data with easy paging support. Extensible, fast and easy to localize.</Description>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -43,8 +44,11 @@
         <Compile Update="Pipeline\Tokenizer\HLinqTokenizer.Language.cs">
           <DependentUpon>HLinqTokenizer.cs</DependentUpon>
         </Compile>
-        <Compile Update="Pipeline\Tokenizer\HLinqTokenizer.Word.cs">
+        <Compile Update="Pipeline\Tokenizer\HLinqTokenizer.WordTranslation.cs">
           <DependentUpon>HLinqTokenizer.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Tree\Filtering\AggregateMethodToExpressionConverter.Exceptions.cs">
+          <DependentUpon>AggregateMethodToExpressionConverter.cs</DependentUpon>
         </Compile>
     </ItemGroup>
 

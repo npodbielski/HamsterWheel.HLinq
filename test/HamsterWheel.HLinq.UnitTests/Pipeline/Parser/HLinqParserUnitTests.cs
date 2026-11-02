@@ -514,7 +514,7 @@ public class HLinqParserUnitTests
 
         tree.Should().HaveStructureOf(query, [
             TakeRoot(
-                SkipOrTakeRange([ExpectedToken.RangeOperatorWithStart("10")], SkipOrTakeConstant("20"))
+                SkipOrTakeRange([RangeOperatorWithStart("10")], SkipOrTakeConstant("20"))
             )
         ]);
     }
@@ -529,7 +529,7 @@ public class HLinqParserUnitTests
 
         tree.Should().HaveStructureOf(query, [
             TakeRoot(
-                SkipOrTakeRange([ExpectedToken.RangeOperator], SkipOrTakeConstant("20"))
+                SkipOrTakeRange([RangeOperator], SkipOrTakeConstant("20"))
             )
         ]);
     }
@@ -544,7 +544,7 @@ public class HLinqParserUnitTests
 
         tree.Should().HaveStructureOf(query, [
             TakeRoot(
-                SkipOrTakeRange([ExpectedToken.RangeOperatorWithStart("10")])
+                SkipOrTakeRange([RangeOperatorWithStart("10")])
             )
         ]);
     }

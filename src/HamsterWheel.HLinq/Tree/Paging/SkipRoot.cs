@@ -59,6 +59,11 @@ public sealed partial class SkipRoot(IToken[] tokens) : TreeBranch(tokens), ITre
 
             var skipNumber = converter.ConvertTo<int?>(numberAsString);
 
+            if (skipNumber < 0)
+            {
+                throw new NegativePagingBoundException("skip", skipNumber.Value);
+            }
+
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Skip),
                 typeParams: context.CurrentResultType);
 

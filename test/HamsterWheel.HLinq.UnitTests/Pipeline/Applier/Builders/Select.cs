@@ -26,7 +26,7 @@ public partial class ExpressionBuilderUnitTests
     }
 
     [Fact]
-    public void GetSelect_WhenFunctionCall_ThenParserRejectsIt()
+    public void GetSelect_WhenFunctionCall_ThenItParsesAsACallMember()
     {
         const string query = "select[Reverse(x.Name)]";
         var hlinqQuery = new HLinqQuery<DummyEntity>
@@ -35,9 +35,11 @@ public partial class ExpressionBuilderUnitTests
         };
         var tokens = _tokenizer.Tokenize(query);
 
-        var action = () => _parser.Parse(hlinqQuery, tokens);
+        ITreeBranch tree = _parser.Parse(hlinqQuery, tokens);
 
-        action.Should().Throw<InvalidTokenCollectionException>();
+        var assignment = tree.GetAll<SelectRoot>().First().Children.Should().ContainSingle()
+            .Which.Should().BeOfType<PropertyAssignment>().Subject;
+        assignment.Call!.Should().NotBeNull();
     }
 
     [Fact]

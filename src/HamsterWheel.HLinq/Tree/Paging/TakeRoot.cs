@@ -87,6 +87,12 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
             var takeParam = converter.ConvertTo<int?>(takeString)
                             //if value is null, then it means that Take[] was added by binder to limit the number of records to return to HTTP request
                             ?? MaxTake;
+
+            if (takeParam < 0)
+            {
+                throw new NegativePagingBoundException("take", takeParam);
+            }
+
             takeParam = takeParam > MaxTake ? MaxTake : takeParam;
 
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Take),

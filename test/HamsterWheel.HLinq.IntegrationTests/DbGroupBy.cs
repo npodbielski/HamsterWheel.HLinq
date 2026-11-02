@@ -1,7 +1,6 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.Client;
 using HamsterWheel.HLinq.Demo.Data;
-using HamsterWheel.HLinq.IntegrationTests.Fixtures;
 
 namespace HamsterWheel.HLinq.IntegrationTests;
 

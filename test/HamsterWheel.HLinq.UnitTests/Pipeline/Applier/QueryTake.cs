@@ -23,7 +23,7 @@ partial class HLinqQueryApplierUnitTests
         };
         var tokens = _tokenizer.Tokenize(queryString);
         _parser.Parse(hlinqQuery, tokens);
-        return _sut.Apply(queryable, hlinqQuery)!;
+        return _sut.Apply(queryable, hlinqQuery);
     }
 
     [Theory]
@@ -117,6 +117,39 @@ partial class HLinqQueryApplierUnitTests
         action.Should().Throw<InvalidTokenCollectionException>();
     }
 
+    [Theory]
+    [InlineData("take[-5]")]
+    [InlineData("skip[-1]")]
+    [InlineData("skip[-1].take[-5]")]
+    [InlineData("where[x.Name==New].skip[-1]")]
+    public void Apply_WhenNegativePagingBound_ThenThrowsWithoutReachingTheSource(string queryString)
+    {
+        //arrange - a negative LIMIT/OFFSET is rejected by the database itself (i.e. postgres
+        //must not be negative), which would answer a 500 for a merely malformed query
+        var entities = Entities(25);
+
+        //act
+        var action = () => Apply(queryString, entities.AsQueryable());
+
+        //assert
+        action.Should().Throw<NegativePagingBoundException>();
+    }
+
+    [Theory]
+    [InlineData("take[0]", 0)]
+    [InlineData("skip[0]", 25)]
+    public void Apply_WhenZeroPagingBound_ThenApplies(string queryString, int expectedCount)
+    {
+        //arrange
+        var entities = Entities(25);
+
+        //act
+        var actual = (Array)Apply(queryString, entities.AsQueryable());
+
+        //assert - zero is a legal bound, only negatives are refused
+        actual.Length.Should().Be(expectedCount);
+    }
+
     [Fact]
     public void Apply_WhenTakeRangeHasNonNumericValues_ThenThrowsOnConversion()
     {
@@ -163,7 +196,7 @@ partial class HLinqQueryApplierUnitTests
         var actual = provider.GetRequiredService<IHLinqQueryApplier>().Apply(entities.AsQueryable(), hlinqQuery);
 
         //assert
-        ((Array)actual!).Length.Should().Be(expected);
+        ((Array)actual).Length.Should().Be(expected);
     }
 
     [Fact]

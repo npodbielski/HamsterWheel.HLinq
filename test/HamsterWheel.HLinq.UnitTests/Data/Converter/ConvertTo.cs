@@ -27,6 +27,10 @@ partial class DefaultConverterUnitTests
     [Theory]
     [InlineData("null", null)]
     [InlineData("\"null\"", "null")]
+    [InlineData("\"\"\"\"", "\"\"")]
+    [InlineData("\"\"\"", "\"")]
+    [InlineData("\"Rock\"\"", "Rock\"")]
+    [InlineData("\"a\"b\"c\"", "a\"b\"c")]
     public void ConvertTo_WhenTargetIsString_ThenReturnsCorrectValue(string stringValue, string? expected)
     {
         //act
@@ -407,7 +411,7 @@ partial class DefaultConverterUnitTests
 
         //assert
         actual.Should().Be(expected);
-        DateTimeOffset.Parse((string)actual!, CultureInfo.InvariantCulture).Should().Be(dateTimeOffset);
+        DateTimeOffset.Parse((string)actual, CultureInfo.InvariantCulture).Should().Be(dateTimeOffset);
     }
 
     /// <summary>
@@ -430,7 +434,7 @@ partial class DefaultConverterUnitTests
 
         //assert
         actual.Should().Be(expected);
-        DateTime.Parse((string)actual!, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal)
+        DateTime.Parse((string)actual, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal)
             .Should().Be(dateTime);
     }
 

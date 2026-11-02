@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 using FluentAssertions;
 using HamsterWheel.HLinq.Client;
 using HamsterWheel.HLinq.Demo.Data;
@@ -103,5 +105,44 @@ partial class DbDataTests
                 SurName = x.LastName
             }).Take(100)
         ]);
+    }
+
+    private static string Json(object value) =>
+        JsonSerializer.Serialize(value, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+    [Fact]
+    public async Task WhenSelectCallRenamed_ThenServerAnswersTheCall()
+    {
+        //act
+        var response = await fixture.Client.GetAsync("/demo/db?select[U=x.FirstName.ToUpper()].take[10]");
+        response.EnsureSuccessStatusCode();
+
+        //assert - the server folds the call, exactly as the same Linq written by hand
+        Json(await response.Content.ReadFromJsonAsync<JsonElement>()).Should().Be(
+            Json(Persons.Select(x => new { U = x.FirstName.ToUpper() }).Take(10).ToList()));
+    }
+
+    [Fact]
+    public async Task WhenSelectCallUnnamed_ThenAnswersUnderTheMethodName()
+    {
+        //act
+        var response = await fixture.Client.GetAsync("/demo/db?select[x.FirstName.ToUpper()].take[10]");
+        response.EnsureSuccessStatusCode();
+
+        //assert
+        Json(await response.Content.ReadFromJsonAsync<JsonElement>()).Should().Be(
+            Json(Persons.Select(x => new { ToUpper = x.FirstName.ToUpper() }).Take(10).ToList()));
+    }
+
+    [Fact]
+    public async Task WhenSelectCallWithWrittenArguments_ThenTheArgumentsReachTheServer()
+    {
+        //act
+        var response = await fixture.Client.GetAsync("/demo/db?select[R=x.FirstName.Substring(0,2)].take[10]");
+        response.EnsureSuccessStatusCode();
+
+        //assert
+        Json(await response.Content.ReadFromJsonAsync<JsonElement>()).Should().Be(
+            Json(Persons.Select(x => new { R = x.FirstName.Substring(0, 2) }).Take(10).ToList()));
     }
 }

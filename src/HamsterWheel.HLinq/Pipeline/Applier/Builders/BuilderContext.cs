@@ -24,6 +24,17 @@ public sealed record BuilderContext(ParameterExpression Param, Type Type, string
             GroupMembers = groupMembers
         };
 
+    /// <summary>
+    /// Builds a context from an existing parameter.
+    /// </summary>
+    public static BuilderContext FromExisting(ParameterExpression param, ExpressionBuilder builder,
+        string hLinqQuery, CultureInfo culture, IHLinqWarnings? warnings = null) =>
+        new(param, param.Type, hLinqQuery, builder)
+        {
+            Culture = culture,
+            Warnings = warnings
+        };
+
     public Expression ToExpression(ITreeElement element) => Builder.ToExpression(this, element);
 
     public MemberAssignment ToMemberAssignment(ITreeElement element, Type destinationType) =>

@@ -10,6 +10,12 @@ public class DummyEntity(string name) : IDummy
     public string Name { get; set; } = name;
     public string Text { get; set; } = null!;
 
+    /// <summary>
+    /// A collection under the entity, so an aggregate over a member (`x.Children.Count()`) has
+    /// something to aggregate over in an ungrouped query.
+    /// </summary>
+    public List<NestedDummyEntity> Children { get; set; } = [];
+
     public bool Flag { get; set; }
     public bool? NullableFlag { get; set; }
     public byte Byte { get; set; }

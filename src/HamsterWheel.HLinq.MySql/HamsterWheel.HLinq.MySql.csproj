@@ -5,6 +5,7 @@
         <LangVersion>latestmajor</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Description>HLinq db functions of the MySQL and MariaDB provider: AddMySqlToHLinq() hands a query the generic EF and the provider's function classes.</Description>
     </PropertyGroup>
 
     <ItemGroup>

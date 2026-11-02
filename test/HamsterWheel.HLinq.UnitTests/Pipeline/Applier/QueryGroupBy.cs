@@ -1,14 +1,7 @@
 using FluentAssertions;
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Pipeline;
 using HamsterWheel.HLinq.Pipeline.Applier;
-using HamsterWheel.HLinq.Pipeline.Parser;
-using HamsterWheel.HLinq.Pipeline.Tokenizer;
-using HamsterWheel.HLinq.Reflection;
-using HamsterWheel.HLinq.Request;
-using HamsterWheel.HLinq.UnitTests.TestUtils;
 using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace HamsterWheel.HLinq.UnitTests.Pipeline.Applier;
 

@@ -1,3 +1,5 @@
+using HamsterWheel.HLinq.Demo.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Memory;
 
@@ -7,7 +9,7 @@ public class DemoFixture : IAsyncLifetime
 {
     public bool IsInCi => Environment.GetEnvironmentVariable("CI_SERVER") != null;
 
-    private string ConnectionString =>
+    internal string ConnectionString =>
         IsInCi
             ? $"Host={Environment.GetEnvironmentVariable("POSTGRES_HOST")};Port=5432;" +
               $"Database={Environment.GetEnvironmentVariable("POSTGRES_DB")};Username=postgres;" +
@@ -24,6 +26,12 @@ public class DemoFixture : IAsyncLifetime
     {
         PgSqlFixture = new PostGreSqlFixture(this, ConnectionString);
         await PgSqlFixture.InitializeAsync();
+        //seed data in db without concurrency issues
+        await using (var seeding = new DemoContext(
+                         new DbContextOptionsBuilder<DemoContext>().UseNpgsql(ConnectionString).Options))
+        {
+            await seeding.EnsureDbAndData();
+        }
         var configuration = new ConfigurationRoot([new MemoryConfigurationProvider(new MemoryConfigurationSource())]);
         configuration["ConnectionStrings:Demo"] = ConnectionString;
         DemoTestHost = new DemoTestHost(configuration);

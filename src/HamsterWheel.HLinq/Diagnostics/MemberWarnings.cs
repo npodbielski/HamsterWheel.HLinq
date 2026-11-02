@@ -32,7 +32,7 @@ internal static class MemberWarnings
                 ? HLinqMemberWarningReason.AmbiguousName
                 : HLinqMemberWarningReason.AmbiguousCall,
             Spelled(resolution.Member),
-            resolution.Member.DeclaringType?.ToString() ?? typeof(T).ToString()!,
+            resolution.Member.DeclaringType?.ToString() ?? typeof(T).ToString(),
             [.. resolution.Competitors.Select(Spelled)],
             query));
     }

@@ -30,4 +30,9 @@ public sealed record GroupingState(
     /// Name of property that holds group rows
     /// </summary>
     public const string RowsName = "Rows";
+
+    /// <summary>
+    /// Named aggregate calls over the group, answered beside Key and Rows of the grouping's answer.
+    /// </summary>
+    public IReadOnlyList<GroupAggregate> Aggregates { get; init; } = [];
 }

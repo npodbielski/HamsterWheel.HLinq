@@ -5,6 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>HamsterWheel.HLinq.SqlServer</RootNamespace>
+        <Description>HLinq db functions of the SQL Server provider: AddSqlServerToHLinq() hands a query the SqlServer function classes - the full-text Contains and FreeText, the DateDiff family, DataLength, PatIndex, dates out of parts.</Description>
     </PropertyGroup>
 
     <ItemGroup>

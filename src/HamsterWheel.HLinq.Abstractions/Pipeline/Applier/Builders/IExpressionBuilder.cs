@@ -38,6 +38,9 @@ public interface IExpressionBuilder
     (LambdaExpression Expression, Type ResultType) GroupRowSelector(GroupingState state, ISelectRoot select,
         string hLinqQuery, CultureInfo culture, IHLinqWarnings? warnings);
 
+    LambdaExpression GroupAggregateSelector(GroupingState state, IMethod method,
+        string hLinqQuery, CultureInfo culture, IHLinqWarnings? warnings = null);
+
     (LambdaExpression Expression, Type PropType) GetProperty(Type source, ITreeRoot query, string hLinqQuery,
         CultureInfo? culture = null, IHLinqWarnings? warnings = null);
 
@@ -51,10 +54,10 @@ public interface IExpressionBuilder
     IParametersConverter GetParametersConverter();
 
     MemberResolution<MethodInfo> ResolveStaticMethod(string? name,
-        (string value, MemberExpression? expression)[] parameters);
+        (string value, MemberExpression? expression)[] parameters, CultureInfo? culture = null);
 
     MemberResolution<MethodInfo> ResolveMethod(Type propType, string name,
-        (string value, MemberExpression? expression)[] parameters);
+        (string value, MemberExpression? expression)[] parameters, CultureInfo? culture = null);
 
     IPropertyContext GetProperty(Type sourceType, Expression source, string[] path,
         IBuilderContext? context = null);

@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
+using DynamicAnonymousType;
+using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Parser;
@@ -21,9 +23,11 @@ public sealed class ExpressionBuilder(
     IMethodsCache methods,
     IConverterFactory converterFactory,
     IParametersConverter parametersConverter,
-    IEnumerable<IStaticMethodSource> staticMethodSources)
-    : IExpressionBuilder
+    IEnumerable<IStaticMethodSource> staticMethodSources,
+    IWrittenValueParser writtenValues,
+    IAggregateMethodToExpressionConverter aggregates) : IExpressionBuilder
 {
+    private IAggregateMethodToExpressionConverter _aggregates = aggregates;
     public IParametersConverter GetParametersConverter() => parametersConverter;
 
     public LambdaExpression GetFilter(Type source, IWhereRoot query, string hLinqQuery,
@@ -85,18 +89,19 @@ public sealed class ExpressionBuilder(
         GetToMemberBindingConverter(element).Build(context, element, destinationType);
 
     public MemberResolution<MethodInfo> ResolveStaticMethod(string? name,
-        (string value, MemberExpression? expression)[] parameters)
+        (string value, MemberExpression? expression)[] parameters, CultureInfo? culture = null)
     {
         var staticMethods = staticMethodSources.SelectMany(s => s.Types)
             .Select(methods.AllStatic).SelectMany(m => m).ToArray();
 
         return RankMethods(declaredOnType: null, name, Named(staticMethods, name), parameters,
-            EfFunctionParametersTransformer);
+            EfFunctionParametersTransformer, writtenValues, culture);
     }
 
     public MemberResolution<MethodInfo> ResolveMethod(Type propType, string name,
-        (string value, MemberExpression? expression)[] parameters) =>
-        RankMethods(propType, name, Named(methods.AllInstance(propType), name), parameters);
+        (string value, MemberExpression? expression)[] parameters, CultureInfo? culture = null) =>
+        RankMethods(propType, name, Named(methods.AllInstance(propType), name), parameters,
+            parametersTransformer: null, writtenValues, culture);
 
     private static MethodInfo[] Named(MethodInfo[] candidates, string? name)
     {
@@ -166,12 +171,19 @@ public sealed class ExpressionBuilder(
     public IElementToMemberAssignmentConverter GetToMemberBindingConverter<T>(T element) where T : ITreeElement =>
         converterFactory.GetToMemberAssignmentConverter(element.GetType());
 
-
     public (LambdaExpression Expression, Type ResultType) GroupProjection(GroupingState state) =>
         state.InnerKey is null
             ? BuildGrouping(state, state.RowShape,
                 RowsOfGroup(state.GroupParam, state.RowType, state.RowSelector))
             : BuildGrouping(state, NestedRowShape(state), NestedRows(state));
+
+    public LambdaExpression GroupAggregateSelector(GroupingState state, IMethod method,
+        string hLinqQuery, CultureInfo culture, IHLinqWarnings? warnings = null)
+    {
+        var context = FromExisting(state.GroupParam, this, hLinqQuery, culture, warnings);
+        var body = _aggregates.BuildOverEntity(context, method);
+        return Lambda(typeof(Func<,>).MakeGenericType(state.GroupingItemType, body.Type), body, state.GroupParam);
+    }
 
     public GroupingState Nest(GroupingState state, LambdaExpression innerKey) =>
         state with { InnerKey = innerKey };
@@ -179,7 +191,7 @@ public sealed class ExpressionBuilder(
     private static Type NestedRowShape(GroupingState state) =>
         typeof(Group<,>).MakeGenericType(state.InnerKey!.ReturnType, state.RowShape);
 
-    private MethodCallExpression NestedRows(GroupingState state)
+    private static MethodCallExpression NestedRows(GroupingState state)
     {
         var innerKey = state.InnerKey!;
         var innerItemType = typeof(IGrouping<,>).MakeGenericType(innerKey.ReturnType, state.RowType);
@@ -195,9 +207,9 @@ public sealed class ExpressionBuilder(
 
         var groupByMethod = typeof(Enumerable).GetMethods()
             .Single(m => m.Name == nameof(Enumerable.GroupBy) && m.GetParameters().Length == 2
-                                                            && m.GetParameters()[1].ParameterType is
-                                                            { IsGenericType: true } keyFunc
-                                                            && keyFunc.GenericTypeArguments.Length == 2)
+                                                              && m.GetParameters()[1].ParameterType is
+                                                              { IsGenericType: true } keyFunc
+                                                              && keyFunc.GenericTypeArguments.Length == 2)
             .MakeGenericMethod(state.RowType, innerKey.ReturnType);
 
         var selectMethod = typeof(Enumerable).GetMethods()
@@ -249,7 +261,7 @@ public sealed class ExpressionBuilder(
         string hLinqQuery, CultureInfo? culture, IHLinqWarnings? warnings = null)
     {
         var context = From(source, this, hLinqQuery, culture ?? CultureInfo.InvariantCulture, warnings);
-        var body = (MemberExpression)BuildBody(context, query);
+        var body = BuildBody(context, query);
 
         var propType = body.Type;
 
@@ -269,14 +281,52 @@ public sealed class ExpressionBuilder(
     private static (LambdaExpression Expression, Type ResultType) BuildGrouping(GroupingState state, Type rowShape,
         MethodCallExpression rows)
     {
-        var projected = typeof(Group<,>).MakeGenericType(state.KeyType, rowShape);
-        var body = MemberInit(
-            New(projected),
+        var projected = ProjectedGroupType(state, rowShape);
+        var bindings = new List<MemberBinding>
+        {
             Bind(projected.GetProperty(GroupingState.KeyName)!, state.KeyMember),
-            Bind(projected.GetProperty(GroupingState.RowsName)!, rows));
+            Bind(projected.GetProperty(GroupingState.RowsName)!, rows)
+        };
+
+        foreach (var aggregate in state.Aggregates)
+        {
+            //the aggregate lambda stands on the grouping's group parameter already
+            bindings.Add(Bind(projected.GetProperty(aggregate.Name)!, aggregate.Selector.Body));
+        }
+
+        var body = MemberInit(New(projected), bindings);
 
         var delegateType = typeof(Func<,>).MakeGenericType(state.GroupingItemType, projected);
         return (Lambda(delegateType, body, state.GroupParam), projected);
+    }
+
+    private static Type ProjectedGroupType(GroupingState state, Type rowShape)
+    {
+        if (state.Aggregates.Count == 0)
+        {
+            return typeof(Group<,>).MakeGenericType(state.KeyType, rowShape);
+        }
+
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            GroupingState.KeyName, GroupingState.RowsName
+        };
+        var properties = new List<(string Name, Type Type)>
+        {
+            (GroupingState.KeyName, state.KeyType),
+            (GroupingState.RowsName, typeof(List<>).MakeGenericType(rowShape))
+        };
+        foreach (var aggregate in state.Aggregates)
+        {
+            if (!names.Add(aggregate.Name))
+            {
+                throw new AggregateMethodToExpressionConverter.AggregateNameCollisionException(aggregate.Name);
+            }
+
+            properties.Add((aggregate.Name, aggregate.Selector.ReturnType));
+        }
+
+        return DynamicFactory.CreateType(properties);
     }
 
     private class ExpectedMemberOrMemberInitExpressionException() : HLinqQueryException(

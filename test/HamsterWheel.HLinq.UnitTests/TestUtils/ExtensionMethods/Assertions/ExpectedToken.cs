@@ -34,6 +34,7 @@ public class ExpectedToken(Type type, string value)
     public static ExpectedToken Comma => new(typeof(Comma), ",");
     public static ExpectedToken Entity(string name = "x") => new(typeof(Entity), name);
     public static ExpectedToken MethodName(string name) => new(typeof(MethodName), name);
+    public static ExpectedToken SubEntity(string name) => new(typeof(SubEntity), name);
     public static ExpectedToken Take => new(typeof(Take), "take");
     public static ExpectedToken Count => new(typeof(Count), "count");
     public static ExpectedToken Skip => new(typeof(Skip), "skip");

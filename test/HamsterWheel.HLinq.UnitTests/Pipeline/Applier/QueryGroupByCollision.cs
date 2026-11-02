@@ -38,7 +38,7 @@ public class HLinqQueryGroupByCollisionUnitTests
         _parser.Parse(hlinqQuery, _tokenizer.Tokenize(queryString));
 
         //act
-        var actual = (object[])_sut.Apply(rows.AsQueryable(), hlinqQuery)!;
+        var actual = (object[])_sut.Apply(rows.AsQueryable(), hlinqQuery);
 
         //assert - the entity's own Key is what x.Key means everywhere else, so it means that here too
         actual.Select(e => e.GetType().GetProperty("Key")!.GetValue(e)).Should().BeEquivalentTo(["a", "b"]);

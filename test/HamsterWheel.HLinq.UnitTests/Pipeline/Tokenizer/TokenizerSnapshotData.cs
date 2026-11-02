@@ -218,6 +218,7 @@ public static class TokenizerSnapshotData
             //value is searched for is written as the pair that closes it - `"Rock""` is `Rock"`
             ("where[x.Name==\"Rock\"\"]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("\"Rock\"\""), RightSquareBracket]),
             ("where[x.Name==\"\"\"]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("\"\"\""), RightSquareBracket]),
+            ("where[x.Name==\"\"\"\"]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("\"\"\"\""), RightSquareBracket]),
             //quotes inside a quoted value that a letter or a space follows are its text
             ("where[x.Name==\"a\"b\"c\"]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("\"a\"b\"c\""), RightSquareBracket]),
             ("where[x.Name==\"John \"The Rock\" Stone\"]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("\"John \"The Rock\" Stone\""), RightSquareBracket]),

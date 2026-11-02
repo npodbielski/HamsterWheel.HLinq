@@ -11,7 +11,7 @@ namespace HamsterWheel.HLinq.UnitTests;
 public class HLinqQueryBinderUnitTests
 {
     [Fact]
-    public void BindQuery_WhenCalled_Then()
+    public void BindQuery_WhenCalled_ThenReturnsCorrectTypeWithCorrectProps()
     {
         //arrange
         var expected = new HLinqQuery<DummyEntity>();

@@ -13,13 +13,13 @@ public class StaticMethodToExpressionConverter : IStaticMethodToExpressionConver
             .Select(p => (value: p.GetValue(context.HLinqQuery),
                 expression: p is Property property ? context.ToExpression(property) as MemberExpression : null))
             .ToArray();
-        var resolution = context.Builder.ResolveStaticMethod(name, parameters);
+        var resolution = context.Builder.ResolveStaticMethod(name, parameters, context.Culture);
         resolution.Report(context);
 
         foreach (var candidate in resolution.Competitors)
         {
             var (converted, expressions) = parametersConverter.TryConvert(parameters,
-                StaticMethodSourceWrapper.MapEfDbFunctionParams(candidate.GetParameters()));
+                StaticMethodSourceWrapper.MapEfDbFunctionParams(candidate.GetParameters()), context.Culture);
             if (!converted)
             {
                 continue;

@@ -18,7 +18,7 @@ public class MemberWarningsUnitTests
     private readonly HLinqWarnings _warnings = new();
 
     private readonly ExpressionBuilder _sut = new(Services.PropertiesCache, Services.MethodsCache,
-        Services.ConverterFactory, new ParametersConverter(), []);
+        Services.ConverterFactory, new ParametersConverter(Services.WrittenValues, Services.DefaultConverter), [], Services.WrittenValues, null!);
 
     private readonly IHLinqParser _parser = new HLinqParser(Services.Parsers);
 

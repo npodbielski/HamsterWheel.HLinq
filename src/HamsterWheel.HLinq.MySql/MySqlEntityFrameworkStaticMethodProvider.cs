@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace HamsterWheel.HLinq.MySql;
 
 /// <summary>
-/// Provides Db functions specific to the MySQL engine to be used in HLinq queries
+/// Provides Db functions of the MySQL and MariaDB provider to be used in HLinq queries.
 /// </summary>
 public class MySqlEntityFrameworkStaticMethodProvider : IStaticMethodSource
 {

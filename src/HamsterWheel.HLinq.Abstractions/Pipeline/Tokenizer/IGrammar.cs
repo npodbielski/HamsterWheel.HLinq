@@ -11,6 +11,12 @@ public interface IGrammar
     char[] GetDelimiters(Type type);
 
     /// <summary>
+    /// The keywords spelling a token type in this grammar's language, so that a clause a word of
+    /// this grammar opens is recognized by the same spelling without any hand-kept list.
+    /// </summary>
+    string[] KeywordsOf(Type tokenType);
+
+    /// <summary>
     /// Returns this grammar rule for specified token.
     /// </summary>
     IGrammarRule GetRuleFor(Type tokenType);

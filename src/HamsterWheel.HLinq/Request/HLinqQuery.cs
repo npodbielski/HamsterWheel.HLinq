@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Reflection;
 using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Exceptions;
-using HamsterWheel.HLinq.Pipeline;
 using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;

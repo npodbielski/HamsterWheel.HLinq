@@ -13,11 +13,12 @@ public class MethodConverterUnitTests
     public void Build_WhenMethodHaveIncorrectTokenSource_ThenThrows()
     {
         //arrange
-        var sut = new Method.Converter(null!, null!);
+        var sut = new Method.Converter(null!, null!, null!);
         var element = new Method([NameOrValue.Empty, MethodName.Empty]);
         var action = () => sut.Build(
             new BuilderContext(null!, typeof(DummyEntity), "where[]",
-                new ExpressionBuilder(null!, null!, null!, new ParametersConverter(), null!)), element);
+                new ExpressionBuilder(null!, null!, null!, new ParametersConverter(null!, null!), null!, null!, null!)),
+                element);
 
         //act
         var exception = action.Should().Throw<Method.InvalidMethodQueryException>();

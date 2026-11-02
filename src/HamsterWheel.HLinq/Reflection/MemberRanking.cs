@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
+using HamsterWheel.HLinq.Data.Converters;
 using static HamsterWheel.HLinq.Reflection.ResolutionReason;
 
 namespace HamsterWheel.HLinq.Reflection;
@@ -11,7 +13,12 @@ internal static class MemberRanking
 {
     private const int Exact = 0;
     private const int ImplicitConversion = 1;
-    private const int ParsedFromQueryText = 2;
+
+    //the text is written in the type's own shape, a date for a date
+    private const int ParsedExact = 2;
+
+    //the text parses into the type but is written in another type's shape, a date into a moment
+    private const int ParsedInexact = 3;
     private const int DeclaredOnType = 0;
     private const int Inherited = 1;
     private const int OfObject = 2;
@@ -35,9 +42,10 @@ internal static class MemberRanking
     public static MemberResolution<MethodInfo> RankMethods(Type? declaredOnType, string? name,
         IReadOnlyList<MethodInfo> candidates,
         IReadOnlyList<(string value, MemberExpression? expression)>? arguments,
-        Func<ParameterInfo[], ParameterInfo[]>? parametersTransformer = null) =>
+        Func<ParameterInfo[], ParameterInfo[]>? parametersTransformer = null,
+        IWrittenValueParser? writtenValues = null, CultureInfo? culture = null) =>
         Rank(declaredOnType, name, candidates,
-            method => Cost(ParametersOf(method, parametersTransformer), arguments));
+            method => Cost(ParametersOf(method, parametersTransformer), arguments, writtenValues, culture));
 
     private static ParameterInfo[] ParametersOf(MethodInfo method,
         Func<ParameterInfo[], ParameterInfo[]>? parametersTransformer) =>
@@ -57,7 +65,7 @@ internal static class MemberRanking
         for (var i = 0; i < candidates.Count; i++)
         {
             var candidate = candidates[i];
-            ranked[i] = new Ranked<T>(candidate, conversionCost is null ? Exact : (int?)conversionCost(candidate),
+            ranked[i] = new Ranked<T>(candidate, conversionCost is null ? Exact : conversionCost(candidate),
                 SpelledAsWritten(name, candidate), DeclaringTier(declaredOnType, candidate));
         }
 
@@ -79,7 +87,7 @@ internal static class MemberRanking
 
         return new MemberResolution<T>(ranked[winner].Member, competitors,
             runnerUp < 0
-                ? candidates.Count == 1 ? ResolutionReason.OnlyCandidate : ResolutionReason.OnlyBindableCandidate
+                ? candidates.Count == 1 ? OnlyCandidate : OnlyBindableCandidate
                 : DecidedBy(ranked[winner], ranked[runnerUp]));
     }
 
@@ -174,11 +182,12 @@ internal static class MemberRanking
 
         return winner.DeclaringTier != runnerUp.DeclaringTier
             ? ResolutionReason.DeclaredOnType
-            : ResolutionReason.OrdinalTieBreak;
+            : OrdinalTieBreak;
     }
 
     private static int? Cost(ParameterInfo[] parameters,
-        IReadOnlyList<(string value, MemberExpression? expression)>? arguments)
+        IReadOnlyList<(string value, MemberExpression? expression)>? arguments,
+        IWrittenValueParser? writtenValues, CultureInfo? culture)
     {
         if (arguments is null)
         {
@@ -193,7 +202,7 @@ internal static class MemberRanking
         var cost = 0;
         for (var i = 0; i < parameters.Length; i++)
         {
-            if (CostOf(parameters[i], arguments[i]) is not { } parameterCost)
+            if (CostOf(parameters[i], arguments[i], writtenValues, culture) is not { } parameterCost)
             {
                 return null;
             }
@@ -204,10 +213,11 @@ internal static class MemberRanking
         return cost;
     }
 
-    private static int? CostOf(ParameterInfo parameter, (string value, MemberExpression? expression) argument) =>
+    private static int? CostOf(ParameterInfo parameter, (string value, MemberExpression? expression) argument,
+        IWrittenValueParser? writtenValues, CultureInfo? culture) =>
         argument.expression is not null
             ? CostOfSource(argument.expression.Type, parameter.ParameterType)
-            : CostOfCast(argument.value, parameter.ParameterType);
+            : CostOfCast(argument.value, parameter.ParameterType, writtenValues, culture);
 
     private static int? CostOfSource(Type sourceType, Type parameterType)
     {
@@ -223,7 +233,8 @@ internal static class MemberRanking
     /// <summary>
     /// Roughly estimates how costly it is to cast part of a query, extracted from value token to destination type (parameter or property)
     /// </summary>
-    private static int? CostOfCast(string value, Type parameterType)
+    private static int? CostOfCast(string value, Type parameterType, IWrittenValueParser? writtenValues,
+        CultureInfo? culture)
     {
         if (parameterType == typeof(string))
         {
@@ -232,10 +243,108 @@ internal static class MemberRanking
 
         if (parameterType == typeof(char))
         {
-            return value.Length == 1 ? ParsedFromQueryText : null;
+            return value.Length == 1 ? ParsedExact : null;
         }
 
-        return parameterType.IsEnum && NamesAMemberOf(value, parameterType) ? ParsedFromQueryText : null;
+        if (parameterType.IsEnum)
+        {
+            return NamesAMemberOf(value, parameterType) ? ParsedExact : null;
+        }
+
+        return writtenValues is not null && writtenValues.Parses(value, parameterType, culture)
+            ? OwnsTheShapeOf(value, parameterType, writtenValues, culture) ? ParsedExact : ParsedInexact
+            : null;
+    }
+
+    private static bool OwnsTheShapeOf(string text, Type parameterType, IWrittenValueParser writtenValues,
+        CultureInfo? culture)
+    {
+        var type = Nullable.GetUnderlyingType(parameterType) ?? parameterType;
+        var shape = ShapeOf(text, writtenValues, culture);
+
+        return type switch
+        {
+            _ when type == typeof(byte) || type == typeof(short) || type == typeof(int) ||
+                   type == typeof(long) => shape == TextShape.Number,
+            _ when type == typeof(decimal) || type == typeof(double) || type == typeof(float) =>
+                shape is TextShape.Number or TextShape.Fraction,
+            _ when type == typeof(Guid) => shape == TextShape.Guid,
+            _ when type == typeof(DateTime) || type == typeof(DateTimeOffset) => shape == TextShape.Moment,
+            _ when type == typeof(TimeSpan) => shape is TextShape.Time or TextShape.Number,
+#if !NETSTANDARD
+            _ when type == typeof(DateOnly) => shape == TextShape.Date,
+            _ when type == typeof(TimeOnly) => shape is TextShape.Time or TextShape.Number,
+#else
+            //the netstandard build knows no DateOnly, so a date text has no other owner than a
+            //moment, and a time text belongs to a span alone, as it does where TimeOnly exists
+            _ when type == typeof(DateTime) || type == typeof(DateTimeOffset) => shape == TextShape.Date,
+            _ when type == typeof(TimeSpan) => shape is TextShape.Time or TextShape.Number,
+#endif
+            _ => true
+        };
+    }
+
+    private enum TextShape
+    {
+        Text,
+        Number,
+        Fraction,
+        Guid,
+        Date,
+        Moment,
+        Time
+    }
+
+    /// <summary>
+    /// Analyzes shape of text
+    /// </summary>
+    private static TextShape ShapeOf(string text, IWrittenValueParser writtenValues, CultureInfo? culture)
+    {
+        if (writtenValues.Parses(text, typeof(Guid), culture))
+        {
+            return TextShape.Guid;
+        }
+
+        if (writtenValues.Parses(text, typeof(int), culture))
+        {
+            return TextShape.Number;
+        }
+
+        if (writtenValues.Parses(text, typeof(decimal), culture))
+        {
+            return TextShape.Fraction;
+        }
+
+#if !NETSTANDARD
+        var isDate = writtenValues.Parses(text, typeof(DateOnly), culture);
+        var isTime = writtenValues.Parses(text, typeof(TimeOnly), culture);
+        if (isDate && isTime)
+        {
+            return TextShape.Moment;
+        }
+
+        if (isDate)
+        {
+            return TextShape.Date;
+        }
+
+        if (isTime || writtenValues.Parses(text, typeof(TimeSpan), culture))
+        {
+            return TextShape.Time;
+        }
+#else
+        if (writtenValues.Parses(text, typeof(TimeSpan), culture))
+        {
+            return TextShape.Time;
+        }
+
+        if (writtenValues.Parses(text, typeof(DateTime), culture))
+        {
+            return TextShape.Date;
+        }
+#endif
+
+        return TextShape.Text;
     }
 
     private static bool NamesAMemberOf(string value, Type enumType)

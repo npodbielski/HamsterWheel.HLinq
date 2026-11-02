@@ -16,15 +16,17 @@ what its arguments may be, is in [the page beside this one](README.md).
 
 | call                                        |                        |
 |---------------------------------------------|------------------------|
-| `where[DateDiffDay(x.From, x.To) > 7]`      | a number of days - and `DateDiffHour`, `Minute`, `Second`, `Millisecond`, `Microsecond`, `Nanosecond`, `Week`, `Month`, `Year` of the same two arguments |
+| `where[DateDiffDay(x.From, x.To) > 7]`      | a number of days - and `DateDiffHour`, `DateDiffMinute`, `DateDiffSecond`, `DateDiffMillisecond`, `DateDiffMicrosecond`, `DateDiffNanosecond`, `DateDiffWeek`, `DateDiffMonth`, `DateDiffYear` of the same two arguments |
 | `where[DataLength(x.Name) > 100]`           | how many bytes the value takes, when it takes any |
 | `where[PatIndex(%Bill%, x.Name) > 0]`       | where a pattern starts in a text |
-| `DateFromParts(x.Year, x.Month, x.Day)`     | a date out of parts - likewise `DateTimeFromParts`, `DateTime2FromParts`, `DateTimeOffsetFromParts`, `SmallDateTimeFromParts`, `TimeFromParts`, each taking the parts as numbers |
-| `AtTimeZone(x.Created, UTC)`                | a moment in a time zone |
+| `where[DateFromParts(x.Year, x.Month, x.Day) > x.Born]` | a date out of parts - likewise `DateTimeFromParts`, `DateTime2FromParts`, `DateTimeOffsetFromParts`, `SmallDateTimeFromParts`, each taking the parts as numbers |
+| `where[AtTimeZone(x.Created, UTC) > x.Born]` | a moment in a time zone |
+| `where[TimeFromParts(x.Int, x.Int, x.Int, x.Int, x.Int) > 00:02:00]` | a time out of parts as a `TimeSpan`, compared with a span the query writes |
 
 `DateDiff` is a family of overloads, one per unit and per kind of moment: the `DateTime`,
 `DateTimeOffset` and `TimeOnly` overloads are reached by a column of that kind, the `DateOnly` and
-`TimeSpan` ones by a row holding such a column - a query writes no value of those two types.
+`TimeSpan` ones by a row holding such a column - or by a written value of that kind, which the
+overload whose shape the text is written in wins outright.
 
 ## Out of reach
 

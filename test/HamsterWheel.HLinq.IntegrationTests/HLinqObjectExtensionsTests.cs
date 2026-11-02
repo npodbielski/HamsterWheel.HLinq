@@ -39,7 +39,7 @@ public class HLinqObjectExtensionsTests
 
         //single object: the projection of the one wrapped row, not a collection
         result.Should().NotBeNull();
-        result!.GetType().GetProperty("Who")!.GetValue(result).Should().Be(hero.Name);
+        result.GetType().GetProperty("Who")!.GetValue(result).Should().Be(hero.Name);
     }
 
     [Fact]

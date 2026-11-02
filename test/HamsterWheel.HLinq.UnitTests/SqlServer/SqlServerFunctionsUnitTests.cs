@@ -1,7 +1,6 @@
 using System.Linq.Expressions;
 using FluentAssertions;
 using HamsterWheel.HLinq.Diagnostics;
-using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.SqlServer;
@@ -9,8 +8,6 @@ using HamsterWheel.HLinq.Tree.Filtering;
 using HamsterWheel.HLinq.UnitTests.TestUtils;
 using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.SqlServer;
-using Xunit;
 
 namespace HamsterWheel.HLinq.UnitTests.SqlServer;
 
@@ -25,7 +22,8 @@ public class SqlServerFunctionsUnitTests
     private static readonly TestServicesCollection Services = new();
 
     private readonly ExpressionBuilder _sut = new(Services.PropertiesCache, Services.MethodsCache,
-        Services.ConverterFactory, new ParametersConverter(), [new SqlServerEntityFrameworkStaticMethodProvider()]);
+        Services.ConverterFactory, new ParametersConverter(Services.WrittenValues, Services.DefaultConverter),
+        [new SqlServerEntityFrameworkStaticMethodProvider()], Services.WrittenValues, null!);
 
     private readonly IHLinqParser _parser = new HLinqParser(Services.Parsers);
 
@@ -41,6 +39,81 @@ public class SqlServerFunctionsUnitTests
     }
 
     private MethodCallExpression Filter(string query) => (MethodCallExpression)WholeFilter(query).Body;
+
+    /// <summary>
+    /// The call an author writes by hand in Linq is the oracle of the tree the binder builds from the
+    /// query text: the same method, the same arguments in the same order, a column where the twin
+    /// reads one and a value where the twin writes one.
+    /// </summary>
+    [Fact]
+    public void GivenFilterOnIsDate_WhenBuilt_ThenBuildsTheTreeOfTheEfCall()
+    {
+        Expression<Func<DummyEntity, bool>> twin =
+            x => SqlServerDbFunctionsExtensions.IsDate(EF.Functions, x.Name);
+
+        EfTwin.AssertSameTree(twin, WholeFilter("where[IsDate(x.Name)]"));
+    }
+
+    [Fact]
+    public void GivenFilterOnFreeText_WhenBuilt_ThenBuildsTheTreeOfTheEfCall()
+    {
+        Expression<Func<DummyEntity, bool>> twin =
+            x => SqlServerDbFunctionsExtensions.FreeText(EF.Functions, x.Name, "abc");
+
+        EfTwin.AssertSameTree(twin, WholeFilter("where[FreeText(x.Name, abc)]"));
+    }
+
+    [Fact]
+    public void GivenFilterOnContains_WhenBuilt_ThenBuildsTheTreeOfTheEfCall()
+    {
+        Expression<Func<DummyEntity, bool>> twin =
+            x => SqlServerDbFunctionsExtensions.Contains(EF.Functions, x.Name, "abc");
+
+        EfTwin.AssertSameTree(twin, WholeFilter("where[Contains(x.Name, abc)]"));
+    }
+
+    [Fact]
+    public void GivenFilterOnDateDiffDayComparedWithNumber_WhenBuilt_ThenBuildsTheTreeOfTheEfCall()
+    {
+        Expression<Func<DummyEntity, bool>> twin =
+            x => SqlServerDbFunctionsExtensions.DateDiffDay(EF.Functions, x.DateTime, x.DateTime) > 7;
+
+        EfTwin.AssertSameTree(twin, WholeFilter("where[DateDiffDay(x.DateTime, x.DateTime)>7]"));
+    }
+
+    [Fact]
+    public void GivenFilterOnDataLengthComparedWithNumber_WhenBuilt_ThenBuildsTheTreeOfTheEfCall()
+    {
+        Expression<Func<DummyEntity, bool>> twin =
+            x => SqlServerDbFunctionsExtensions.DataLength(EF.Functions, x.Name) > 100;
+
+        EfTwin.AssertSameTree(twin, WholeFilter("where[DataLength(x.Name)>100]"));
+    }
+
+    [Fact]
+    public void GivenFilterOnPatIndexComparedWithNumber_WhenBuilt_ThenBuildsTheTreeOfTheEfCall()
+    {
+        Expression<Func<DummyEntity, bool>> twin =
+            x => SqlServerDbFunctionsExtensions.PatIndex(EF.Functions, "%Bill%", x.Name) > 0;
+
+        EfTwin.AssertSameTree(twin, WholeFilter("where[PatIndex(%Bill%, x.Name)>0]"));
+    }
+
+    /// <summary>
+    /// A comparison is written with a value of the type it compares with, so what a call answers with -
+    /// here a span of the parts of a time - is compared with the span the query writes.
+    /// </summary>
+    [Fact]
+    public void GivenFilterOnTimeFromPartsComparedWithWrittenTimeSpan_WhenBuilt_ThenTheWrittenSpanReachesTheComparison()
+    {
+        //act
+        var comparison = (BinaryExpression)WholeFilter(
+            "where[TimeFromParts(x.Int, x.Int, x.Int, x.Int, x.Int) > 00:02:00]").Body;
+
+        //assert
+        comparison.Right.Should().BeAssignableTo<ConstantExpression>()
+            .Which.Value.Should().Be(TimeSpan.FromMinutes(2));
+    }
 
     [Fact]
     public void GivenFilterOnFunctionOfTheProvider_WhenBuilt_ThenCallsTheFunctionWithTheColumn()

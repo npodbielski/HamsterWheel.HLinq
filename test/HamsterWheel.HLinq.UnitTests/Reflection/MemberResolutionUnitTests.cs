@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Linq.Expressions;
 using FluentAssertions;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
@@ -14,7 +15,8 @@ public class MemberResolutionUnitTests
     private readonly IHLinqParser _parser = new HLinqParser(Services.Parsers);
 
     private readonly ExpressionBuilder _sut = new(Services.PropertiesCache, Services.MethodsCache,
-        Services.ConverterFactory, new ParametersConverter(), []);
+        Services.ConverterFactory, new ParametersConverter(Services.WrittenValues, Services.DefaultConverter), [],
+        Services.WrittenValues, null!);
 
     private static (string value, MemberExpression? expression)[] Text(params string[] values) =>
         [.. values.Select(v => (v, (MemberExpression?)null))];
@@ -84,7 +86,6 @@ public class MemberResolutionUnitTests
     }
 
     [Theory]
-    [InlineData("5")]
     [InlineData("abc")]
     public void ResolveMethod_WhenASingleOverloadTakesTheTextOfTheQuery_ThenItWins(string value)
     {
@@ -92,6 +93,16 @@ public class MemberResolutionUnitTests
 
         resolution.Member!.GetParameters().Single().ParameterType.Should().Be(typeof(string));
         resolution.Reason.Should().Be(ResolutionReason.OnlyBindableCandidate);
+        resolution.Competitors.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public void ResolveMethod_WhenANumberTextCompetesWithATextTakingAnything_ThenTheTextStillWins()
+    {
+        var resolution = _sut.ResolveMethod(typeof(RankedService), "Sub", Text("5"));
+
+        resolution.Member!.GetParameters().Single().ParameterType.Should().Be(typeof(string));
+        resolution.Reason.Should().Be(ResolutionReason.CheapestConversion);
         resolution.Competitors.Should().HaveCount(3);
     }
 
@@ -157,6 +168,72 @@ public class MemberResolutionUnitTests
         argument.Value.Should().Be("5");
         argument.Type.Should().Be(typeof(string));
     }
+
+    [Theory]
+    [InlineData("abc")]
+    [InlineData("One")]
+    public void ResolveMethod_WhenTheTextParsesIntoNothingOfTheCandidate_ThenNoneBinds(string value)
+    {
+        var resolution = _sut.ResolveMethod(typeof(WrittenArgumentService), "When", Text(value));
+
+        resolution.Member.Should().BeNull();
+        resolution.Reason.Should().Be(ResolutionReason.NoBindableCandidate);
+    }
+
+    [Theory]
+#if !NETSTANDARD
+    [InlineData("2020-01-01", typeof(DateOnly))]
+    //the netstandard build parses no DateOnly, so a moment has no competitor there
+    [InlineData("2020-01-01T14:30", typeof(DateTime))]
+#endif
+    [InlineData("14:30", typeof(TimeSpan))]
+    [InlineData("7.5", typeof(decimal))]
+    public void ResolveMethod_WhenTheTextIsWrittenInOneCandidatesOwnShape_ThenThatOneWins(string value,
+        Type expected)
+    {
+        var resolution = _sut.ResolveMethod(typeof(WrittenArgumentService), "Of", Text(value));
+
+        resolution.Member!.GetParameters().Single().ParameterType.Should().Be(expected);
+        resolution.Reason.Should().Be(ResolutionReason.CheapestConversion);
+    }
+
+    [Theory]
+    [InlineData("7", typeof(int))]
+    public void ResolveMethod_WhenTwoWidthsOfOneShapeBindTheSameText_ThenTheOrdinalFirstOneWins(string value,
+        Type expected)
+    {
+        var resolution = _sut.ResolveMethod(typeof(WrittenWidthService), "Of", Text(value));
+
+        resolution.Member!.GetParameters().Single().ParameterType.Should().Be(expected);
+        resolution.Reason.Should().Be(ResolutionReason.OrdinalTieBreak);
+    }
+
+#if !NETSTANDARD
+    [Fact]
+    public void ResolveMethod_WhenTheCultureOfTheQueryReadsTheTextAsAnotherShape_ThenAnotherOverloadWins()
+    {
+        //1.2 is a fraction in the invariant culture and only a date in Polish, so the same text
+        //handed to the same pair of overloads means a different one of them in each language
+        var polish = _sut.ResolveMethod(typeof(WrittenShapeService), "Of", Text("1.2"),
+            CultureInfo.GetCultureInfo("pl-PL"));
+        var invariant = _sut.ResolveMethod(typeof(WrittenShapeService), "Of", Text("1.2"));
+
+        polish.Member!.GetParameters().Single().ParameterType.Should().Be(typeof(DateOnly));
+        polish.Reason.Should().Be(ResolutionReason.OnlyBindableCandidate);
+        invariant.Member!.GetParameters().Single().ParameterType.Should().Be(typeof(decimal));
+        invariant.Reason.Should().Be(ResolutionReason.CheapestConversion);
+    }
+
+    //the netstandard build of the library parses no DateOnly, so it has nothing to bind here
+    [Fact]
+    public void ResolveMethod_WhenTheTextFillsANullableOfItsOwnShape_ThenItBindsTheNullable()
+    {
+        var resolution = _sut.ResolveMethod(typeof(WrittenArgumentService), "Lifted", Text("2020-01-01"));
+
+        resolution.Member!.GetParameters().Single().ParameterType.Should().Be(typeof(DateOnly?));
+        resolution.Reason.Should().Be(ResolutionReason.OnlyCandidate);
+    }
+#endif
 }
 
 public class RankedEntity
@@ -202,4 +279,49 @@ public enum RankedEnum
 {
     Zero = 0,
     One = 1
+}
+
+/// <summary>
+/// The contests a written value creates: a date, a moment, a time and a number each stand before
+/// the overloads whose parameters they merely parse into.
+/// </summary>
+public class WrittenArgumentService
+{
+    public bool Of(Guid value) => true;
+
+    public bool Of(decimal value) => true;
+
+    public bool Of(TimeSpan value) => true;
+
+    public bool Of(DateTime value) => true;
+
+#if !NETSTANDARD
+    public bool Of(DateOnly value) => true;
+
+    public bool Lifted(DateOnly? value) => true;
+#endif
+
+    public bool When(Guid value) => true;
+
+    public bool When(int value) => true;
+
+    public bool When(decimal value) => true;
+
+    public bool When(TimeSpan value) => true;
+}
+
+public class WrittenShapeService
+{
+    public bool Of(decimal value) => true;
+
+#if !NETSTANDARD
+    public bool Of(DateOnly value) => true;
+#endif
+}
+
+public class WrittenWidthService
+{
+    public bool Of(int value) => true;
+
+    public bool Of(long value) => true;
 }

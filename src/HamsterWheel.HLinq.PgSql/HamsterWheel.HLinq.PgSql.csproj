@@ -5,6 +5,7 @@
         <LangVersion>latestmajor</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Description>HLinq db functions of the Npgsql provider: AddPgSqlToHLinq() hands a query the Npgsql and trigram function classes - ILike, the trigram similarities and measures, Reverse, ToTimestamp.</Description>
     </PropertyGroup>
 
     <ItemGroup>

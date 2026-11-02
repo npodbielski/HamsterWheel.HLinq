@@ -102,6 +102,7 @@ partial class HLinqQueryApplierUnitTests
     [Theory]
     [InlineAutoData("Rock\"", "Rock\"", 1)]
     [InlineAutoData("\"", "\"", 1)]
+    [InlineAutoData("\"\"", "\"\"", 1)]
     [InlineAutoData("John \"The Rock\" Stone", "John \"The Rock\" Stone", 1)]
     [InlineAutoData("a\"b\"c", "a\"b\"c", 1)]
     [InlineAutoData("Rock", "Rock\"", 0)]

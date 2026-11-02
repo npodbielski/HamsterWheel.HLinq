@@ -24,6 +24,7 @@ public class TokenizerBenchmarks
         ["orderbyLower"] = "orderby[x.Name]",
         ["orderByDescending"] = "orderByDescending[x.Name]",
         ["takeRange"] = "take[10..20]",
+        ["nestedSelect"] = "select[x.Name,addresses=x.Addresses.select(a.Street,a.City)]",
         ["select27"] = BuildWideSelectQuery(27)
     };
 

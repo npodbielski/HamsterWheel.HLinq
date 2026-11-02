@@ -10,6 +10,7 @@ public class EntityLeaf(IToken token) : TreeLeaf([token]), IMethodParamElement
 {
     public string GetValue(string hLinqQuery) => token.GetValue(hLinqQuery);
 
+    // ReSharper disable once UnusedType.Global -> used by the Parser
     public sealed class Parser : ElementParserBase<EntityLeaf>
     {
         public override IToken[] ExampleTokens { get; } = [Entity.Empty];

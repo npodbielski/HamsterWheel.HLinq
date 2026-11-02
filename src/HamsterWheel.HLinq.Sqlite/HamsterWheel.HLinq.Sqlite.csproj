@@ -5,6 +5,7 @@
         <LangVersion>latestmajor</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Description>HLinq db functions of EF Core SQLite: AddSqliteToHLinq() hands a query the generic EF function class - Like; the provider's own class is not handed over.</Description>
     </PropertyGroup>
 
     <ItemGroup>

@@ -1,7 +1,9 @@
 using System.Globalization;
 using FluentAssertions;
 using HamsterWheel.HLinq.AspNet;
+using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Pipeline.Tokenizer;
+
 using HamsterWheel.HLinq.Lang.Pl;
 using HamsterWheel.HLinq.Tokens;
 using Microsoft.Extensions.DependencyInjection;
@@ -89,6 +91,26 @@ public class PolishTranslationUnitTests
         var types = Tokens("gdzie[x.Name==Superman].sortujPo[x.Name].wez[2]", Pl).Select(t => t.GetType()).ToArray();
 
         types.Should().Contain([typeof(WhereToken), typeof(OrderByToken), typeof(TakeToken)]);
+    }
+
+    [Fact]
+    public void WhenThePackIsInstalled_ThenTheCallOfANestedSelectIsSpelledWithTheLanguagesWord()
+    {
+        //the call hangs on the navigation like the clause root opens the clause - the same word
+        //of the same language spells both
+        var services = new ServiceCollection();
+        services.ConfigureHLinq(c => c.AddPolishToHLinq());
+        using var provider = services.BuildServiceProvider();
+        const string query = "wybierz[x.Int,addresses=x.Int.wybierz(a.Int)]";
+        var tokens = provider.GetRequiredService<IHLinqTokenizer>().Tokenize(query, Pl);
+
+        var parse = () => new HLinqParser(provider.GetServices<IElementParser>()).Parse(
+            new Request.HLinqQuery<TestUtils.Dummies.DummyEntity>
+            {
+                SourceQueryString = query
+            }, tokens);
+
+        parse.Should().NotThrow();
     }
 
     private static IToken[] Tokens(string query, CultureInfo culture)

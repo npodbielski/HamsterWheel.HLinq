@@ -1,6 +1,5 @@
 using HamsterWheel.HLinq.Pipeline.Tokenizer;
 using HamsterWheel.HLinq.UnitTests.TestUtils;
-using HamsterWheel.HLinq.UnitTests.TestUtils.Assertions;
 using static HamsterWheel.HLinq.UnitTests.TestUtils.Assertions.ExpectedToken;
 
 namespace HamsterWheel.HLinq.UnitTests.Pipeline.Tokenizer;
@@ -16,23 +15,23 @@ public partial class HLinqTokenizerUnitTests
         var tokens = _sut.Tokenize(query);
         tokens.Should().HaveSequenceOf(query, [
             Where,
-            ExpectedToken.LeftSquareBracket,
+            LeftSquareBracket,
             Entity(),
-            ExpectedToken.Dot,
+            Dot,
             Prop("Id"),
             Equality,
             NameOrValue("1"),
-            ExpectedToken.RightSquareBracket,
-            ExpectedToken.Dot,
+            RightSquareBracket,
+            Dot,
             Skip,
-            ExpectedToken.LeftSquareBracket,
+            LeftSquareBracket,
             NameOrValue("10"),
-            ExpectedToken.RightSquareBracket,
-            ExpectedToken.Dot,
+            RightSquareBracket,
+            Dot,
             Take,
-            ExpectedToken.LeftSquareBracket,
+            LeftSquareBracket,
             NameOrValue("20"),
-            ExpectedToken.RightSquareBracket
+            RightSquareBracket
         ]);
     }
 }

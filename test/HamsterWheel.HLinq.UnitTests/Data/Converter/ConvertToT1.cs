@@ -224,6 +224,43 @@ partial class DefaultConverterUnitTests
     }
 
     [Theory]
+    [InlineData("00:02:00", 0, 0, 2, 0)]
+    [InlineData("730.00:00:00", 730, 0, 0, 0)]
+    [InlineData("2", 2, 0, 0, 0)]
+    [InlineData("\"730.00:00:00\"", 730, 0, 0, 0)]
+    [InlineData("00:00:00.500", 0, 0, 0, 500)]
+    public void ConvertToT1_WhenCalledWithConvertableStringToTimeSpan_ThenReturnsCorrectValue(string stringValue,
+        int days, int hours, int minutes, int milliseconds)
+    {
+        //act
+        var actual = _sut.ConvertTo<TimeSpan>(stringValue);
+
+        //assert
+        actual.Should().Be(new TimeSpan(days, hours, minutes, 0) + TimeSpan.FromMilliseconds(milliseconds));
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenNullAsNullableTimeSpan_ThenCanConvertToNull()
+    {
+        //act
+        var actual = _sut.ConvertTo<TimeSpan?>(new NullKeyword().Value);
+
+        //assert
+        actual.Should().BeNull();
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenUnconvertibleStringToTimeSpan_ThenThrowsNamingTheType()
+    {
+        //act
+        var action = () => _sut.ConvertTo<TimeSpan>("abc");
+
+        //assert
+        action.Should().Throw<InvalidConstantStringToTypeConversionException>()
+            .WithMessage("*abc*TimeSpan*");
+    }
+
+    [Theory]
     [InlineData("1", 1)]
     [InlineData("2", 2)]
     [InlineData("003", 3)]
@@ -578,6 +615,42 @@ partial class DefaultConverterUnitTests
 
         //assert
         actual.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("2020-01-01", 2020, 1, 1)]
+    [InlineData("2020-01-01T00:00:00", 2020, 1, 1)]
+    [InlineData("\"2020-01-01\"", 2020, 1, 1)]
+    [InlineData("2025.11.22", 2025, 11, 22)]
+    public void ConvertToT1_WhenCalledWithConvertableStringToDateOnly_ThenReturnsCorrectValue(string stringValue,
+        int year, int month, int day)
+    {
+        //act
+        var actual = _sut.ConvertTo<DateOnly>(stringValue);
+
+        //assert
+        actual.Should().Be(new DateOnly(year, month, day));
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenNullAsNullableDateOnly_ThenCanConvertToNull()
+    {
+        //act
+        var actual = _sut.ConvertTo<DateOnly?>(new NullKeyword().Value);
+
+        //assert
+        actual.Should().BeNull();
+    }
+
+    [Fact]
+    public void ConvertToT1_WhenUnconvertibleStringToDateOnly_ThenThrowsNamingTheType()
+    {
+        //act
+        var action = () => _sut.ConvertTo<DateOnly>("abc");
+
+        //assert
+        action.Should().Throw<InvalidConstantStringToTypeConversionException>()
+            .WithMessage("*abc*DateOnly*");
     }
 #endif
 

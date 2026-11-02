@@ -76,7 +76,7 @@ public class HLinqQueryApplier(IElementApplierFactory applierFactory, IMethodsCa
         try
         {
             var data = (ICollection)method.Invoke(null, [endResult.Queryable])!;
-            return new Result(data.Cast<object>().ToArray(), endResult.CurrentResultType);
+            return new Result([.. data.Cast<object>()], endResult.CurrentResultType);
         }
         catch (TargetInvocationException e) when (e.InnerException is InvalidOperationException ioe &&
                                                   ioe.Message.Contains(

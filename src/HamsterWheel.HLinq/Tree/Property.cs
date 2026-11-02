@@ -23,8 +23,9 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
 
         protected override Type[] ValidParents { get; } =
         [
-            typeof(Condition), typeof(Method), typeof(OrderByRoot), typeof(OrderByDescendingRoot), typeof(ThenByRoot),
-            typeof(ThenByDescendingRoot), typeof(PropertyAssignment)
+            typeof(Condition), typeof(Method), typeof(OrderByRoot), typeof(OrderByDescendingRoot),
+            typeof(ThenByRoot), typeof(ThenByDescendingRoot), typeof(PropertyAssignment),
+            typeof(NestedSelect)
         ];
 
         protected override Property? BuildBranch(IParsingContext context)

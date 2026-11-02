@@ -121,10 +121,10 @@ public class TestDummyQueryableContext : IQueryableContext
     public Type CurrentResultType { get; init; } = typeof(Person);
     public int? Count { get; init; } = 0;
     public IHLinqWarnings? Warnings { get; init; }
-    public HamsterWheel.HLinq.Pipeline.Applier.GroupingState? Grouping { get; init; }
+    public GroupingState? Grouping { get; init; }
 
     public IQueryableContext Next(IQueryable? queryable, Type currentResultType, int? count = null,
-        HamsterWheel.HLinq.Pipeline.Applier.GroupingState? grouping = null) =>
+        GroupingState? grouping = null) =>
         new TestDummyQueryableContext
         {
             Queryable = queryable,

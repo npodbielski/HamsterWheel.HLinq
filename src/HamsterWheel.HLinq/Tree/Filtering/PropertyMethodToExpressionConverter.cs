@@ -6,7 +6,8 @@ using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 
 namespace HamsterWheel.HLinq.Tree.Filtering;
 
-public class PropertyMethodToExpressionConverter : IPropertyMethodToExpressionConverter
+public class PropertyMethodToExpressionConverter(
+    IAggregateMethodToExpressionConverter aggregates) : IPropertyMethodToExpressionConverter
 {
     public Expression BuildInstance(IBuilderContext context, IMethod method,
         IParametersConverter parametersConverter)
@@ -15,13 +16,19 @@ public class PropertyMethodToExpressionConverter : IPropertyMethodToExpressionCo
                                 throw new PropertyMethodCallNeedsToHaveSourceExpressionException();
         var source = methodCallContext.MethodSource ??
                      throw new PropertyMethodCallNeedsToHaveSourceExpressionException();
-        var propType = source.Type;
         var name = method.GetName(context.HLinqQuery);
+
+        if (aggregates.BindOverMember(context, method, source) is { } aggregate)
+        {
+            return aggregate;
+        }
+
+        var propType = source.Type;
         var parameters = method.Children.OfType<IMethodParamElement>()
             .Select(p => (value: p.GetValue(context.HLinqQuery),
                 expression: p is Property property ? context.ToExpression(property) as MemberExpression : null))
             .ToArray();
-        var resolution = context.Builder.ResolveMethod(propType, name, parameters);
+        var resolution = context.Builder.ResolveMethod(propType, name, parameters, context.Culture);
         resolution.Report(context);
 
         foreach (var candidate in resolution.Competitors)
@@ -29,9 +36,8 @@ public class PropertyMethodToExpressionConverter : IPropertyMethodToExpressionCo
             var (converted, expressions) = parametersConverter.TryConvert(parameters,
                 [
                     .. candidate.GetParameters()
-                        .Select<ParameterInfo, IBindingParameterInfo>(m => new BindingParameterInfo
-                            { Info = m })
-                ]);
+                        .Select<ParameterInfo, IBindingParameterInfo>(m => new BindingParameterInfo { Info = m })
+                ], context.Culture);
             if (!converted)
             {
                 continue;
@@ -43,8 +49,7 @@ public class PropertyMethodToExpressionConverter : IPropertyMethodToExpressionCo
             }
             catch (ArgumentException)
             {
-                //Expression.Call can still refuse to bind the candidate the ranking put first, and then
-                //the one below it is tried
+                //Expression.Call cannot be bound, swallow and try another method
             }
         }
 

@@ -1,12 +1,15 @@
+using System.Globalization;
 using System.Linq.Expressions;
 using HamsterWheel.HLinq.Data.Converters;
+using HamsterWheel.HLinq.Exceptions;
 
 namespace HamsterWheel.HLinq.Pipeline.Applier.Builders;
 
-public class ParametersConverter : IParametersConverter
+public class ParametersConverter(IWrittenValueParser writtenValues, IDefaultConverter defaultConverter) : IParametersConverter
 {
     public (bool converted, Expression[] expressions) TryConvert(
-        (string value, MemberExpression? expression)[] hLinqParams, IBindingParameterInfo[] parameterTypes)
+        (string value, MemberExpression? expression)[] hLinqParams, IBindingParameterInfo[] parameterTypes,
+        CultureInfo? culture = null)
     {
         var mapped = new List<Expression>(parameterTypes.Length);
         var argument = 0;
@@ -24,7 +27,7 @@ public class ParametersConverter : IParametersConverter
                 return (false, []);
             }
 
-            var filled = MapArgument(hLinqParams[argument], binding.Info.ParameterType);
+            var filled = MapArgument(hLinqParams[argument], binding.Info.ParameterType, culture);
             if (filled is null)
             {
                 return (false, []);
@@ -43,8 +46,8 @@ public class ParametersConverter : IParametersConverter
         return (true, [.. mapped]);
     }
 
-    private static Expression? MapArgument((string value, MemberExpression? expression) hLinqParam,
-        Type parameterType)
+    private Expression? MapArgument((string value, MemberExpression? expression) hLinqParam,
+        Type parameterType, CultureInfo? culture)
     {
         //property value is just accessed (i.e. method call) so we just need to check if both match
         if (hLinqParam.expression is { } property)
@@ -62,7 +65,25 @@ public class ParametersConverter : IParametersConverter
             return Expression.Constant(DefaultConverter.Instance.ConvertTo<char>(hLinqParam.value));
         }
 
-        return parameterType.IsEnum ? MapEnumMember(hLinqParam.value, parameterType) : null;
+        if (parameterType.IsEnum)
+        {
+            return MapEnumMember(hLinqParam.value, parameterType);
+        }
+
+        if (writtenValues.Parses(hLinqParam.value, parameterType, culture))
+        {
+            try
+            {
+                return Expression.Constant(
+                    defaultConverter.ConvertTo(parameterType, hLinqParam.value, culture), parameterType);
+            }
+            catch (InvalidConstantStringToTypeConversionException)
+            {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     private static Expression? MapEnumMember(string value, Type enumType)

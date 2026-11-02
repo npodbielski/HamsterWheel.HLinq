@@ -22,6 +22,18 @@ public sealed class InvalidPropertyPathException(Type type, string path, string[
         $"Invalid property path '{path}' for entity '{type.Name}'." +
         $" Available properties at this point are: '{(availableProps.Length != 0 ? string.Join("', '", availableProps) : "none")}'");
 
+/// <summary>
+/// A paging bound below zero is refused where it is read: handed on, the negative reaches the
+/// database, which rejects it there (i.e. postgres 'LIMIT must not be negative'), so the host
+/// answers a 500 with its internals for what is simply a malformed query.
+/// </summary>
+public sealed class NegativePagingBoundException(string operation, int value) : HLinqQueryException(
+    $"'{operation}[{value}]' needs a non-negative number of records.");
+
 public sealed class RowsCannotBeOrderedOrFilteredException()
     : HLinqQueryException(
         "The rows of a group cannot be ordered or filtered by; only the key of the group orders and filters groups.");
+
+public sealed class EntityAggregateNeedsGroupException(string name) : HLinqQueryException(
+    $"'{name}()' stands on the entity of the clause here, and there is no group to aggregate over; " +
+    "write it after a groupBy, or on a collection the query reached through a property, i.e. x.Addresses.Count().");

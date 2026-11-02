@@ -87,6 +87,14 @@
             <Link>Pipeline/Applier/QueryGroupBy.cs</Link>
             <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
         </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\QueryGroupAggregates.cs">
+            <Link>Pipeline/Applier/QueryGroupAggregates.cs</Link>
+            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\QueryNestedSelect.cs">
+            <Link>Pipeline/Applier/QueryNestedSelect.cs</Link>
+            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\QueryTake.cs">
             <Link>Pipeline/Applier/QueryTake.cs</Link>
             <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
@@ -121,6 +129,10 @@
             <Link>Pipeline/Tokenizer/TokenizerPagingTests.cs</Link>
             <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
         </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Tokenizer\TokenizerNestedSelectTests.cs">
+            <Link>Pipeline/Tokenizer/TokenizerNestedSelectTests.cs</Link>
+            <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
+        </Compile>
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Tokenizer\TokenizerSelectTests.cs">
             <Link>Pipeline/Tokenizer/TokenizerSelectTests.cs</Link>
             <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
@@ -141,6 +153,9 @@
         </Compile>
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Requests\HLinqQueryUnitTests.cs">
             <Link>Requests\HLinqQueryUnitTests.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\TestUtils\Dummies\NestedDummy.cs">
+            <Link>TestUtils\Dummies\NestedDummy.cs</Link>
         </Compile>
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\TestUtils\Dummies\DummyEntity.cs">
             <Link>TestUtils\Dummies\DummyEntity.cs</Link>

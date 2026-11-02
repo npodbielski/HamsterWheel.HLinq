@@ -21,6 +21,12 @@ public class ExpectedTreeElement(
     public static ExpectedTreeElement PropertyAssignment(params ExpectedTreeElement[] children) =>
         new(typeof(PropertyAssignment), children);
 
+    public static ExpectedTreeElement NestedSelect(params ExpectedTreeElement[] children) =>
+        new(typeof(NestedSelect), children);
+
+    public static ExpectedTreeElement InnerProperty(params ExpectedToken[] tokens) =>
+        new(typeof(InnerProperty), tokens: tokens);
+
     public static ExpectedTreeElement Property(params ExpectedTreeElement[] children) =>
         new(typeof(Property), children);
 
@@ -49,6 +55,12 @@ public class ExpectedTreeElement(
 
     public static ExpectedTreeElement MethodElement(ExpectedToken methodName, params ExpectedTreeElement[] children) =>
         new(typeof(Method), children, [methodName]);
+
+    //a call with no arguments has no children to walk, so its own tokens name it
+    public static ExpectedTreeElement MethodCallWithoutArguments(string name) =>
+        new(typeof(Method), tokens:
+            [ExpectedToken.Dot, ExpectedToken.MethodName(name), ExpectedToken.LeftCircleBracket,
+                ExpectedToken.RightCircleBracket]);
 
     public static ExpectedTreeElement MethodConstParam(params ExpectedToken[] tokens) =>
         new(typeof(MethodConstParam), tokens: tokens);

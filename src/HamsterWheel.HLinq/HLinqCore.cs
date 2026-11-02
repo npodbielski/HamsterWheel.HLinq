@@ -53,8 +53,11 @@ internal static class HLinqCore
             services.AddSingleton(typeof(IElementToMemberAssignmentConverter), mac);
         }
 
+        services.AddSingleton<IAggregateMethodToExpressionConverter, AggregateMethodToExpressionConverter>();
+        services.AddSingleton<IAggregatesCache, AggregatesCache>();
         services.AddSingleton<IPropertyMethodToExpressionConverter, PropertyMethodToExpressionConverter>();
         services.AddSingleton<IStaticMethodToExpressionConverter, StaticMethodToExpressionConverter>();
+        services.AddSingleton<INestedSelectBuilder, Tree.Selecting.NestedSelectBuilder>();
 
         //value converters
         foreach (var vc in GetTypesFromAssemblyWithStatic<IConfigurableValueConverter>())
@@ -75,8 +78,11 @@ internal static class HLinqCore
         services.AddSingleton<IHLinqQueryApplier, HLinqQueryApplier>();
 
         //builders
+        services.AddSingleton<IWrittenValueParser>(c => c.GetRequiredService<FromStringConverter>());
         services.AddSingleton<IExpressionBuilder, ExpressionBuilder>();
-        services.AddSingleton<IParametersConverter, ParametersConverter>();
+        services.AddSingleton<IParametersConverter>(c =>
+            new ParametersConverter(c.GetRequiredService<IWrittenValueParser>(),
+                c.GetRequiredService<IDefaultConverter>()));
 
         //reflection helpers
         services.AddSingleton<IPropertiesCache, PropertiesCache>();

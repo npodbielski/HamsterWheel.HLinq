@@ -3,7 +3,7 @@ using HamsterWheel.HLinq.Exceptions;
 
 namespace HamsterWheel.HLinq.Data.Converters;
 
-public class FromStringConverter(INullKeyword nullKeyword) : IConfigurableValueConverter
+public class FromStringConverter(INullKeyword nullKeyword) : IConfigurableValueConverter, IWrittenValueParser
 {
     public int Priority => 1000;
 
@@ -105,7 +105,19 @@ public class FromStringConverter(INullKeyword nullKeyword) : IConfigurableValueC
                     ? number
                     : throw new InvalidConstantStringToTypeConversionException(s, typeof(short))
             },
+            {
+                typeof(TimeSpan),
+                (s, culture) => TimeSpan.TryParse(s, culture, out var span)
+                    ? span
+                    : throw new InvalidConstantStringToTypeConversionException(s, typeof(TimeSpan))
+            },
 #if !NETSTANDARD
+            {
+                typeof(DateOnly),
+                (s, culture) => DateOnly.TryParse(s, culture, out var date)
+                    ? date
+                    : throw new InvalidConstantStringToTypeConversionException(s, typeof(DateOnly))
+            },
             {
                 typeof(TimeOnly),
                 (s, culture) => TimeOnly.TryParse(s, culture, out var number)
@@ -114,6 +126,45 @@ public class FromStringConverter(INullKeyword nullKeyword) : IConfigurableValueC
             }
 #endif
         };
+
+    /// <summary>
+    /// Says whether a text a query writes parses as a value of the type, in the culture the query
+    /// is written in, with quotes stripped and the null keyword of this converter honoured - the
+    /// question "what may a query write" asked of the registered instance, so the overload ranking
+    /// and the argument conversion read the same table and cannot drift apart.
+    /// </summary>
+    public bool Parses(string text, Type destination, CultureInfo? culture = null)
+    {
+        if (string.IsNullOrWhiteSpace(text)
+            || !_stringParseMethods.TryGetValue(destination.GetNullableArgument(), out var parse))
+        {
+            return false;
+        }
+
+        var value = text.IsDoubleQuoted() ? text.UnQuote() : text;
+        if (destination.GetNullableArgument() == typeof(char) && value.Length != 1 && !value.IsSingleQuoted())
+        {
+            //the char entry reads the first character of anything longer, which is a value of two
+            //characters, not a refusal - a char is one character, quoted or not
+            return false;
+        }
+
+        if (destination.IsNullable() &&
+            (string.IsNullOrWhiteSpace(value) || value == nullKeyword.Value))
+        {
+            return true;
+        }
+
+        try
+        {
+            parse(value, culture ?? CultureInfo.InvariantCulture);
+            return true;
+        }
+        catch (InvalidConstantStringToTypeConversionException)
+        {
+            return false;
+        }
+    }
 
     public (bool success, object? result) TryConvert(object? value, Type destination,
         CultureInfo? culture = null)

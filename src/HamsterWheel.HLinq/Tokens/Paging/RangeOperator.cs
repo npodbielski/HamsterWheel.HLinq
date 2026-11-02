@@ -1,5 +1,4 @@
 using HamsterWheel.HLinq.Pipeline.Tokenizer;
-using HamsterWheel.HLinq.Tokens.Patterns;
 
 namespace HamsterWheel.HLinq.Tokens.Paging;
 

@@ -29,34 +29,32 @@ public class Grammar(IEnumerable<IHLinqWord> tokenWords) : IGrammar
 
     private IGrammarRule[] BuildRules()
     {
-        //a clause root is a root only before its bracket, and `<` and `>` are comparisons only before
-        //the character that would make them `<=` and `>=` - of every spelling this language has for
-        //the bracket and for `==`, since a word of one language is a character of another
-        var delimiters = LastCharsOfKeywordsOf(typeof(LeftSquareBracket));
+        var rootDelimiters = LastCharsOfKeywordsOf(typeof(LeftSquareBracket));
         var endsComparison = LastCharsOfKeywordsOf(typeof(Equality));
 
         return
         [
             //roots
-            new GrammarRootRule<Select>(delimiters),
-            new GrammarRootRule<Where>(delimiters),
-            new GrammarRootRule<GroupBy>(delimiters),
-            new GrammarRootRule<OrderBy>(delimiters),
-            new GrammarRootRule<OrderByDescending>(delimiters),
-            new GrammarRootRule<Count>(delimiters),
-            new GrammarRootRule<Skip>(delimiters),
-            new GrammarRootRule<Take>(delimiters),
-            new GrammarRootRule<ThenBy>(delimiters),
-            new GrammarRootRule<ThenByDescending>(delimiters),
+            new GrammarRootRule<Select>(rootDelimiters),
+            new GrammarRootRule<Where>(rootDelimiters),
+            new GrammarRootRule<GroupBy>(rootDelimiters),
+            new GrammarRootRule<OrderBy>(rootDelimiters),
+            new GrammarRootRule<OrderByDescending>(rootDelimiters),
+            new GrammarRootRule<Count>(rootDelimiters),
+            new GrammarRootRule<Skip>(rootDelimiters),
+            new GrammarRootRule<Take>(rootDelimiters),
+            new GrammarRootRule<ThenBy>(rootDelimiters),
+            new GrammarRootRule<ThenByDescending>(rootDelimiters),
             new GrammarRule<PropertyName>(false,
-                [static pt => pt is [.., Entity, Dot] or [.., PropertyName, Dot]]),
+            [
+                static pt => pt is [.., Entity, Dot] or [.., PropertyName, Dot] or [.., SubEntity, Dot]
+            ]),
             new GrammarRule<NameOrValue>(false,
             [
                 static pt => pt is
                 [
                     .., _, IComparisonToken or LeftCircleBracket or LeftSquareBracket or Comma or Assignment
                 ],
-                // end side of take[start..end] / take[..end] range
                 static pt => pt is [.., RangeOperator]
             ]),
             new GrammarRule<RangeOperator>(false, [static pt => pt is [.., Take or Skip, LeftSquareBracket]]),
@@ -70,8 +68,12 @@ public class Grammar(IEnumerable<IHLinqWord> tokenWords) : IGrammar
                     [.., LeftSquareBracket or And or Or or Comma or LeftCircleBracket or Assignment or
                         IComparisonToken]
             ]),
-            new GrammarRule<Comma>(false, [static pt => pt is [.., NameOrValue or PropertyName]]),
-            new GrammarRule<Dot>(false, [static pt => pt is [.., Entity or PropertyName or RightSquareBracket]]),
+            new GrammarRule<Comma>(false,
+                [static pt => pt is [.., NameOrValue or PropertyName or RightCircleBracket]]),
+            new GrammarRule<Dot>(false,
+            [
+                static pt => pt is [.., Entity or PropertyName or RightSquareBracket or SubEntity]
+            ]),
             new GrammarRule<Assignment>(false,
                 [static pt => pt.Count > 0 && pt is [.., NameOrValue]],
                 insideClauseOf: typeof(Select)),
@@ -101,7 +103,8 @@ public class Grammar(IEnumerable<IHLinqWord> tokenWords) : IGrammar
             ]),
             new GrammarRule<RightCircleBracket>(false,
             [
-                static pt => pt is [.., NameOrValue or PropertyName or RightCircleBracket]
+                static pt => pt is [.., NameOrValue or PropertyName or RightCircleBracket],
+                static pt => pt is [.., LeftCircleBracket]
             ]),
             new GrammarRule<LeftSquareBracket>(false,
             [
@@ -119,9 +122,32 @@ public class Grammar(IEnumerable<IHLinqWord> tokenWords) : IGrammar
             ),
             new GrammarRule<MethodName>(false,
             [
-                static pt => pt is [.., Dot or LeftSquareBracket or IComparisonToken]
-            ])
+                static pt => pt is [.., Dot or LeftSquareBracket or IComparisonToken or Assignment]
+            ]),
+            new GrammarRule<SubEntity>(false,
+            [
+                static pt => pt is [.., LeftCircleBracket or Comma or Assignment] && InsideCircleBrackets(pt)
+            ], insideClauseOf: typeof(Select))
         ];
+    }
+
+    private static bool InsideCircleBrackets(IReadOnlyList<IToken> previousTokens)
+    {
+        var open = 0;
+        foreach (var token in previousTokens)
+        {
+            switch (token)
+            {
+                case LeftCircleBracket:
+                    open++;
+                    break;
+                case RightCircleBracket:
+                    open--;
+                    break;
+            }
+        }
+
+        return open > 0;
     }
 
     /// <summary>
@@ -176,7 +202,7 @@ public class Grammar(IEnumerable<IHLinqWord> tokenWords) : IGrammar
                     .Distinct()
             ]);
 
-    private string[] KeywordsOf(Type tokenType) =>
+    public string[] KeywordsOf(Type tokenType) =>
         [
             .. _words
                 .Where(p => p.ForType == tokenType && p.Keyword is not null)

@@ -40,6 +40,9 @@ explicit `alpha` → `master` MR.
 
 ## Code style
 
+- **No `out` and `ref` parameters.** A method that may or may not produce a value returns it
+  nullable (or a tuple when it produces more than one); an `out` parameter hides which value is
+  the answer and which is a by-product.
 - **Braces on every loop and branch body**, even single statements, and one
   statement per line (no `foreach x foreach y yield return z;` chains, no
   `if (x) return;`).

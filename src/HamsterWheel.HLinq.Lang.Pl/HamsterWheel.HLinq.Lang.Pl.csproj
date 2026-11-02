@@ -5,6 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>HamsterWheel.HLinq.Lang.Pl</RootNamespace>
+        <Description>Polish HLinq translation.</Description>
     </PropertyGroup>
 
     <ItemGroup>

@@ -49,7 +49,11 @@ public class DefaultConverter(
 
     public object? ConvertTo(Type targetType, object? value, CultureInfo? culture = null)
     {
-        value = ReadQuotedValue(value);
+        //leave unquoting to the converter if the target is a string
+        if (targetType.GetNullableArgument() != typeof(string))
+        {
+            value = ReadQuotedValue(value);
+        }
 
         if (targetType == typeof(bool) || targetType == typeof(bool?))
         {

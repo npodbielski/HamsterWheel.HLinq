@@ -17,7 +17,8 @@ public partial class ExpressionBuilderUnitTests
     private static readonly TestServicesCollection HLinqServices = new();
     private readonly IHLinqTokenizer _tokenizer = HLinqServices.Tokenizer;
     private readonly HLinqParser _parser = new(HLinqServices.Parsers);
-    private readonly ParametersConverter _parametersConverter = new();
+    private readonly ParametersConverter _parametersConverter =
+        new(HLinqServices.WrittenValues, HLinqServices.DefaultConverter);
 
     public ExpressionBuilderUnitTests()
     {
@@ -30,7 +31,7 @@ public partial class ExpressionBuilderUnitTests
 #else
                 new DummyStaticMethod()
 #endif
-            ]);
+            ], HLinqServices.WrittenValues, null!);
     }
 }
 

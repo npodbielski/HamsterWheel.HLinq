@@ -44,7 +44,8 @@ public sealed class NameOrValue : TokenBase
                         continue;
                     }
 
-                    if (current == '.' && index + 1 < window.Length && window[index + 1] == '.')
+                    if (index == 0 && delimiters?.Contains(current) == true ||
+                        current == '.' && index + 1 < window.Length && window[index + 1] == '.')
                     {
                         return MatchAt.Discarded;
                     }

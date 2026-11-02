@@ -15,12 +15,6 @@ namespace HamsterWheel.HLinq.Tree.Selecting;
 
 public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoot, ITreeRoot, IProjectionMembers
 {
-    public IReadOnlyList<ITreeElement> MemberSources => field ??=
-        [.. Children.OfType<PropertyAssignment>()];
-
-    public bool NeedsObjectInitializer => MemberSources.Count > 1 ||
-                                          MemberSources.OfType<PropertyAssignment>().Any(c => c.NeedsObjectInitializer);
-
     public sealed class Parser : ElementParserBase<SelectRoot>
     {
         public override IToken[] ExampleTokens => SelectRootExampleTokens;
@@ -71,14 +65,42 @@ public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoo
         protected override IQueryableContext ApplyImpl(IQueryableContext context, ISelectRoot select,
             string hLinqQuery, CultureInfo culture)
         {
+            var aggregateAssignments = select.AggregateAssignments;
+
             if (context.Grouping is { } grouping)
             {
-                var (rowSelector, rowShape) = builder.GroupRowSelector(grouping, select, hLinqQuery, culture,
+                var state = grouping;
+                if (aggregateAssignments.Count > 0)
+                {
+                    var aggregates = new List<GroupAggregate>();
+                    foreach (var assignment in aggregateAssignments)
+                    {
+                        aggregates.Add(new GroupAggregate(
+                            assignment.AggregateName(hLinqQuery) ?? assignment.Call!.GetName(hLinqQuery),
+                            builder.GroupAggregateSelector(grouping, assignment.Call!, hLinqQuery, culture,
+                                context.Warnings)));
+                    }
+
+                    state = grouping with { Aggregates = aggregates };
+                }
+
+                if (select.RowMemberSources.Count == 0)
+                {
+                    return context.Next(context.Queryable, grouping.GroupingItemType, context.Count, state);
+                }
+
+                var (rowSelector, rowShape) = builder.GroupRowSelector(state, select, hLinqQuery, culture,
                     context.Warnings);
 
                 return context.Next(context.Queryable, grouping.GroupingItemType,
                     context.Count,
-                    grouping with { RowSelector = rowSelector, RowShape = rowShape });
+                    state with { RowSelector = rowSelector, RowShape = rowShape });
+            }
+
+            if (aggregateAssignments.Count > 0)
+            {
+                throw new EntityAggregateNeedsGroupException(
+                    aggregateAssignments[0].Call!.GetName(hLinqQuery));
             }
 
             var selector = builder.GetSelect(context.CurrentResultType, select, hLinqQuery, culture,
@@ -107,9 +129,11 @@ public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoo
                     .OfType<MemberExpression>().First();
             }
 
-            var properties = element.MemberSources.Select(context.ToPropInfo).ToArray();
+            //aggregates over the group are answered by the grouping's projection, never in a row
+            var members = element.RowMemberSources;
+            var properties = members.Select(context.ToPropInfo).ToArray();
             var type = DynamicFactory.CreateType(properties.Select(p => (p.Name, p.Type)));
-            var memberBindings = element.MemberSources
+            var memberBindings = members
                 .Select(e => context.ToMemberAssignment(e, type)).Cast<MemberBinding>();
 
             return Expression.MemberInit(Expression.New(type), memberBindings);

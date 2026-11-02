@@ -6,6 +6,7 @@
         <LangVersion>13.0</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>HamsterWheel.HLinq</RootNamespace>
+        <Description>The interfaces of HLinq - the query, the tree, the binder's contracts - without the implementation, to build extensions or to consume a bound query without pulling the binder in.</Description>
     </PropertyGroup>
 
     <ItemGroup>

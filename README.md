@@ -17,7 +17,7 @@ This project contains of two main parts:
 - HamsterWheel.HLinq.Abstractions package that can be used to further develop extensions for HLinq and adding functionalities missing from main package
 - HamsterWheel.HLinq.AspNet package contains helpers for HLinq integration with Asp.NET core framework
 - HamsterWheel.HLinq.PgSql package with PostgreSql specific functions for use in HLinq queries
-- HamsterWheel.HLinq.MySql and HamsterWheel.HLinq.MariaDb packages with the Pomelo provider functions for use in HLinq queries
+- HamsterWheel.HLinq.MySql package with the MySQL and MariaDB provider functions for use in HLinq queries
 - HamsterWheel.HLinq.Sqlite package with EF Core SQLite functions for use in HLinq queries
 - HamsterWheel.HLinq.Client package with fluent API for building HLinq queries on top of HttpClient
 
@@ -68,7 +68,7 @@ Below you can find instructions how to get you started using HLinq on the server
 
 First, reference AspNet package:
 ```xml
-<PackageReference Include="HamsterWheel.HLinq.AspNet" Version="0.13.0" />
+<PackageReference Include="HamsterWheel.HLinq.AspNet" Version="0.14.0" />
 ```
 
 After that add initialization of HLinq:
@@ -108,7 +108,7 @@ First you need to install package and configure it inside the host. Those are si
 
 Reference AspNet package:
 ```xml
-<PackageReference Include="HamsterWheel.HLinq.AspNet" Version="0.13.0" />
+<PackageReference Include="HamsterWheel.HLinq.AspNet" Version="0.14.0" />
 ```
 
 Initialize HLinq:
@@ -147,7 +147,6 @@ For example, the following lines add the functions of a database to HLinq:
 services.ConfigureHLinq(c => c.AddPgSqlToHLinq());     // HamsterWheel.HLinq.PgSql
 services.ConfigureHLinq(c => c.AddSqlServerToHLinq()); // HamsterWheel.HLinq.SqlServer
 services.ConfigureHLinq(c => c.AddMySqlToHLinq());     // HamsterWheel.HLinq.MySql
-services.ConfigureHLinq(c => c.AddMariaDbToHLinq());   // HamsterWheel.HLinq.MariaDb
 services.ConfigureHLinq(c => c.AddSqliteToHLinq());    // HamsterWheel.HLinq.Sqlite
 ```
 A function returning bool is enough to filter on its own - `where[ILike(x.Name, %Bill%)]`, `where[IsDate(x.Name)]`
@@ -157,7 +156,7 @@ A function answering with another type need to be compared with another value to
 
 You can use any property in such function, any number, any text, a single character, the member of an enum. As long at parameters type matches. HLinq will try its best to match them but it cannot convert "foobar" to `int`.
 
-Details of all available functions for each engine are here: [Db Functions Filters](docs/db-functions/README.md), [Postgres](docs/db-functions/postgres.md), [SQL Server](docs/db-functions/sql-server.md), [MySQL](docs/db-functions/mysql.md), [MariaDB](docs/db-functions/mariadb.md), [SQLite](docs/db-functions/sqlite.md). A pack is the list of what one database can do, not a promise about what a query may ask: a function its provider cannot translate fails at the database, as the same call written by hand in Linq does.
+Details of all available functions for each engine are here: [Db Functions Filters](docs/db-functions/README.md), [Postgres](docs/db-functions/postgres.md), [SQL Server](docs/db-functions/sql-server.md), [MySQL](docs/db-functions/mysql.md), [SQLite](docs/db-functions/sqlite.md). A pack is the list of what one database can do, not a promise about what a query may ask: a function its provider cannot translate fails at the database, as the same call written by hand in Linq does.
 
 # How to use on the client
 
@@ -695,8 +694,58 @@ It can be useful when real property was filtered by select, but a client require
 
 A constant becomes a `string`, a number or a `bool`. Its type is decided by the way it is written: `Name=1` is a number, `Name=x` and `Name="x"` are text. That is all JSON has - there is no date in it, so `select[Date=2023-10-12]` answers with the text `2023-10-12`. If you need different type your client need to do a convertion.
 
+It is possible to select results of methods, exactly the same way methods can be used to filter query:
+```http request
+GET /data/persons?select[U=x.Name.ToUpper(),S=x.Name.Substring(0,2)]
+GET /data/persons?select[x.Name.ToUpper()]
+```
+Method called on property is instance method of that property's type (`x.Name.ToUpper()`). Method called without source is db function (`reverse(x.Name)`), the same set a filter may call, see [EF DbFunctions](#ef-dbfunctions).
+Constant values (`Substring(0,2)`) are converted using query culture the same way in `where[]` filter.
+
+Method return value can be assigned to arbitrary property. If you will omit assignment HLinq will use method name: `U=x.Name.ToUpper()` answers `U`, `x.Name.ToUpper()` answers `ToUpper`. If you will ask HLinq for two unnamed calls to the same method, only the last will be returned. Set explicit name to both to make sure both are returned.
+
 HLinq creates a new type on the fly to be serialized to JSON and returns it to the client. This means that other properties of the original type are not returned.
 Selecting is not an exclusive operation. You need to be specific by providing which properties you are interested in. You cannot exclude properties by excluding them from the query.
+
+#### Nested selects
+
+It is possible to limit, remove members from sub-entities and sub-collections:
+```http request
+GET /data/persons?select[x.Name,addresses=x.Addresses.select(a.Street,a.City)]
+```
+
+It returns collection of addresses with only `Street` and `City` properties removing everything else:
+```json
+[{ "Name": "Ann", "addresses": [ {"Street": "Main 1", "City": "Warsaw"}, {"Street": "Oak 2", "City": "Krakow"} ] }]
+```
+This is the equivalent of:
+```csharp
+personQueryable.Select(x => new { x.Name, addresses = x.Addresses.Select(a => new { a.Street, a.City }).ToList() });
+```
+
+Nested select property can also be renamed, the same way it is done for first level property (`delivery=x.Addresses.select(a.Street)` sets new property with the name `delivery`).
+Nested select applied to 1-1 relation, i.e. `x.Address.select(a.Street,a.City)` returns as object, but with less properties than the original type.
+
+The source of the property inside the nested select does matter. I.e.:
+
+```http request
+GET `/data/persons?select[address=x.Addresses.select(contact=x.Name,a.City)]`
+```
+
+`addresses` new type of a property have mixed data:
+`a.City` - is a street name from an address of each person
+`x.Name` - is a person name
+
+There is no limit of how nested select can be:
+```http request
+select[x.Addresses.select(a.Street,country=a.Country.select(c.Name))]
+```
+As long as your backend for `IQueryable` can translate Linq expression tree to DB query, it is queryable via HLinq. 
+
+Method call used in a nested select behaves the same. It can use properties from each select level: `City=x.Name.ToUpper()` calls method on the entity property and every nested object contains property with return value of a call, `City=a.City.ToUpper()` on the other hand calls method of nested object property and assign it to the same nested property.
+
+> [!WARNING]
+> Filtering or paging inside the call is not part of the syntax yet - do it before, with a `where` of the outer query.
 
 ### Grouping
 
@@ -741,6 +790,16 @@ A second `groupBy` groups the rows of every group, so the result holds groups un
 GET /data/persons?groupBy[x.Status].groupBy[x.Type]
 ```
 returns `[{"Key": "New", "Rows": [{"Key": "A", "Rows": ["Ann"]}, {"Key": "B", "Rows": ["Bob"]}]}]`. A `select` after a `groupBy` selects columns of the last group. `take`, `where`, `orderBy` and `count` work on the first group.
+
+An aggregate over the rows of a group - `Count()`, `Sum`, `Average`, `Min`, `Max`, `Any()`, `First` and the other calls of that shape - is a call written like the aggregate calls of filters: `x.Count()`, or `x.Max(x.Age)` with the property it aggregates. A name is an aggregate when it folds a collection to a value the way `Enumerable` does, so the language follows LINQ instead of a list written down beside it. It is answered by the server, as `HAVING`, `ORDER BY` or another aggregate column of the grouped query, never in memory:
+```http request
+GET /data/persons?groupBy[x.Status].where[x.Count()>5]
+GET /data/persons?groupBy[x.Status].orderBy[x.Max(x.Age)]
+GET /data/persons?groupBy[x.Status].select[C=x.Count(),M=x.Max(x.Age)]
+```
+`where` keeps the groups the aggregate answers true of, `orderBy` orders groups by the value it computes, and `select` answers the value beside `Key` and `Rows` under the name the query gave it (`C`, `M` above). `Count()` and `Any()` stand without an argument; the others name the property they aggregate. A group answers `Key` and `Rows` beside its aggregates, so an aggregate cannot be named `Key` or `Rows`.
+
+The same call over a collection the query reached through a property is answered by the server in the same statement - `select[N=x.Addresses.Count()]` answers the number of the related rows per row, and a bare `select[H=x.Prices.Max()]` the greatest of a collection of numbers (text, dates), of whatever the engine can compare.
 
 This is equivalent of a Linq query:
 ```csharp
@@ -1027,10 +1086,11 @@ collection.Where(x => x.Enum == RandomEnum.One).Select(c => new { c.Name, c.Enum
 
 # Roadmap
 - [x] Add support for grouping - `groupBy[key]` answers one entry per key with the rows under it, see [Grouping](#grouping)
-- [ ] Add support for nested counts `[NumberOfAddresses=x.Addresses.Count[]]`
-- [ ] Add support for nested type selects: `select[Addresses=select[a.Street,a.City]]`
-- [ ] Add support for methods in select: `select[reverse(x.Name)]`
+- [x] Add support for nested counts `[NumberOfAddresses=x.Addresses.Count()]` - a call over a collection is answered by the server in the same statement, see [Grouping](#grouping)
+- [x] Add support for nested type selects: `select[Addresses=x.Addresses.select(a.Street,a.City)]` - a shaped collection per row, joined by the server in one statement, see [Selecting](#selecting)
+- [x] Add support for methods in select: `select[R=reverse(x.Name)]` - the value of a call names the column it answers, an unnamed call names itself by the method, see [Selecting](#selecting)
 - [x] Add support for other than bool methods in filters: `where[DateDiffDay(x.DateOfBirth, x.DateOfDeath)>36500]` - a function answering with a value is compared with what it returned, see [Db functions in a query](docs/db-functions/README.md)
 - [ ] Add support for property operation in select: `select[FullName=x.Name+' '+x.Surname]`
-- [x] Add support for other DBs - SQL Server, MySQL, MariaDB and SQLite packs beside Postgres, each installed by its own `Add...ToHLinq()` call
+- [ ] Deeper query analysis - a pass over the whole parsed query, not one clause at a time: every property path, method name and constant checked against the entity and the provider, so a query with an error anywhere is refused before anything runs (#2)
+- [x] Add support for other DBs - SQL Server, MySQL (and MariaDB) and SQLite packs beside Postgres, each installed by its own `Add...ToHLinq()` call
 - [x] Add support for changing grammar rules - the language is extended by registering words (pattern + adjacency rule), validated at startup, see the grammar design in AGENTS.md 
