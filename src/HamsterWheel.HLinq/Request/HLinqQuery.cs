@@ -19,14 +19,14 @@ public class HLinqQuery<T> : IHLinqQuery
     public ITreeElement[] Children { get; private set; } = [];
     public Type ItemType { get; } = typeof(T);
     public string SourceQueryString { get; internal init; } = null!;
-    public IHLinqWarnings Warnings { get; set; } = new HLinqWarnings();
+    public IHLinqDiagnostics Diagnostics { get; set; } = new HLinqDiagnostics();
 
     /// <summary>
     /// The culture the request asked for, as it named it: the first value of the culture parameter,
     /// null when the request did not carry one. Read by the binder, so that it is known before a
     /// single clause is interpreted and no matter where in the request it stood.
     /// </summary>
-    public string? Culture { get; internal init; }
+    public string? Culture { get; private init; }
 
     public bool NoChildren => Children.Length == 0;
 
@@ -39,7 +39,7 @@ public class HLinqQuery<T> : IHLinqQuery
     internal IHLinqOptions? Options { get; set; }
 
     /// <summary>
-    /// If query is valid this should always be empty. If not then we should have an error in <see cref="Finish" />
+    /// A whole query holds no tokens of its own; its clauses do.
     /// </summary>
     IToken[] ITreeElement.Tokens => [];
 
@@ -53,6 +53,12 @@ public class HLinqQuery<T> : IHLinqQuery
 
         Children = [.. context.Current.Children];
     }
+
+    public IReadOnlyList<HLinqError> Validate() => BuildErrors(new HLinqDiagnostics());
+
+    private IReadOnlyList<HLinqError> BuildErrors(IHLinqDiagnostics diagnostics) => QueryApplier is null
+        ? throw new HLinqQueryQueryApplierNullException()
+        : QueryApplier.Validate(this, ItemType, diagnostics);
 
     public object? ApplyTo(IQueryable<T> queryable, CancellationToken token = default)
     {
@@ -70,6 +76,30 @@ public class HLinqQuery<T> : IHLinqQuery
     }
 
     /// <summary>
+    /// Validates the query without running it against data.
+    /// </summary>
+    /// <param name="dependenciesBag">Instance of <see cref="HLinqBinderDependenciesBag"/> from DI</param>
+    /// <param name="queryString">HTTP query string</param>
+    /// <returns>One entry per thing the query gets wrong, empty when it gets nothing wrong</returns>
+    public static IReadOnlyList<HLinqError> Validate(HLinqBinderDependenciesBag dependenciesBag, string queryString)
+    {
+        var diagnostics = new HLinqDiagnostics();
+
+        HLinqQuery<T> query;
+        try
+        {
+            query = Parse(dependenciesBag, queryString);
+        }
+        catch (HLinqQueryException exception)
+        {
+            diagnostics.Report(exception.ToError(null));
+            return diagnostics.Errors;
+        }
+
+        return query.BuildErrors(diagnostics);
+    }
+
+    /// <summary>
     /// Used from Minimal APIs to bind Parameters of <see cref="HLinqQuery{T}"/>
     /// </summary>
     /// <returns>Instance of <see cref="HLinqQuery{T}"/> that can be applied to <see cref="IQueryable{T}"/></returns>
@@ -79,7 +109,7 @@ public class HLinqQuery<T> : IHLinqQuery
     {
         var queryString = context.Request.QueryString.Value ?? "";
         var query = Parse(context.RequestServices.GetRequiredService<HLinqBinderDependenciesBag>(), queryString);
-        query.Warnings = context.RequestServices.GetService<IHLinqWarnings>() ?? query.Warnings;
+        query.Diagnostics = context.RequestServices.GetService<IHLinqDiagnostics>() ?? query.Diagnostics;
         return query;
     }
 
@@ -100,6 +130,12 @@ public class HLinqQuery<T> : IHLinqQuery
         }
 
         var request = dependenciesBag.QueryParameters.GetRequest(queryString);
+
+        if (request.Query.Length > dependenciesBag.Options.MaximumQueryLength)
+        {
+            throw new QueryTooLongException(request.Query.Length,
+                dependenciesBag.Options.MaximumQueryLength);
+        }
 
         var hlinqQuery = new HLinqQuery<T>
         {

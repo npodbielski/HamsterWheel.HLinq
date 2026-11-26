@@ -15,13 +15,6 @@ partial class MemoryDataTests
         Converters = { new JsonStringEnumConverter() }
     };
 
-    private async Task<Superhero[]> GetSuperheroesAsync(string query)
-    {
-        var response = await fixture.Client.GetAsync($"/demo/memory?{query}");
-        response.EnsureSuccessStatusCode();
-        return (await response.Content.ReadFromJsonAsync<Superhero[]>(JsonOptions))!;
-    }
-
     [Theory]
     [InlineData(0, 1)]
     [InlineData(3, 7)]
@@ -103,5 +96,12 @@ partial class MemoryDataTests
 
         //assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    private async Task<Superhero[]> GetSuperheroesAsync(string query)
+    {
+        var response = await fixture.Client.GetAsync($"/demo/memory?{query}");
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<Superhero[]>(JsonOptions))!;
     }
 }

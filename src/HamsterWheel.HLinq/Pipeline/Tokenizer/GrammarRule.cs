@@ -7,8 +7,8 @@ public class GrammarRule<T>(
     Func<IReadOnlyList<IToken>, bool>[] previousTokensMatchers,
     char[]? nextCharsAllowed = null,
     char[]? nextCharsRefused = null,
-    Type? insideClauseOf = null,
-    Type? outsideClauseOf = null) : IGrammarRule
+    Type[]? insideRootOf = null,
+    Type[]? outsideRootOf = null) : IGrammarRule
 {
     public Type ForType { get; } = typeof(T);
     public bool IsFor<TToken>() => ForType == typeof(TToken);
@@ -38,7 +38,7 @@ public class GrammarRule<T>(
         (nextCharsAllowed is null || next is not null && nextCharsAllowed.Contains(next.Value))
         && (nextCharsRefused is null || next is null || !nextCharsRefused.Contains(next.Value));
 
-    public bool MatchesClauseRoot(Type? currentClauseRoot) =>
-        (insideClauseOf is null || insideClauseOf == currentClauseRoot)
-        && (outsideClauseOf is null || outsideClauseOf != currentClauseRoot);
+    public bool MatchesRoot(Type? currentRoot) =>
+        (insideRootOf is null || Array.IndexOf(insideRootOf, currentRoot) >= 0)
+        && (outsideRootOf is null || Array.IndexOf(outsideRootOf, currentRoot) < 0);
 }

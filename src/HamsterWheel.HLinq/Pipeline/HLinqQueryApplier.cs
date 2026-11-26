@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Reflection;
+using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
@@ -11,7 +12,7 @@ using System.Collections;
 namespace HamsterWheel.HLinq.Pipeline;
 
 public class HLinqQueryApplier(IElementApplierFactory applierFactory, IMethodsCache methodsCache,
-    IExpressionBuilder builder) : IHLinqQueryApplier
+    IExpressionBuilder builder, IHLinqOptions options) : IHLinqQueryApplier
 {
     private static readonly Lazy<HashSet<string>> KnownCultureNames = new(() =>
         new HashSet<string>(CultureInfo.GetCultures(CultureTypes.AllCultures).Select(c => c.Name),
@@ -39,16 +40,17 @@ public class HLinqQueryApplier(IElementApplierFactory applierFactory, IMethodsCa
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var culture = GetQueryCulture(hLinqQuery);
-        IQueryableContext endResult = new QueryableContext(queryable, itemType)
+        ValidateNumberOfProperties(hLinqQuery);
+        var diagnostics = hLinqQuery.Diagnostics;
+        var endResult = Process(new QueryableContext(queryable, itemType)
         {
-            Warnings = hLinqQuery.Warnings
-        };
-        foreach (var methodRoot in hLinqQuery.Children.OfType<ITreeBranch>())
+            Diagnostics = diagnostics
+        }, hLinqQuery, diagnostics, cancellationToken);
+
+        if (diagnostics.Exception is { } endOfTheLineExc)
         {
-            var applier = applierFactory.Get(methodRoot);
-            endResult = applier.Apply(endResult, methodRoot, hLinqQuery.SourceQueryString, culture,
-                cancellationToken);
+            endOfTheLineExc.Errors = diagnostics.Errors;
+            throw endOfTheLineExc;
         }
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -86,6 +88,98 @@ public class HLinqQueryApplier(IElementApplierFactory applierFactory, IMethodsCa
         }
     }
 
+    public IReadOnlyList<HLinqError> Validate(IHLinqQuery hLinqQuery, Type itemType,
+        IHLinqDiagnostics diagnostics)
+    {
+        try
+        {
+            ValidateNumberOfProperties(hLinqQuery);
+        }
+        catch (HLinqQueryException exception)
+        {
+            diagnostics.AddException(exception);
+            return diagnostics.Errors;
+        }
+
+        var start = new QueryableContext(null, itemType)
+        {
+            Diagnostics = diagnostics,
+            ValidateMode = true
+        };
+
+        Process(start, hLinqQuery, diagnostics, CancellationToken.None);
+
+        return diagnostics.Errors;
+    }
+
+    /// <summary>
+    /// Checks if query does not violate max number of properties limit.
+    /// </summary>
+    private void ValidateNumberOfProperties(IHLinqQuery hLinqQuery)
+    {
+        foreach (var methodRoot in hLinqQuery.Children.OfType<ITreeBranch>())
+        {
+            var widest = methodRoot.MaxNumberOfProperties();
+            if (widest > options.MaximumNumberOfProperties)
+            {
+                throw new TooManyPropertiesException(widest, options.MaximumNumberOfProperties);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Processes hlinq query.
+    /// </summary>
+    private IQueryableContext Process(IQueryableContext context, IHLinqQuery hLinqQuery,
+        IHLinqDiagnostics diagnostics, CancellationToken cancellationToken)
+    {
+        var endResult = context;
+
+        CultureInfo culture;
+        try
+        {
+            culture = GetQueryCulture(hLinqQuery);
+        }
+        catch (HLinqQueryException exception)
+        {
+            diagnostics.AddException(exception);
+            return context;
+        }
+
+        foreach (var methodRoot in hLinqQuery.Children.OfType<ITreeBranch>())
+        {
+            diagnostics.RootKeyword = methodRoot.GetTokenKeyword();
+
+            try
+            {
+                var applier = applierFactory.Get(methodRoot);
+                endResult = applier.Apply(endResult, methodRoot, hLinqQuery.SourceQueryString, culture,
+                    cancellationToken);
+            }
+            catch (HLinqQueryException exception)
+            {
+                diagnostics.AddException(exception);
+                if (methodRoot.ChangesResponse())
+                {
+                    break;
+                }
+            }
+            catch (Exception)
+            {
+                if (diagnostics.Exception is null)
+                {
+                    //HLinq bug or API exception
+                    throw;
+                }
+
+                //query is already broken or invalid
+                break;
+            }
+        }
+
+        return endResult;
+    }
+
     private static CultureInfo GetQueryCulture(IHLinqQuery hLinqQuery) =>
         hLinqQuery.Culture switch
         {
@@ -93,7 +187,7 @@ public class HLinqQueryApplier(IElementApplierFactory applierFactory, IMethodsCa
             var name => GetCultureInfo(name)
         };
 
-    internal static CultureInfo GetCultureInfo(string name)
+    private static CultureInfo GetCultureInfo(string name)
     {
         switch (KnownCultureNames.Value.Contains(name))
         {

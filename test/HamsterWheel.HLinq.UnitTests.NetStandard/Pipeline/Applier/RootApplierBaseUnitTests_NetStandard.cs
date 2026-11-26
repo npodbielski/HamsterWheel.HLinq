@@ -102,6 +102,8 @@ public class TestDummySelectRoot : ISelectRoot
     public void Finish(IParsingContext context, IToken[] endingTokens)
     {
     }
+
+    public INestedSelect? RowsSelection { get; } = null!;
 }
 
 public class TestDummyOrderRoot : ITreeRoot
@@ -120,7 +122,8 @@ public class TestDummyQueryableContext : IQueryableContext
     public IQueryable? Queryable { get; init; } = Enumerable.Empty<Person>().AsQueryable();
     public Type CurrentResultType { get; init; } = typeof(Person);
     public int? Count { get; init; } = 0;
-    public IHLinqWarnings? Warnings { get; init; }
+    public IHLinqDiagnostics? Diagnostics { get; init; }
+    public bool ValidateMode { get; init; }
     public GroupingState? Grouping { get; init; }
 
     public IQueryableContext Next(IQueryable? queryable, Type currentResultType, int? count = null,
@@ -130,7 +133,8 @@ public class TestDummyQueryableContext : IQueryableContext
             Queryable = queryable,
             CurrentResultType = currentResultType,
             Count = count,
-            Warnings = Warnings,
+            Diagnostics = Diagnostics,
+            ValidateMode = ValidateMode,
             Grouping = grouping ?? Grouping,
         };
 }

@@ -18,7 +18,7 @@ public sealed class SkipOrTakeRange(IToken[] tokens) : TreeBranch(tokens)
     /// <summary>
     /// End of the range (exclusive rows count) or <c>null</c> for open end (<c>take[start..]</c>).
     /// </summary>
-    public SkipOrTakeConstant? EndConstant => GetChildOfType<SkipOrTakeConstant>();
+    private SkipOrTakeConstant? EndConstant => this.GetChildOfType<SkipOrTakeConstant>();
 
     /// <summary>
     /// Start of the range (skipped rows count) as written, or <c>null</c> for open start
@@ -28,12 +28,13 @@ public sealed class SkipOrTakeRange(IToken[] tokens) : TreeBranch(tokens)
 
     public string? GetEnd(string query) => EndConstant?.Value.GetValue(query);
 
+    // ReSharper disable once UnusedType.Global -> used by Parser
     public sealed class Parser : ElementParserBase<SkipOrTakeRange>
     {
         public override IToken[] ExampleTokens { get; } =
             [new TokenExample("10.."), new TokenExample("20")];
 
-        protected override Type[] ValidParents { get; } = [typeof(TakeRoot)];
+        public override Type[] ValidParents { get; } = [typeof(TakeRoot)];
 
         protected override SkipOrTakeRange? BuildBranch(IParsingContext context) =>
             context.Tokens switch

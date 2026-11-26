@@ -4,6 +4,7 @@ using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
+using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Selecting;
@@ -34,22 +35,14 @@ public sealed partial class Method(IToken[] tokens) : TreeBranch(tokens), IMetho
     /// </summary>
     public bool IsEntity => SourceType == MethodSource.Entity;
 
+    public bool IsGroupAggregate { get; private set; }
+
     /// <summary>
     /// The property argument of the call (<c>x.Age</c> in <c>x.Max(x.Age)</c>) when it has one.
     /// </summary>
     private Property? Argument => Children.OfType<Property>().SingleOrDefault();
 
     public string[]? ArgumentPath(string hLinqQuery) => Argument?.GetPath(hLinqQuery);
-
-    /// <summary>
-    /// The arguments the query wrote between the brackets, with the expression of every argument
-    /// that names a member: the ranking of an overload asks both - what a written value says and
-    /// what type a member of the row is.
-    /// </summary>
-    public (string value, MemberExpression? expression)[] WrittenParameters(IBuilderContext context) =>
-        [.. Children.OfType<IMethodParamElement>()
-            .Select(p => (value: p.GetValue(context.HLinqQuery),
-                expression: p is Property property ? context.ToExpression(property) as MemberExpression : null))];
 
     /// <summary>
     /// The overload of this call among the instance methods of <paramref name="source"/>, refused
@@ -81,12 +74,20 @@ public sealed partial class Method(IToken[] tokens) : TreeBranch(tokens), IMetho
                    [.. resolution.Competitors]);
     }
 
+    /// <summary>
+    /// The arguments the query wrote, with the expression of every one that names a member.
+    /// </summary>
+    private (string value, MemberExpression? expression)[] WrittenParameters(IBuilderContext context) =>
+    [.. Children.OfType<IMethodParamElement>()
+        .Select(p => (value: p.GetValue(context.HLinqQuery),
+            expression: p is Property property ? context.ToExpression(property) as MemberExpression : null))];
+
     // ReSharper disable once UnusedType.Global -> used by the Parser
-    public sealed class Parser : ElementParserBase<Method>
+    public sealed class Parser(IAggregatesCache aggregates) : ElementParserBase<Method>
     {
-        protected override Type[] ValidParents { get; } =
+        public override Type[] ValidParents { get; } =
         [
-            typeof(Condition), typeof(Selecting.PropertyAssignment),
+            typeof(Condition), typeof(Selecting.PropertyAssignment), typeof(Selecting.MathTerm), typeof(Selecting.MathGroup),
             typeof(Ordering.OrderByRoot), typeof(Ordering.OrderByDescendingRoot),
             typeof(Ordering.ThenByRoot), typeof(Ordering.ThenByDescendingRoot)
         ];
@@ -102,6 +103,10 @@ public sealed partial class Method(IToken[] tokens) : TreeBranch(tokens), IMetho
                     [RightCircleBracket.Empty]);
             }
 
+            var method = (Method)context.CurrentElement;
+            var name = method.GetName(context.SourceQueryString);
+            method.IsGroupAggregate = method.IsEntity && aggregates.IsAggregateName(name);
+
             context.CurrentBranch?.Finish(context, [bracket]);
             context.RemoveStartTokens(1);
         }
@@ -113,8 +118,8 @@ public sealed partial class Method(IToken[] tokens) : TreeBranch(tokens), IMetho
                 [Entity, Dot, MethodName _, LeftCircleBracket, ..] => new Method(context.Tokens[..4]),
                 [Dot, MethodName _, LeftCircleBracket, ..] => new Method(context.Tokens[..3]),
                 [MethodName _, LeftCircleBracket, ..]
-                    when context.CurrentBranch is Condition or Selecting.PropertyAssignment => new Method(
-                    context.Tokens[..2]),
+                    when context.CurrentBranch is Condition or Selecting.PropertyAssignment or Selecting.MathTerm =>
+                    new Method(context.Tokens[..2]),
                 [Assignment, MethodName _, LeftCircleBracket, ..]
                     when context.CurrentBranch is Selecting.PropertyAssignment => new Method(
                     context.Tokens[..3]),

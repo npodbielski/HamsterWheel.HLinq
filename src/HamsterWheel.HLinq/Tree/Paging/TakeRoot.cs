@@ -15,9 +15,9 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
     {
     }
 
-    private SkipOrTakeConstant? Constant => GetChildOfType<SkipOrTakeConstant>();
+    private SkipOrTakeConstant? Constant => this.GetChildOfType<SkipOrTakeConstant>();
 
-    private SkipOrTakeRange? Range => GetChildOfType<SkipOrTakeRange>();
+    private SkipOrTakeRange? Range => this.GetChildOfType<SkipOrTakeRange>();
 
     private string GetTakeNumber(string query)
     {
@@ -25,6 +25,7 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
         return takeNumberAsString is not null ? takeNumberAsString.Value.GetValue(query) : "";
     }
 
+    // ReSharper disable once ClassNeverInstantiated.Global -> used by DI
     public sealed class Parser : ElementParserBase<TakeRoot>
     {
         public override IToken[] ExampleTokens => TakeRootExampleTokens;
@@ -90,7 +91,7 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 
             if (takeParam < 0)
             {
-                throw new NegativePagingBoundException("take", takeParam);
+                throw new InvalidPagingValueException("take", takeParam);
             }
 
             takeParam = takeParam > MaxTake ? MaxTake : takeParam;
@@ -99,8 +100,8 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
                 infos => infos[1].ParameterType == type,
                 context.CurrentResultType);
 
-            return context.Next((IQueryable)method.Invoke(null, [context.Queryable, takeParam])!,
-                context.CurrentResultType, context.Count);
+            return context.NextByCalling(context.CurrentResultType,
+                source => (IQueryable)method.Invoke(null, [source, takeParam])!, context.Count);
         }
 
         private IQueryableContext ApplyRange(IQueryableContext context, TakeRoot take, SkipOrTakeRange range,
@@ -109,16 +110,18 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
             // non-numeric sides throw InvalidConstantStringToTypeConversionException here, i.e. just like take[a]
             var startString = range.GetStart(hLinqQuery);
             var endString = range.GetEnd(hLinqQuery);
-            var start = startString is { } startText
-                ? converter.ConvertTo<int?>(startText) ?? 0
-                : 0;
-            var end = endString is { } endText
-                ? converter.ConvertTo<int?>(endText)
-                : null;
+            var start = startString != null ? converter.ConvertTo<int?>(startString) ?? 0 : 0;
+            var end = endString != null ? converter.ConvertTo<int?>(endString) : null;
 
             if (start < 0 || end < 0 || startString is not null && start >= end)
             {
                 throw new InvalidTokenCollectionException(hLinqQuery, take.Tokens, Parser.TakeRootExampleTokens);
+            }
+
+            //the bounds above are checked whether the rows are run or not
+            if (context.ValidateMode)
+            {
+                return context.Next(null, context.CurrentResultType, context.Count);
             }
 
             var queryable = context.Queryable;
@@ -128,19 +131,21 @@ public sealed class TakeRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
             {
                 var skipMethod = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Skip),
                     typeParams: resultType);
-                queryable = (IQueryable)skipMethod.Invoke(null, [queryable, start])!;
+                queryable = (IQueryable?)skipMethod.Invoke(null, [queryable, start])!;
             }
 
-            if (end is { } endValue)
+            if (end is not { } endValue)
             {
-                var takeParam = endValue - start;
-                takeParam = takeParam > MaxTake ? MaxTake : takeParam;
-
-                var takeMethod = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Take),
-                    infos => infos[1].ParameterType == type,
-                    resultType);
-                queryable = (IQueryable)takeMethod.Invoke(null, [queryable, takeParam])!;
+                return context.Next(queryable, resultType, context.Count);
             }
+
+            var takeParam = endValue - start;
+            takeParam = takeParam > MaxTake ? MaxTake : takeParam;
+
+            var takeMethod = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Take),
+                infos => infos[1].ParameterType == type,
+                resultType);
+            queryable = (IQueryable?)takeMethod.Invoke(null, [queryable, takeParam])!;
 
             return context.Next(queryable, resultType, context.Count);
         }

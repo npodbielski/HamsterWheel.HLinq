@@ -25,4 +25,10 @@ public interface IAggregateMethodToExpressionConverter
     /// The type the aggregate call answers, without building it.
     /// </summary>
     Type ReturnType(IBuilderContext context, IMethod method, Type sourceType);
+
+    /// <summary>
+    /// The type an aggregate written on the subject of the clause answers, refused as
+    /// <see cref="BuildOverEntity" /> refuses it.
+    /// </summary>
+    Type ReturnTypeOverSubject(IBuilderContext context, IMethod method);
 }

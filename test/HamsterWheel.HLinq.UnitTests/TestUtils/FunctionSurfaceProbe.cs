@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using System.Reflection;
-using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Reflection;
@@ -10,9 +9,7 @@ using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
 namespace HamsterWheel.HLinq.UnitTests.TestUtils;
 
 /// <summary>
-/// Asks every declared name of every class a pack hands over the question its own signature asks, and
-/// sorts the names into the three sets of the surface: what answers with a truth, what answers with a
-/// value a comparison of the row can be made of, and what stays out of reach with the reason.
+/// Sorts a pack's declared names into the three sets of its surface.
 /// </summary>
 /// <remarks>
 /// A parameter is filled with the first column of <see cref="DummyEntity"/> or written value that
@@ -210,9 +207,7 @@ public sealed class FunctionSurfaceProbe(IStaticMethodSource source)
     }
 
     /// <summary>
-    /// A value a query writes for a parameter of the type, in one of the shapes the parse table
-    /// reads - the same fillings a query may hand a function since a written argument reaches a
-    /// parameter of any type the table parses.
+    /// A written value for a parameter of the type, in a shape the parse table reads.
     /// </summary>
     private static (string QueryText, Expression Expression)? WrittenValueOf(Type parameterType)
     {
@@ -350,8 +345,7 @@ public sealed class FunctionSurfaceProbe(IStaticMethodSource source)
                 [source], Services.WrittenValues, null!);
             var tokens = Services.Tokenizer.Tokenize(query);
             var tree = Parser.TestParseEntryPoint<DummyEntity>(query, tokens);
-            builder.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(), query,
-                warnings: new HLinqWarnings());
+            builder.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(), query);
             return true;
         }
         catch (Exception e) when (e is not OutOfMemoryException)

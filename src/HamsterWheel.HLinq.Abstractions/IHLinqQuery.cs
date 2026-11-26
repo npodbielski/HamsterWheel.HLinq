@@ -8,9 +8,9 @@ public interface IHLinqQuery : ITreeBranch
     string SourceQueryString { get; }
 
     /// <summary>
-    /// Query warnings
+    /// Hlinq query errors and warnings
     /// </summary>
-    IHLinqWarnings Warnings { get; set; }
+    IHLinqDiagnostics Diagnostics { get; set; }
 
     /// <summary>
     /// User requested culture to be applied to the query

@@ -12,13 +12,21 @@ public class DefaultConverter(
     private readonly IConfigurableValueConverter[] _converters =
         [.. converters.Concat([fallbackSerializer]).Where(c => c is not null).OrderBy(c => c!.Priority)!];
 
-    internal static DefaultConverter Instance { get; } = new(GetDefaultConverters(), new NullKeyword());
+    /// <summary>
+    /// The standard converter set, reading a written value the way a filter reads it.
+    /// </summary>
+    public static DefaultConverter Instance { get; } = new(GetDefaultConverters(), new NullKeyword());
 
-    internal static IEnumerable<IConfigurableValueConverter> GetDefaultConverters()
+    /// <summary>
+    /// The converters of the standard set, in the order their <see cref="IConfigurableValueConverter.Priority" />
+    /// puts them into a <see cref="DefaultConverter" />.
+    /// </summary>
+    public static IEnumerable<IConfigurableValueConverter> GetDefaultConverters()
     {
         return
         [
             new FromStringConverter(new NullKeyword()), new FromFormattableConverter(), new FromConvertibleConverter(),
+            new Iso8601TimeSpanConverter(),
             new EnumValueConverter(),
             new NullableEnumValueConverter(new NullKeyword(), new EnumValueConverter()),
             new CustomTypeCombinationsConverter(),
@@ -60,6 +68,20 @@ public class DefaultConverter(
             return ConvertToBoolean(value, targetType.IsNullable());
         }
 
+        //a bare four digit number compared to a date is the year the engine reads when it reads
+        //a date: the number is read through the chain itself, so a host that reads an int its own
+        //way has said the year its own way too
+        if (IsDate(targetType) && value is string yearText && IsYear(yearText))
+        {
+            var year = ConvertTo<int>(yearText, culture);
+            if (targetType == typeof(DateTime) || targetType == typeof(DateTime?))
+            {
+                return new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            }
+
+            return new DateTimeOffset(year, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        }
+
         foreach (var converter in _converters)
         {
             if (converter.TryConvert(value, targetType, culture) is (true, var result))
@@ -70,11 +92,6 @@ public class DefaultConverter(
 
         throw new InvalidConstantStringToTypeConversionException(value, targetType);
     }
-
-    private object? ReadQuotedValue(object? value) =>
-        value is string text && text.IsDoubleQuoted() && text.UnQuote() != nullKeyword.Value
-            ? text.UnQuote()
-            : value;
 
     public bool? ConvertToBoolean(object? arg, bool isNullable)
     {
@@ -132,4 +149,18 @@ public class DefaultConverter(
 
         //at this point it should be not null custom object type -> return true
     }
+    private static bool IsDate(Type type) =>
+        type == typeof(DateTime) || type == typeof(DateTime?) || type == typeof(DateTimeOffset)
+        || type == typeof(DateTimeOffset?);
+
+    //four digits that are a year of a date, no sign and no separator: what reads back as the
+    //same year whole is all a year can be written as
+    private static bool IsYear(string text) =>
+        text.Length == 4 && text.All(char.IsDigit) && int.Parse(text) >= 1;
+
+    private object? ReadQuotedValue(object? value) =>
+        value is string text && text.IsDoubleQuoted() && text.UnQuote() != nullKeyword.Value
+            ? text.UnQuote()
+            : value;
+
 }

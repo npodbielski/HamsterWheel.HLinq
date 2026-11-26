@@ -5,7 +5,9 @@ namespace HamsterWheel.HLinq.Pipeline.Applier;
 public record QueryableContext(IQueryable? Queryable, Type CurrentResultType, int? Count = null)
     : IQueryableContext
 {
-    public IHLinqWarnings? Warnings { get; init; }
+    public IHLinqDiagnostics? Diagnostics { get; init; }
+
+    public bool ValidateMode { get; init; }
 
     public GroupingState? Grouping { get; init; }
 
@@ -13,7 +15,8 @@ public record QueryableContext(IQueryable? Queryable, Type CurrentResultType, in
         GroupingState? grouping = null) =>
         new QueryableContext(queryable, currentResultType, count)
         {
-            Warnings = Warnings,
+            Diagnostics = Diagnostics,
+            ValidateMode = ValidateMode,
             Grouping = grouping ?? Grouping
         };
 }

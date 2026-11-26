@@ -3,6 +3,7 @@ using HamsterWheel.HLinq.Pipeline.Tokenizer;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Paging;
+using HamsterWheel.HLinq.Tokens.Selecting;
 using HamsterWheel.HLinq.UnitTests.TestUtils;
 using HamsterWheel.HLinq.UnitTests.TestUtils.Assertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,10 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace HamsterWheel.HLinq.UnitTests.Pipeline.Tokenizer;
 
 /// <summary>
-/// Grammar self-check: the grammar must describe itself consistently - one rule per token,
-/// every token reachable, no keyword swallowing a longer one, and delimiter sets exactly as
-/// the adjacency rules derive them. Runs against the effective registered words, so
-/// a localized grammar (tokens replaced through <c>AddWord</c>) validates too.
+/// A grammar must describe itself consistently, checked on the registered words.
 /// </summary>
 public class GrammarSelfCheckUnitTests
 {
@@ -62,8 +60,19 @@ public class GrammarSelfCheckUnitTests
     {
         var grammar = TestServicesCollection.Provider.GetRequiredService<IGrammar>();
 
+        //the operators of a math expression end a member; they are derived from adjacency and
+        //belong to no free text - a written date or GUID stays one value of its clause
         grammar.GetDelimiters(typeof(PropertyName)).Should()
-            .BeEquivalentTo(['=', '&', '|', ',', '!', '<', '>', ')', ']', '.']);
+            .BeEquivalentTo(['=', '&', '|', ',', '!', '<', '>', ')', ']', '.', '+', '-', '*', '/']);
+    }
+
+    [Fact]
+    public void GetDelimiters_WhenMathOperand_ThenDerivedFromAdjacency()
+    {
+        var grammar = TestServicesCollection.Provider.GetRequiredService<IGrammar>();
+
+        grammar.GetDelimiters(typeof(MathOperand)).Should()
+            .BeEquivalentTo([',', ']', ')', '+', '-', '*', '/', '=', '!', '<', '>', '&', '|']);
     }
 
     [Fact]

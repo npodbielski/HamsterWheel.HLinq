@@ -87,23 +87,24 @@ public sealed class NestedSelectBuilder : INestedSelectBuilder
         }));
     }
 
-    private static MemberExpression GetSourceExpression(PropertyAssignment assignment, IBuilderContext context)
+    private static MemberExpression GetSourceExpression(IPropertyAssignment assignment, IBuilderContext context)
     {
+        string[] path;
         if (assignment.NestedSelectProperty is { } property)
         {
-            var path = property.GetPath(context.HLinqQuery);
+            path = property.GetPath(context.HLinqQuery);
             return context.Builder.GetProperty(context.Type, context.Param, path, context).Member;
         }
 
-        if (assignment.NestedSelectInnerProperty is { } inner)
+        if (assignment.NestedSelectInnerProperty is not { } inner)
         {
-            var scope = context as INestedScopeBuilderContext ??
-                        throw new InnerProperty.Converter.InnerPropertyOutsideOfNestedSelectException();
-            var path = inner.GetPath(context.HLinqQuery);
-            return context.Builder.GetProperty(scope.InnerType, scope.InnerSource, path, context).Member;
+            throw new NestedSelectHasNoNavigationException();
         }
 
-        throw new NestedSelectHasNoNavigationException();
+        var scope = context as INestedScopeBuilderContext ??
+                    throw new InnerProperty.Converter.InnerPropertyOutsideOfNestedSelectException();
+        path = inner.GetPath(context.HLinqQuery);
+        return context.Builder.GetProperty(scope.InnerType, scope.InnerSource, path, context).Member;
     }
 
     private static bool IsCollection(Type type) =>

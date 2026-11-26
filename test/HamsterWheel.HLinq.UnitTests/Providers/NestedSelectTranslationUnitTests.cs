@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using FluentAssertions;
-using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tree.Selecting;
@@ -10,10 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace HamsterWheel.HLinq.UnitTests.Providers;
 
 /// <summary>
-/// The shape a nested select asks of the engine, measured in each provider pack: one statement,
-/// the related rows joined beside the row. The projection built from the query text is asked of
-/// each engine's translator what SQL it would produce - the assertion the Postgres integration
-/// suite makes against a live server, asked of every engine here without one.
+/// A nested select is one statement, the related rows joined beside the row, in every pack.
 /// </summary>
 public class NestedSelectTranslationUnitTests
 {
@@ -99,9 +95,7 @@ public class NestedSelectTranslationUnitTests
     };
 
     /// <summary>
-    /// A row with a collection of related rows and one single related row, and a reference under
-    /// the related row - the shape the three measurements walk. Written for the translator: keys
-    /// and foreign keys as an engine would declare them, nothing else.
+    /// The shape the measurements walk, written for the translator.
     /// </summary>
     public class Row
     {
@@ -149,7 +143,7 @@ public class NestedSelectTranslationUnitTests
         var tokens = Services.Tokenizer.Tokenize(query);
         var tree = new HLinqParser(Services.Parsers).TestParseEntryPoint<Row>(query, tokens);
         return builder.GetSelect(typeof(Row),
-            tree.GetAll<SelectRoot>().First(), query, warnings: new HLinqWarnings()).Expression;
+            tree.GetAll<SelectRoot>().First(), query).Expression;
     }
 
     private static string Sql(DbContext context, string query)

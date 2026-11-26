@@ -4,7 +4,8 @@ namespace HamsterWheel.HLinq.Pipeline.Parser;
 
 public abstract class ElementParserBase<T> : IElementParser where T : ITreeElement
 {
-    protected virtual Type[] ValidParents { get; } = [];
+    //the parse asks ChildOf; the set itself is public so a caller can read what a parser declares
+    public virtual Type[] ValidParents { get; } = [];
 
     public bool ChildOf<TParent>(TParent parent) where TParent : ITreeElement =>
         ValidParents.Contains(parent.GetType());

@@ -30,6 +30,24 @@ public static class TokenizerSnapshotData
             ("culture=pl-PL", nameof(HLinqTokenizer.UnknownTokenException), null),
             ("culture=pl-PL&where[x.Name==test]", nameof(HLinqTokenizer.UnknownTokenException), null),
             ("where[x.Name==test]&culture=pl-PL", nameof(HLinqTokenizer.UnknownTokenException), null),
+            //the '+' of a join is a word of the select clause only: a '+' written inside a value of
+            //another clause stays a character of that value
+            ("where[x.Name==a+b]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("a+b"), RightSquareBracket]),
+            ("where[x.Name==x+1]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("x+1"), RightSquareBracket]),
+            ("where[x.Name==+48123]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("+48123"), RightSquareBracket]),
+            ("select[A=+17]", null, [Select, LeftSquareBracket, NameOrValue("A"), Assignment, NameOrValue("+17"), RightSquareBracket]),
+            ("select[FullName=x.Name+\" \"+x.Surname]", null, [Select, LeftSquareBracket, NameOrValue("FullName"), Assignment, Entity(), Dot, Prop("Name"), Plus, Quoted(" "), Plus, Entity(), Dot, Prop("Surname"), RightSquareBracket]),
+            ("select[x.Name+\" \"+x.Surname]", null, [Select, LeftSquareBracket, Entity(), Dot, Prop("Name"), Plus, Quoted(" "), Plus, Entity(), Dot, Prop("Surname"), RightSquareBracket]),
+            ("select[N=x.Int+1]", null, [Select, LeftSquareBracket, NameOrValue("N"), Assignment, Entity(), Dot, Prop("Int"), Plus, Number("1"), RightSquareBracket]),
+            ("select[N=x.Int+x.Long*2-1]", null, [Select, LeftSquareBracket, NameOrValue("N"), Assignment, Entity(), Dot, Prop("Int"), Plus, Entity(), Dot, Prop("Long"), Multiply, Number("2"), Minus, Number("1"), RightSquareBracket]),
+            //an expression opened by a text says so with a group: after '=' alone the quoted
+            //run stays the free value of the clause, the shipped Name="x" spelling
+            ("select[FullName=(\"Mr \"+x.Name)]", null, [Select, LeftSquareBracket, NameOrValue("FullName"), Assignment, LeftCircleBracket, Quoted("Mr "), Plus, Entity(), Dot, Prop("Name"), RightCircleBracket, RightSquareBracket]),
+            ("select[FullName=\"Mr \"]", null, [Select, LeftSquareBracket, NameOrValue("FullName"), Assignment, NameOrValue("\"Mr \""), RightSquareBracket]),
+            ("select[N=(x.Int+1)*2]", null, [Select, LeftSquareBracket, NameOrValue("N"), Assignment, LeftCircleBracket, Entity(), Dot, Prop("Int"), Plus, Number("1"), RightCircleBracket, Multiply, Number("2"), RightSquareBracket]),
+            ("select[N=(2022-12-31)]", null, [Select, LeftSquareBracket, NameOrValue("N"), Assignment, LeftCircleBracket, Number("2022"), Minus, Number("12"), Minus, Number("31"), RightCircleBracket, RightSquareBracket]),
+            ("select[x.Name+]", nameof(HLinqTokenizer.UnknownTokenException), null),
+            ("select[FullName=x.Int+1]", null, [Select, LeftSquareBracket, NameOrValue("FullName"), Assignment, Entity(), Dot, Prop("Int"), Plus, Number("1"), RightSquareBracket]),
             ("count", null, [Count]),
             ("count[]", null, [Count, LeftSquareBracket, RightSquareBracket]),
             ("orderBy", nameof(HLinqTokenizer.UnknownTokenException), null),
@@ -230,6 +248,17 @@ public static class TokenizerSnapshotData
             ("where[x.Name==\"Rock\"\"&&x.Id==1]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("\"Rock\"\""), And, Entity(), Dot, Prop("Id"), Equality, NameOrValue("1"), RightSquareBracket]),
             ("where[x.Name==\"a\"\"b\"]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("\"a\"\"b\""), RightSquareBracket]),
             ("where[x.Name==x.Int]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, Entity(), Dot, Prop("Int"), RightSquareBracket]),
+            //math written bare in a filter: an operator stands after a member or a call and nowhere
+            //else, so the values above - a date, a GUID, a search text - stayed one value
+            ("where[x.Total-x.Paid>5]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Total"), Minus, Entity(), Dot, Prop("Paid"), GreaterThan, NameOrValue("5"), RightSquareBracket]),
+            ("where[x.Name.ToUpper()+x.Name==q]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Dot, MethodName("ToUpper"), LeftCircleBracket, RightCircleBracket, Plus, Entity(), Dot, Prop("Name"), Equality, NameOrValue("q"), RightSquareBracket]),
+            ("where[(2-1)>x.Int]", null, [Where, LeftSquareBracket, LeftCircleBracket, NameOrValue("2-1"), RightCircleBracket, GreaterThan, Entity(), Dot, Prop("Int"), RightSquareBracket]),
+            ("where[x.Int>(2*3)]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Int"), GreaterThan, LeftCircleBracket, Number("2"), Multiply, Number("3"), RightCircleBracket, RightSquareBracket]),
+            ("where[x.Date<=(2022-12-31)]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Date"), LessOrEqualThan, LeftCircleBracket, Number("2022"), Minus, Number("12"), Minus, Number("31"), RightCircleBracket, RightSquareBracket]),
+            ("where[x.Name==((x.A+x.B)*2)]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, LeftCircleBracket, LeftCircleBracket, Entity(), Dot, Prop("A"), Plus, Entity(), Dot, Prop("B"), RightCircleBracket, Multiply, Number("2"), RightCircleBracket, RightSquareBracket]),
+            ("orderBy[x.Total-x.Paid]", null, [OrderBy, LeftSquareBracket, Entity(), Dot, Prop("Total"), Minus, Entity(), Dot, Prop("Paid"), RightSquareBracket]),
+            ("orderBy[(x.A+x.B)*2]", null, [OrderBy, LeftSquareBracket, LeftCircleBracket, Entity(), Dot, Prop("A"), Plus, Entity(), Dot, Prop("B"), RightCircleBracket, Multiply, Number("2"), RightSquareBracket]),
+            ("orderBy[x.Name].thenBy[x.Total-x.Paid]", null, [OrderBy, LeftSquareBracket, Entity(), Dot, Prop("Name"), RightSquareBracket, Dot, ThenBy, LeftSquareBracket, Entity(), Dot, Prop("Total"), Minus, Entity(), Dot, Prop("Paid"), RightSquareBracket]),
             ("where[x.Name==xander]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("xander"), RightSquareBracket]),
             ("where[x.Name==John Doe]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("John Doe"), RightSquareBracket]),
             ("where[x.Name==John&&x.Int>3].select[FullName=Name,x.Id].orderBy[x.Name].take[10..20]", null, [Where, LeftSquareBracket, Entity(), Dot, Prop("Name"), Equality, NameOrValue("John"), And, Entity(), Dot, Prop("Int"), GreaterThan, NameOrValue("3"), RightSquareBracket, Dot, Select, LeftSquareBracket, NameOrValue("FullName"), Assignment, NameOrValue("Name"), Comma, Entity(), Dot, Prop("Id"), RightSquareBracket, Dot, OrderBy, LeftSquareBracket, Entity(), Dot, Prop("Name"), RightSquareBracket, Dot, Take, LeftSquareBracket, RangeOperatorWithStart("10"), NameOrValue("20"), RightSquareBracket]),

@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using FluentAssertions;
-using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.SqlServer;
@@ -12,10 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace HamsterWheel.HLinq.UnitTests.SqlServer;
 
 /// <summary>
-/// A function of a provider is named by its own word and given the column as its argument, which is how
-/// EF reads the same call written in C#. A method written on a value stays a method of that value: the
-/// provider has a function of the same word, and the query that spells it on the property is still the
-/// string's own - a pack adds words, it does not take them away.
+/// A provider function is named by its word with the column as its argument.
 /// </summary>
 public class SqlServerFunctionsUnitTests
 {
@@ -27,23 +23,8 @@ public class SqlServerFunctionsUnitTests
 
     private readonly IHLinqParser _parser = new HLinqParser(Services.Parsers);
 
-    private LambdaExpression WholeFilter(string query)
-    {
-        //arrange
-        var tokens = Services.Tokenizer.Tokenize(query);
-        var tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
-
-        //act
-        return _sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(), query,
-            warnings: new HLinqWarnings());
-    }
-
-    private MethodCallExpression Filter(string query) => (MethodCallExpression)WholeFilter(query).Body;
-
     /// <summary>
-    /// The call an author writes by hand in Linq is the oracle of the tree the binder builds from the
-    /// query text: the same method, the same arguments in the same order, a column where the twin
-    /// reads one and a value where the twin writes one.
+    /// The hand-written Linq call is the oracle of the tree the binder builds.
     /// </summary>
     [Fact]
     public void GivenFilterOnIsDate_WhenBuilt_ThenBuildsTheTreeOfTheEfCall()
@@ -100,8 +81,7 @@ public class SqlServerFunctionsUnitTests
     }
 
     /// <summary>
-    /// A comparison is written with a value of the type it compares with, so what a call answers with -
-    /// here a span of the parts of a time - is compared with the span the query writes.
+    /// What a call answers is compared with a value of its own type.
     /// </summary>
     [Fact]
     public void GivenFilterOnTimeFromPartsComparedWithWrittenTimeSpan_WhenBuilt_ThenTheWrittenSpanReachesTheComparison()
@@ -139,9 +119,7 @@ public class SqlServerFunctionsUnitTests
     }
 
     /// <summary>
-    /// A parameter of no type in particular - <c>FreeText</c> reads its first argument as whatever the
-    /// column holds - takes a column too: what it answers is the question of the types, not of the text a
-    /// query writes.
+    /// A parameter of no type in particular takes a column too.
     /// </summary>
     [Fact]
     public void GivenFilterOnFunctionOfAnArgumentOfAnyType_WhenBuilt_ThenTheColumnReachesTheFunction()
@@ -155,9 +133,7 @@ public class SqlServerFunctionsUnitTests
     }
 
     /// <summary>
-    /// The arguments of a function are matched with the type of its parameters, so a function of dates is
-    /// written with the date columns of a row - a date itself, which a query writes as text, no parameter
-    /// of a function is read from.
+    /// A function of dates is written with the date columns of a row.
     /// </summary>
     [Fact]
     public void GivenFilterComparingDifferenceOfTwoDateColumns_WhenBuilt_ThenBothColumnsReachTheFunction()
@@ -168,4 +144,16 @@ public class SqlServerFunctionsUnitTests
         //assert
         actual.ToString().Should().Be("Param_0 => (null.DateDiffDay(Param_0.DateTime, Param_0.DateTime) > 7)");
     }
+
+    private LambdaExpression WholeFilter(string query)
+    {
+        //arrange
+        var tokens = Services.Tokenizer.Tokenize(query);
+        var tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+
+        //act
+        return _sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(), query);
+    }
+
+    private MethodCallExpression Filter(string query) => (MethodCallExpression)WholeFilter(query).Body;
 }

@@ -1,4 +1,5 @@
 using System.Text;
+using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Tokens;
 
 namespace HamsterWheel.HLinq.Exceptions;
@@ -11,6 +12,18 @@ public class InvalidTokenCollectionException(
     : HLinqQueryException(
         $"HLinq query '{queryString}' is invalid {ShowInvalidPart(actual, queryString)}.{ShowAlternatives(expected, orExpected)}")
 {
+    public override HLinqErrorCode Code => HLinqErrorCode.InvalidQuery;
+
+    public override string InvalidQueryChunk =>
+        actual.Length > 0 ? string.Join("", actual.Take(5).Select(a => a.GetValue(queryString))) : queryString;
+
+    public override IReadOnlyList<string> Examples { get; } =
+    [
+        .. new[] { expected }.Concat(orExpected)
+            .Where(alternatives => alternatives.Length != 0)
+            .Select(alternatives => string.Join("", alternatives.Select(t => ExampleOfTokenValue(t, t.GetType()))))
+    ];
+
     private static string ShowInvalidPart(IToken[] actual, string queryString) =>
         actual.Length > 0
             ? $"at character {actual.First().Range.Start}: '{string.Join("", actual.Take(5).Select(a => a.GetValue(queryString)))}'"

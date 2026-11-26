@@ -35,11 +35,11 @@ public partial class ExpressionBuilderUnitTests
         };
         var tokens = _tokenizer.Tokenize(query);
 
-        ITreeBranch tree = _parser.Parse(hlinqQuery, tokens);
+        var tree = _parser.Parse(hlinqQuery, tokens);
 
-        var assignment = tree.GetAll<SelectRoot>().First().Children.Should().ContainSingle()
-            .Which.Should().BeOfType<PropertyAssignment>().Subject;
-        assignment.Call!.Should().NotBeNull();
+        tree.GetAll<SelectRoot>().First().Children.Should().ContainSingle()
+            .Which.Should().BeOfType<PropertyAssignment>()
+            .Which.Call?.Should().NotBeNull();
     }
 
     [Fact]

@@ -11,21 +11,23 @@ namespace HamsterWheel.HLinq.Tree.Selecting;
 /// <summary>
 /// Nested property in nested select. I.e.: <c>a.City</c> in <c>x.Addresses.select(a.City)</c>.
 /// </summary>
-public sealed class InnerProperty(IToken[] tokens) : TreeLeaf(tokens)
+public sealed class InnerProperty(IToken[] tokens) : TreeLeaf(tokens), IInnerProperty
 {
     public string[] GetPath(string hLinqQuery) =>
         Tokens.Any(t => t is PropertyName)
-            ? [.. Tokens.OfType<PropertyName>().Select(t => t.GetValue(hLinqQuery))]
-            : [Tokens.OfType<NameOrValue>().First().GetValue(hLinqQuery)];
+            ? [.. this.GetTokensOf<PropertyName>().Select(t => t.GetValue(hLinqQuery))]
+            : [this.GetFirstTokenOf<NameOrValue>().GetValue(hLinqQuery)];
 
-    public string GetLastName(string hLinqQuery) => GetPath(hLinqQuery).Last();
+    public string GetLastName(string hLinqQuery) =>
+        Tokens.Any(t => t is PropertyName)
+            ? this.GetTokensOf<PropertyName>().Last().GetValue(hLinqQuery)
+            : this.GetFirstTokenOf<NameOrValue>().GetValue(hLinqQuery);
 
     // ReSharper disable once UnusedType.Global - Used by Parser
     public sealed class Parser : ElementParserBase<InnerProperty>
     {
-        protected override Type[] ValidParents { get; } = [typeof(PropertyAssignment)];
-        public override IToken[] ExampleTokens { get; } =
-            [SubEntity.Empty, Dot.Empty, PropertyName.Empty];
+        public override Type[] ValidParents { get; } = [typeof(PropertyAssignment), typeof(MathTerm), typeof(MathGroup)];
+        public override IToken[] ExampleTokens { get; } = [SubEntity.Empty, Dot.Empty, PropertyName.Empty];
 
         protected override InnerProperty? BuildBranch(IParsingContext context)
         {

@@ -16,7 +16,7 @@ public sealed record NestedScopeBuilderContext(IBuilderContext Outer, Expression
     public string HLinqQuery => Outer.HLinqQuery;
     public IExpressionBuilder Builder => Outer.Builder;
     public CultureInfo Culture => Outer.Culture;
-    public IHLinqWarnings? Warnings => Outer.Warnings;
+    public IHLinqDiagnostics? Diagnostics => Outer.Diagnostics;
     public IReadOnlyDictionary<string, MemberExpression>? GroupMembers => Outer.GroupMembers;
 
     public Expression ToExpression(ITreeElement element) => Builder.ToExpression(this, element);

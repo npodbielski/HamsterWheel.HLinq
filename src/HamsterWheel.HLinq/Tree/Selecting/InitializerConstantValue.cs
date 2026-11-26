@@ -10,13 +10,13 @@ namespace HamsterWheel.HLinq.Tree.Selecting;
 
 public sealed class InitializerConstantValue(IToken[] tokens) : TreeLeaf(tokens)
 {
-    public NameOrValue ValueToken => Tokens.OfType<NameOrValue>().First();
+    public NameOrValue ValueToken => this.GetFirstTokenOf<NameOrValue>();
 
     // ReSharper disable once UnusedType.Global - Used by Parser
     public sealed class Parser : ElementParserBase<InitializerConstantValue>
     {
         public override IToken[] ExampleTokens { get; } = [NameOrValue.Empty];
-        protected override Type[] ValidParents { get; } = [typeof(PropertyAssignment)];
+        public override Type[] ValidParents { get; } = [typeof(PropertyAssignment)];
 
         protected override InitializerConstantValue? BuildBranch(IParsingContext context) =>
             context.Tokens is [Assignment, NameOrValue, ..]

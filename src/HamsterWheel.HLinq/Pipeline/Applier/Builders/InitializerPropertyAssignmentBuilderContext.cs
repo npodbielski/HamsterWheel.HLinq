@@ -14,7 +14,7 @@ public sealed record InitializerPropertyAssignmentBuilderContext(IBuilderContext
     public IExpressionBuilder Builder { get; } = BuilderContext.Builder;
     public string HLinqQuery { get; } = BuilderContext.HLinqQuery;
     public CultureInfo Culture { get; } = BuilderContext.Culture;
-    public IHLinqWarnings? Warnings { get; } = BuilderContext.Warnings;
+    public IHLinqDiagnostics? Diagnostics { get; } = BuilderContext.Diagnostics;
     public IReadOnlyDictionary<string, MemberExpression>? GroupMembers { get; } = BuilderContext.GroupMembers;
 
     public Expression ToExpression(ITreeElement element) => BuilderContext.Builder.ToExpression(this, element);

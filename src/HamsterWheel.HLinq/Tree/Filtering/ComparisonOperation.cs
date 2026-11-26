@@ -8,9 +8,10 @@ public sealed class ComparisonOperation(IComparisonToken comparison) : TreeLeaf(
 {
     public IComparisonToken Comparison => comparison;
 
+    // ReSharper disable once UnusedType.Global -> used by Parser
     public sealed class Parser : ElementParserBase<ComparisonOperation>
     {
-        protected override Type[] ValidParents { get; } = [typeof(Condition)];
+        public override Type[] ValidParents { get; } = [typeof(Condition)];
         public override IToken[] ExampleTokens { get; } = [Equality.Empty];
 
         protected override ComparisonOperation? BuildBranch(IParsingContext context) =>

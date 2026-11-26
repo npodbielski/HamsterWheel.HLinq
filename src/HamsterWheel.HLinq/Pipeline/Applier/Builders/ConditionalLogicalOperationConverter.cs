@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tree;
 
@@ -9,16 +10,29 @@ public abstract class ConditionalLogicalOperationConverter<TBranch> :
 {
     protected override Expression Build(IBuilderContext context, TBranch parent)
     {
+        var diagnostics = context.Diagnostics;
+        var refused = false;
         Expression? body = null;
-        var enumerable = parent.Children;
-        foreach (var element in enumerable)
+
+        foreach (var element in parent.Children)
         {
             if (element is not ILogicalOperationGroupBranch branch)
             {
                 continue;
             }
 
-            var innerBody = context.ToExpression(branch);
+            Expression innerBody;
+            try
+            {
+                innerBody = context.ToExpression(branch);
+            }
+            catch (HLinqQueryException exception) when (diagnostics is not null)
+            {
+                diagnostics.AddException(exception);
+                refused = true;
+                continue;
+            }
+
             if (body is null)
             {
                 body = innerBody;
@@ -41,6 +55,17 @@ public abstract class ConditionalLogicalOperationConverter<TBranch> :
             }
         }
 
+        if (refused)
+        {
+            throw new ConditionGroupRefusedException();
+        }
+
         return body ?? Expression.Constant(true);
+    }
+
+    private sealed class ConditionGroupRefusedException()
+        : HLinqQueryException("Condition query was invalid and could not be translated to expression")
+    {
+        public override bool ShouldReportToClient => false;
     }
 }

@@ -8,14 +8,13 @@ using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Ordering;
-using HamsterWheel.HLinq.Tree.Grouping;
 
 namespace HamsterWheel.HLinq.Tree.Ordering;
 
 public sealed class ThenByDescendingRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 {
     // ReSharper disable once UnusedType.Global - Used by Parser
-    public sealed class Parser : ElementParserBase<ThenByDescendingRoot>
+    public sealed class Parser : OrderingOrFilteringRootParser<ThenByDescendingRoot>
     {
         public override IToken[] ExampleTokens { get; } = ThenByDescendingRootExampleTokens;
 
@@ -34,18 +33,6 @@ public sealed class ThenByDescendingRoot(IToken[] tokens) : TreeBranch(tokens), 
                 _ => default
             };
 
-        protected override void FinishImpl(IParsingContext context)
-        {
-            if (context.Tokens is not [RightSquareBracket bracket, ..])
-            {
-                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
-                    [RightSquareBracket.Empty]);
-            }
-
-            context.CurrentBranch?.Finish(context, [bracket]);
-            context.RemoveStartTokens(1);
-        }
-
         private static ThenByDescendingRoot ThrowOnEmpty(IParsingContext context) =>
             throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
                 ThenByDescendingRootExampleTokens);
@@ -58,19 +45,13 @@ public sealed class ThenByDescendingRoot(IToken[] tokens) : TreeBranch(tokens), 
         protected override IQueryableContext ApplyImpl(IQueryableContext context,
             ThenByDescendingRoot orderBy, string hLinqQuery, CultureInfo culture)
         {
-            if (context.Grouping is not null)
-            {
-                GroupedResultPropertyValidator.CheckIfPropertyAvailable(orderBy, hLinqQuery);
-            }
-
             var selector = builder.GetProperty(context.CurrentResultType, orderBy, hLinqQuery, culture,
-                context.Warnings);
+                context.Diagnostics);
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.ThenByDescending),
                 infos => infos.Length == 2,
                 context.CurrentResultType, selector.PropType);
-            return context.Next(
-                (IOrderedQueryable)method.Invoke(null, [context.Queryable, selector.Expression])!,
-                context.CurrentResultType, context.Count);
+            return context.NextByCalling(context.CurrentResultType,
+                source => (IQueryable)method.Invoke(null, [source, selector.Expression])!, context.Count);
         }
     }
 
@@ -78,6 +59,6 @@ public sealed class ThenByDescendingRoot(IToken[] tokens) : TreeBranch(tokens), 
     public sealed class Converter : ElementToExpressionConverter<ThenByDescendingRoot>
     {
         protected override Expression Build(IBuilderContext context, ThenByDescendingRoot element) =>
-            context.ToExpression(element.Children[0]);
+            context.Builder.BuildValue(context, element.Children);
     }
 }

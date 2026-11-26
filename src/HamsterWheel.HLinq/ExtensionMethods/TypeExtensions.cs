@@ -18,6 +18,14 @@ public static class TypeExtensions
 
         public Type GetNullableArgument() => type.IsNullable() ? type.GetGenericArguments().First() : type;
 
+        public bool IsNumeric() =>
+            type == typeof(sbyte) || type == typeof(byte) || type == typeof(short) || type == typeof(ushort)
+            || type == typeof(int) || type == typeof(uint) || type == typeof(long) || type == typeof(ulong)
+            || type == typeof(float) || type == typeof(double) || type == typeof(decimal);
+
+        public bool IsSignedIntegral() =>
+            type == typeof(sbyte) || type == typeof(short) || type == typeof(int) || type == typeof(long);
+
         /// <summary>
         /// Returns true if two types are compatible to use via Expression
         /// (i.e., if property can be used as a method parameter)

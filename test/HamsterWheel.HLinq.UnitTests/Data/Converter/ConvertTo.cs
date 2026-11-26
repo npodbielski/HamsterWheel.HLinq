@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using FluentAssertions;
 using HamsterWheel.HLinq.Data;
+using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Tree.Filtering;
 using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
@@ -67,6 +68,9 @@ partial class DefaultConverterUnitTests
     [InlineData("90092311", 90092311)]
     [InlineData("102323281", 102323281)]
     [InlineData("2147483647", int.MaxValue)]
+    [InlineData("1.0", 1)]
+    [InlineData("3.00", 3)]
+    [InlineData("1e2", 100)]
     [InlineData(null, 0)]
     public void ConvertTo_WhenCalledWithConvertableStringToInt_ThenReturnsCorrectValue(string? stringValue,
         int expected)
@@ -76,6 +80,18 @@ partial class DefaultConverterUnitTests
 
         //assert
         actual.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("1.5")]
+    [InlineData("foobar")]
+    public void ConvertTo_WhenCalledWithStringThatIsNotAnIntegralNumberToInt_ThenThrows(string stringValue)
+    {
+        //act
+        var action = () => _sut.ConvertTo(typeof(int), stringValue);
+
+        //assert
+        action.Should().Throw<InvalidConstantStringToTypeConversionException>();
     }
 
     [Theory]
@@ -221,6 +237,60 @@ partial class DefaultConverterUnitTests
 
         //assert
         actual.Should().Be(new DateTime(year, month, day, hour, minute, second, millisecond, DateTimeKind.Utc));
+    }
+
+    [Theory]
+    [InlineData("1979")]
+    [InlineData("2025")]
+    public void ConvertTo_WhenCalledWithAYearStringToDateTime_ThenReturnsTheMomentTheYearStarts(string year)
+    {
+        //act
+        //reads as a date, and an engine asked about a year answers the moment the year starts
+        var actual = _sut.ConvertTo(typeof(DateTime), year);
+
+        //assert
+        actual.Should().Be(new DateTime(int.Parse(year), 1, 1, 0, 0, 0, DateTimeKind.Utc));
+    }
+
+    [Theory]
+    [InlineData("1979")]
+    [InlineData("2025")]
+    public void ConvertTo_WhenCalledWithAYearStringToDateTimeOffset_ThenReturnsTheMomentTheYearStarts(string year)
+    {
+        //act
+        var actual = _sut.ConvertTo<DateTimeOffset>(year);
+
+        //assert
+        actual.Should().Be(new DateTimeOffset(int.Parse(year), 1, 1, 0, 0, 0, TimeSpan.Zero));
+    }
+
+    [Fact]
+    public void ConvertTo_WhenTheYearIsAHostsIntConversion_ThenTheHostsYearStartsTheDate()
+    {
+        //arrange
+        var sut = new DefaultConverter(
+            [.. DefaultConverter.GetDefaultConverters(), new ShiftedIntConverter()], new NullKeyword());
+
+        //act
+        //host's reading of the int is the year: `1000` read as `1979` is the year 1979
+        var actual = sut.ConvertTo<DateTime>("1000");
+
+        //assert
+        actual.Should().Be(new DateTime(ShiftedIntConverter.Shift, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+    }
+
+    [Theory]
+    [InlineData("0000")]
+    [InlineData("12345")]
+    [InlineData("19.9")]
+    public void ConvertTo_WhenCalledWithNoYearStringToDateTime_ThenRefusedAsAnyOtherText(string year)
+    {
+        //act
+        //is a number and not a year, and none of them becomes a date by accident
+        var act = () => _sut.ConvertTo(typeof(DateTime), year);
+
+        //assert
+        act.Should().Throw<InvalidConstantStringToTypeConversionException>();
     }
 
     [Theory]
@@ -389,10 +459,7 @@ partial class DefaultConverterUnitTests
     }
 
     /// <summary>
-    /// The string form of a <see cref="DateTimeOffset" /> is the serializer's: the fraction of a
-    /// second without its trailing zeros, whole fraction dropped when it is zero. Reading the
-    /// string back is asserted along with the exact text, because the point of the shorter form is
-    /// that it names the same instant.
+    /// A <see cref="DateTimeOffset" /> reads back as the serializer's string form.
     /// </summary>
     [Theory]
     [InlineData(1234567, "2026-01-01T12:00:00.1234567+02:00")]
@@ -415,10 +482,7 @@ partial class DefaultConverterUnitTests
     }
 
     /// <summary>
-    /// The string form of a <see cref="DateTime" /> is the serializer's too: the fraction of a
-    /// second without its trailing zeros, whole fraction dropped when it is zero - the same text
-    /// a <see cref="DateTimeOffset" /> gets. Both forms name the instant, which is what a query
-    /// compares on.
+    /// A <see cref="DateTime" /> reads back as the serializer's string form too.
     /// </summary>
     [Theory]
     [InlineData(1234567, "2026-01-01T12:00:00.1234567Z")]
@@ -558,7 +622,7 @@ partial class DefaultConverterUnitTests
         //act
         var actual = _sut.ConvertTo(typeof(DateTime), "\"2020-01-01 00:00\"");
 
-        //assert - the space is a character of the value and the date is read as the invariant one
+        //assert
         actual.Should().Be(new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc));
     }
 
@@ -572,7 +636,7 @@ partial class DefaultConverterUnitTests
         //act
         var convert = () => _sut.ConvertTo(typeof(int), stringValue);
 
-        //assert - the message names the text between the quotes, which is what was not a number
+        //assert
         convert.Should().Throw<InvalidConstantStringToTypeConversionException>()
             .And.Message.Should().Contain(stringValue.Trim('"')).And.Contain(nameof(Int32));
     }
@@ -583,7 +647,7 @@ partial class DefaultConverterUnitTests
         //act
         var actual = _sut.ConvertTo(typeof(char), "\"a\"");
 
-        //assert - double quotes are taken off before the type reads the text, so a `char` gets one
+        //assert
         //character from a quoted value too
         actual.Should().Be('a');
     }
@@ -649,7 +713,7 @@ partial class DefaultConverterUnitTests
     [Fact]
     public void ConvertTo_WhenTargetIsByte_ThenReadsTheInvariantNumber()
     {
-        //act - `byte` used to parse with the culture of the machine, so which queries worked depended
+        //act
         //on where the service ran
         var actual = _sut.ConvertTo(typeof(byte), "2,5");
 
@@ -674,7 +738,7 @@ partial class DefaultConverterUnitTests
     [Fact]
     public void ConvertTo_WhenGivenACulture_ThenReadsTheDateInIt()
     {
-        //act - the month of the value is spelled in Polish
+        //act
         var actual = _sut.ConvertTo(typeof(DateTime), "\"1 sty 2020\"", CultureInfo.GetCultureInfo("pl-PL"));
 
         //assert
@@ -684,7 +748,7 @@ partial class DefaultConverterUnitTests
     [Fact]
     public void ConvertTo_WhenValueIsAnIntAndTargetIsEnum_ThenConvertsToTheMemberWithThatValue()
     {
-        //act - the chain has to let the number reach the enum converter, and not read it as text first
+        //act
         var actual = _sut.ConvertTo(typeof(SecondEnum), 10);
 
         //assert
@@ -694,7 +758,7 @@ partial class DefaultConverterUnitTests
     [Fact]
     public void ConvertTo_WhenGivenNoCulture_ThenReadsTheValueInInvariantCulture()
     {
-        //act - a request that named no culture reaches this converter as `null`, and `null` is the
+        //act
         //invariant culture, not the one the service runs in
         var actual = _sut.ConvertTo(typeof(decimal), "\"1,2\"");
 

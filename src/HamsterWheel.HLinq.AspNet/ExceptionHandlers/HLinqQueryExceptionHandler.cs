@@ -8,6 +8,8 @@ namespace HamsterWheel.HLinq.AspNet.ExceptionHandlers;
 
 public sealed class HLinqQueryExceptionHandler(ILogger<HLinqQueryExceptionHandler> logger) : IExceptionHandler
 {
+    public const string ErrorsExtension = "errors";
+
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception,
         CancellationToken cancellationToken)
     {
@@ -34,12 +36,19 @@ public sealed class HLinqQueryExceptionHandler(ILogger<HLinqQueryExceptionHandle
             _ => null
         };
 
-    private static ProblemDetails GetDetails(HLinqQueryException exception) =>
-        new()
+    private static ProblemDetails GetDetails(HLinqQueryException exception)
+    {
+        var problemDetails = new ProblemDetails
         {
             Status = (int)HttpStatusCode.BadRequest,
             Title = exception.Message
         };
+
+        problemDetails.Extensions[ErrorsExtension] = exception.Errors.Count > 0
+            ? exception.Errors
+            : new[] { exception.ToError(null) };
+        return problemDetails;
+    }
 
     private static readonly Action<ILogger, string, Exception> LogHLinqOriginalMessageAction =
         LoggerMessage.Define<string>(LogLevel.Information, new EventId(13, nameof(TryHandleAsync)), "{Message}");

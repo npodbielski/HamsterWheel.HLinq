@@ -8,7 +8,13 @@ public interface IQueryableContext
     Type CurrentResultType { get; init; }
     int? Count { get; init; }
 
-    IHLinqWarnings? Warnings { get; init; }
+    IHLinqDiagnostics? Diagnostics { get; init; }
+
+    /// <summary>
+    /// Whether HLinq only validates the query: the roots are built into expressions and nothing is
+    /// run against the source.
+    /// </summary>
+    bool ValidateMode { get; init; }
 
     IQueryableContext Next(IQueryable? queryable, Type currentResultType, int? count = null,
         GroupingState? grouping = null);

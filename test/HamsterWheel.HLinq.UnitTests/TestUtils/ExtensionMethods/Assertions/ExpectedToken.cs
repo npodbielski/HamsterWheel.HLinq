@@ -39,6 +39,14 @@ public class ExpectedToken(Type type, string value)
     public static ExpectedToken Count => new(typeof(Count), "count");
     public static ExpectedToken Skip => new(typeof(Skip), "skip");
     public static ExpectedToken RangeOperator => new(typeof(RangeOperator), "..");
+    public static ExpectedToken Plus => new(typeof(Plus), "+");
+    public static ExpectedToken Minus => new(typeof(Minus), "-");
+    public static ExpectedToken Multiply => new(typeof(Multiply), "*");
+    public static ExpectedToken Divide => new(typeof(Divide), "/");
+    //one written operand of an expression, spelled as text or as a number: the token said which
+    //one it is by its first character and the helpers keep the test spelling readable
+    public static ExpectedToken Quoted(string text) => new(typeof(MathOperand), $"\"{text}\"");
+    public static ExpectedToken Number(string number) => new(typeof(MathOperand), number);
     // the range operator carries the start number of take[start..end] (`10..`)
     public static ExpectedToken RangeOperatorWithStart(string start) => new(typeof(RangeOperator), $"{start}..");
     public static ExpectedToken OrderBy => new(typeof(OrderBy), "orderBy");

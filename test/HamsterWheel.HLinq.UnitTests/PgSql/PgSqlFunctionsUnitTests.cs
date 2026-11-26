@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using FluentAssertions;
-using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.PgSql;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
@@ -13,9 +12,7 @@ using NpgsqlTypes;
 namespace HamsterWheel.HLinq.UnitTests.PgSql;
 
 /// <summary>
-/// A filter is a whole function call, so the functions of the provider that answer with a truth are the
-/// ones a query can use: <c>ILike</c> and the trigram similarities, each written with the column as one
-/// of its arguments and the other argument as a value.
+/// The provider's functions answering with a truth are whole calls a filter can use.
 /// </summary>
 public class PgSqlFunctionsUnitTests
 {
@@ -26,19 +23,6 @@ public class PgSqlFunctionsUnitTests
         [new PgSqlEntityFrameworkStaticMethodProvider()], Services.WrittenValues, null!);
 
     private readonly IHLinqParser _parser = new HLinqParser(Services.Parsers);
-
-    private LambdaExpression WholeFilter(string query)
-    {
-        //arrange
-        var tokens = Services.Tokenizer.Tokenize(query);
-        var tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
-
-        //act
-        return _sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(), query,
-            warnings: new HLinqWarnings());
-    }
-
-    private MethodCallExpression Filter(string query) => (MethodCallExpression)WholeFilter(query).Body;
 
     [Theory]
     [InlineData("where[ILike(x.Name, x.Text)]", @"null.ILike(Param_0.Name, Param_0.Text)")]
@@ -57,10 +41,7 @@ public class PgSqlFunctionsUnitTests
     }
 
     /// <summary>
-    /// A column goes to a parameter that takes the type of the column, which is how a function of two
-    /// addresses of one row is reachable at all. The network functions are no words of the pack yet, so the
-    /// query is written to a source of its own: what is measured here are the arguments a call binds, not
-    /// the words a pack hands over.
+    /// A column binds to a parameter of the column's type, over a source of its own.
     /// </summary>
     [Fact]
     public void GivenFilterOnFunctionOfColumnsOfTheTypeOfItsParameters_WhenBuilt_ThenBothColumnsReachTheFunction()
@@ -75,7 +56,7 @@ public class PgSqlFunctionsUnitTests
 
         //act
         var actual = (MethodCallExpression)ofNetworkFunctions.GetFilter(typeof(Hosts),
-            tree.GetAll<WhereRoot>().First(), query, warnings: new HLinqWarnings()).Body;
+            tree.GetAll<WhereRoot>().First(), query).Body;
 
         //assert
         actual.ToString().Should().Be("null.SameFamily(Param_0.Source, Param_0.Target)");
@@ -116,9 +97,7 @@ public class PgSqlFunctionsUnitTests
     }
 
     /// <summary>
-    /// The call an author writes by hand in Linq is the oracle of the tree the binder builds from the
-    /// query text: the same method, the same arguments in the same order, a column where the twin
-    /// reads one and a value where the twin writes one.
+    /// The hand-written Linq call is the oracle of the tree the binder builds.
     /// </summary>
     [Fact]
     public void GivenFilterOnILike_WhenBuilt_ThenBuildsTheTreeOfTheEfCall()
@@ -157,8 +136,7 @@ public class PgSqlFunctionsUnitTests
     }
 
     /// <summary>
-    /// A comparison is written with a value of the type it compares with, so what a call answers with -
-    /// here a span of the difference of two moments - is compared with the span the query writes.
+    /// What a call answers is compared with a value of its own type.
     /// </summary>
     [Fact]
     public void GivenFilterOnDistanceComparedWithWrittenTimeSpan_WhenBuilt_ThenTheWrittenSpanReachesTheComparison()
@@ -192,4 +170,16 @@ public class PgSqlFunctionsUnitTests
         public NpgsqlInet Source { get; set; }
         public NpgsqlInet Target { get; set; }
     }
+
+    private LambdaExpression WholeFilter(string query)
+    {
+        //arrange
+        var tokens = Services.Tokenizer.Tokenize(query);
+        var tree = _parser.TestParseEntryPoint<DummyEntity>(query, tokens);
+
+        //act
+        return _sut.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(), query);
+    }
+
+    private MethodCallExpression Filter(string query) => (MethodCallExpression)WholeFilter(query).Body;
 }

@@ -39,12 +39,20 @@
             <Link>Data/Converter/ConvertToBoolean.cs</Link>
             <DependentUpon>DefaultConverterUnitTests.cs</DependentUpon>
         </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Data\Converter\ConvertToInterface.cs">
+            <Link>Data/Converter/ConvertToInterface.cs</Link>
+            <DependentUpon>DefaultConverterUnitTests.cs</DependentUpon>
+        </Compile>
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Data\Converter\ConvertToT1.cs">
             <Link>Data/Converter/ConvertToT1.cs</Link>
             <DependentUpon>DefaultConverterUnitTests.cs</DependentUpon>
         </Compile>
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Data\Converter\DefaultConverterUnitTests.cs">
             <Link>Data\Converter\DefaultConverterUnitTests.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Data\Converter\StandardSet.cs">
+            <Link>Data/Converter/StandardSet.cs</Link>
+            <DependentUpon>DefaultConverterUnitTests.cs</DependentUpon>
         </Compile>
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Data\Converter\EnumValueConverterUnitTests.cs">
             <Link>Data\Converter\EnumValueConverterUnitTests.cs</Link>
@@ -83,12 +91,31 @@
             <Link>Pipeline/Applier/QueryCount.cs</Link>
             <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
         </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Diagnostics\HLinqErrorCodeUnitTests.cs">
+            <Link>Diagnostics\HLinqErrorCodeUnitTests.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\QueryValidation.cs">
+            <Link>Pipeline/Applier/QueryValidation.cs</Link>
+            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\QueryGroupBy.cs">
             <Link>Pipeline/Applier/QueryGroupBy.cs</Link>
             <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
         </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\QueryCallValue.cs">
+            <Link>Pipeline/Applier/QueryCallValue.cs</Link>
+            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\QueryGroupAggregates.cs">
             <Link>Pipeline/Applier/QueryGroupAggregates.cs</Link>
+            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\QuerySelectMath.cs">
+            <Link>Pipeline/Applier/QuerySelectMath.cs</Link>
+            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\QueryGroupRowsSelect.cs">
+            <Link>Pipeline/Applier/QueryGroupRowsSelect.cs</Link>
             <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
         </Compile>
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\QueryNestedSelect.cs">
@@ -114,6 +141,19 @@
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Parser\HLinqParserUnitTests.cs">
             <Link>Pipeline\Parser\HLinqParserUnitTests.cs</Link>
         </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Parser\HLinqParserMathUnitTests.cs">
+            <Link>Pipeline\Parser\HLinqParserMathUnitTests.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Parser\HLinqParserGroupScopeUnitTests.cs">
+            <Link>Pipeline\Parser\HLinqParserGroupScopeUnitTests.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Parser\HLinqParserDuplicateMemberNameUnitTests.cs">
+            <Link>Pipeline\Parser\HLinqParserDuplicateMemberNameUnitTests.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Applier\QueryDuplicateMemberNames.cs">
+            <Link>Pipeline\Applier\QueryDuplicateMemberNames.cs</Link>
+            <DependentUpon>HLinqQueryApplierUnitTests.cs</DependentUpon>
+        </Compile>
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Tokenizer\HLinqTokenizerUnitTests.cs">
             <Link>Pipeline\Tokenizer\HLinqTokenizerUnitTests.cs</Link>
         </Compile>
@@ -128,6 +168,9 @@
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Tokenizer\TokenizerPagingTests.cs">
             <Link>Pipeline/Tokenizer/TokenizerPagingTests.cs</Link>
             <DependentUpon>HLinqTokenizerUnitTests.cs</DependentUpon>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Tokenizer\TokenizerMathTests.cs">
+            <Link>Pipeline/Tokenizer/TokenizerMathTests.cs</Link>
         </Compile>
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Pipeline\Tokenizer\TokenizerNestedSelectTests.cs">
             <Link>Pipeline/Tokenizer/TokenizerNestedSelectTests.cs</Link>
@@ -207,6 +250,9 @@
         </Compile>
         <Compile Include="..\HamsterWheel.HLinq.UnitTests\Tree\EntityLeafUniTests.cs">
             <Link>Tree\EntityLeafUniTests.cs</Link>
+        </Compile>
+        <Compile Include="..\HamsterWheel.HLinq.UnitTests\Tree\PathLastNameUnitTests.cs">
+            <Link>Tree\PathLastNameUnitTests.cs</Link>
         </Compile>
     </ItemGroup>
 

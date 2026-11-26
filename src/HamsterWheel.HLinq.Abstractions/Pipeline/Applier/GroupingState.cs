@@ -6,7 +6,6 @@ namespace HamsterWheel.HLinq.Pipeline.Applier;
 /// Group state data
 /// </summary>
 public sealed record GroupingState(
-    IQueryable Grouping,
     Type RowType,
     Type KeyType,
     Type GroupingItemType,
@@ -17,11 +16,6 @@ public sealed record GroupingState(
     LambdaExpression? InnerKey = null)
 {
     /// <summary>
-    /// If group is inside another group.
-    /// </summary>
-    public bool IsNested => InnerKey is not null;
-
-    /// <summary>
     /// The name a grouped row context reads the key of its group under.
     /// </summary>
     public const string KeyName = "Key";
@@ -30,6 +24,11 @@ public sealed record GroupingState(
     /// Name of property that holds group rows
     /// </summary>
     public const string RowsName = "Rows";
+
+    /// <summary>
+    /// The names a grouped answer holds before the query writes any member of its own.
+    /// </summary>
+    public static IReadOnlyCollection<string> GroupReservedNames { get; } = [KeyName, RowsName];
 
     /// <summary>
     /// Named aggregate calls over the group, answered beside Key and Rows of the grouping's answer.

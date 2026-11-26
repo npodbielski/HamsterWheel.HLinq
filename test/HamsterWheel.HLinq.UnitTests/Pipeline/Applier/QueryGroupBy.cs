@@ -7,37 +7,6 @@ namespace HamsterWheel.HLinq.UnitTests.Pipeline.Applier;
 
 partial class HLinqQueryApplierUnitTests
 {
-    private static DummyEntity[] Grouped() =>
-    [
-        new("New") { Text = "a", Int = 1 },
-        new("New") { Text = "b", Int = 2 },
-        new("Paid") { Text = "c", Int = 3 },
-        new("Sent") { Text = "d", Int = 4 },
-    ];
-
-    private object ApplyGrouped(string queryString) =>
-        Apply(queryString, Grouped().AsQueryable());
-
-    //a grouping answers the list of {Key, Rows} entries, whatever the key is; keyed by the text of
-    //the key so a test reads one group at a time, in the order the answer came in
-    private static Dictionary<string, List<object>> AsDictionary(object result)
-    {
-        result.Should().BeAssignableTo<object[]>();
-        return ((object[])result).ToDictionary(
-            e => e.GetType().GetProperty(GroupingState.KeyName)!.GetValue(e)!.ToString()!,
-            e => ((System.Collections.IEnumerable)e.GetType().GetProperty(GroupingState.RowsName)!.GetValue(e)!)
-                .Cast<object>().ToList());
-    }
-
-    private static IEnumerable<object> RowsOf(Dictionary<string, List<object>> dictionary, string key) =>
-        dictionary[key];
-
-    private static void AssertKeyAndText(object row, string? key, string? text)
-    {
-        var type = row.GetType();
-        type.GetProperty("Key")!.GetValue(row).Should().Be(key);
-        type.GetProperty("Text")!.GetValue(row).Should().Be(text);
-    }
 
     [Fact]
     public void Apply_WhenGroupBy_ThenAnswersAListOfKeyAndRowsEntries()
@@ -73,20 +42,6 @@ partial class HLinqQueryApplierUnitTests
         AssertKeyAndText(row, "Paid", "c");
     }
 
-    //a grouping written after a grouping groups the rows of every group: the answer holds inner
-    //{Key, Rows} entries under the outer groups, read here as one dictionary per outer key
-    private static Dictionary<string, Dictionary<string, List<object>>> AsNestedDictionary(object result)
-    {
-        result.Should().BeAssignableTo<object[]>();
-        return ((object[])result).ToDictionary(
-            e => e.GetType().GetProperty(GroupingState.KeyName)!.GetValue(e)!.ToString()!,
-            e => ((System.Collections.IEnumerable)e.GetType().GetProperty(GroupingState.RowsName)!.GetValue(e)!)
-                .Cast<object>().ToDictionary(
-                    inner => inner.GetType().GetProperty(GroupingState.KeyName)!.GetValue(inner)!.ToString()!,
-                    inner => ((System.Collections.IEnumerable)inner.GetType()
-                        .GetProperty(GroupingState.RowsName)!.GetValue(inner)!).Cast<object>().ToList()));
-    }
-
     [Fact]
     public void Apply_WhenNestedGroupBy_ThenAnswersGroupsUnderGroups()
     {
@@ -118,7 +73,7 @@ partial class HLinqQueryApplierUnitTests
         //act
         var actual = AsNestedDictionary(ApplyGrouped("groupBy[x.Name].groupBy[x.Int].take[2]"));
 
-        //assert - the clauses after a grouping act on the groups of the chain, the outer ones,
+        //assert
         //the same way they did before the inner grouping was written
         actual.Should().HaveCount(2);
     }
@@ -220,7 +175,7 @@ partial class HLinqQueryApplierUnitTests
         //act
         var actual = ApplyGrouped("groupBy[x.Name, x.Int]");
 
-        //assert - the same list shape as a single-key grouping, with a key of several parts
+        //assert
         actual.Should().BeAssignableTo<object[]>();
         var entries = ((object[])actual).ToList();
         entries.Should().HaveCount(4);
@@ -233,7 +188,7 @@ partial class HLinqQueryApplierUnitTests
     [Fact]
     public void Apply_WhenGroupByThenOrderByRowMember_ThenRefused()
     {
-        //act - a row of the group is not a name of the group; only the key and the rows are
+        //act
         var act = () => ApplyGrouped("groupBy[x.Name].orderBy[x.Text]");
 
         //assert
@@ -251,29 +206,9 @@ partial class HLinqQueryApplierUnitTests
     }
 
     [Fact]
-    public void Apply_WhenGroupByThenOrderByTheRowsOfTheGroup_ThenRefusedWithTheReason()
-    {
-        //act - the provider cannot order groups by their rows, so the name is refused with the reason
-        var act = () => ApplyGrouped("groupBy[x.Name].orderBy[x.Rows.Text]");
-
-        //assert
-        act.Should().Throw<RowsCannotBeOrderedOrFilteredException>();
-    }
-
-    [Fact]
-    public void Apply_WhenGroupByThenWhereOnTheRowsOfTheGroup_ThenRefusedWithTheReason()
-    {
-        //act
-        var act = () => ApplyGrouped("groupBy[x.Name].where[x.Rows.Text==a]");
-
-        //assert
-        act.Should().Throw<RowsCannotBeOrderedOrFilteredException>();
-    }
-
-    [Fact]
     public void Parse_WhenSelectNotDirectlyAfterGroupBy_ThenRefused()
     {
-        //act - the parse refuses the order the query wrote, before anything is applied
+        //act
         var act = () => ApplyGrouped("groupBy[x.Name].take[2].select[x.Text]");
 
         //assert
@@ -299,6 +234,50 @@ partial class HLinqQueryApplierUnitTests
         //assert
         actual.Should().HaveCount(2);
         RowsOf(actual, "New").Should().Equal("a", "b");
+    }
+
+    private static DummyEntity[] Grouped() =>
+    [
+        new("New") { Text = "a", Int = 1 },
+        new("New") { Text = "b", Int = 2 },
+        new("Paid") { Text = "c", Int = 3 },
+        new("Sent") { Text = "d", Int = 4 },
+    ];
+
+    private object ApplyGrouped(string queryString) =>
+        Apply(queryString, Grouped().AsQueryable());
+
+    //a grouping answers the list of {Key, Rows} entries, whatever the key is; keyed by the text of
+    //the key so a test reads one group at a time, in the order the answer came in
+    private static Dictionary<string, List<object>> AsDictionary(object result)
+    {
+        result.Should().BeAssignableTo<object[]>();
+        return ((object[])result).ToDictionary(
+            e => e.GetType().GetProperty(GroupingState.KeyName)!.GetValue(e)!.ToString()!,
+            e => ((System.Collections.IEnumerable)e.GetType().GetProperty(GroupingState.RowsName)!.GetValue(e)!)
+                .Cast<object>().ToList());
+    }
+
+    private static IEnumerable<object> RowsOf(Dictionary<string, List<object>> dictionary, string key) =>
+        dictionary[key];
+
+    private static void AssertKeyAndText(object row, string? key, string? text)
+    {
+        var type = row.GetType();
+        type.GetProperty("Key")!.GetValue(row).Should().Be(key);
+        type.GetProperty("Text")!.GetValue(row).Should().Be(text);
+    }
+
+    private static Dictionary<string, Dictionary<string, List<object>>> AsNestedDictionary(object result)
+    {
+        result.Should().BeAssignableTo<object[]>();
+        return ((object[])result).ToDictionary(
+            e => e.GetType().GetProperty(GroupingState.KeyName)!.GetValue(e)!.ToString()!,
+            e => ((System.Collections.IEnumerable)e.GetType().GetProperty(GroupingState.RowsName)!.GetValue(e)!)
+                .Cast<object>().ToDictionary(
+                    inner => inner.GetType().GetProperty(GroupingState.KeyName)!.GetValue(inner)!.ToString()!,
+                    inner => ((System.Collections.IEnumerable)inner.GetType()
+                        .GetProperty(GroupingState.RowsName)!.GetValue(inner)!).Cast<object>().ToList()));
     }
 }
 

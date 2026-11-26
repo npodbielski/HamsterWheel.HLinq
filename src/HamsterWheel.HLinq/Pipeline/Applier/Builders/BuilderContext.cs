@@ -10,17 +10,17 @@ public sealed record BuilderContext(ParameterExpression Param, Type Type, string
 {
     public CultureInfo Culture { get; private init; } = CultureInfo.InvariantCulture;
 
-    public IHLinqWarnings? Warnings { get; private init; }
+    public IHLinqDiagnostics? Diagnostics { get; private init; }
 
     public IReadOnlyDictionary<string, MemberExpression>? GroupMembers { get; private init; }
 
     public static BuilderContext From(Type source, ExpressionBuilder builder, string hLinqQuery,
-        CultureInfo culture, IHLinqWarnings? warnings = null,
+        CultureInfo culture, IHLinqDiagnostics? diagnostics = null,
         IReadOnlyDictionary<string, MemberExpression>? groupMembers = null) =>
         new(Expression.Parameter(source), source, hLinqQuery, builder)
         {
             Culture = culture,
-            Warnings = warnings,
+            Diagnostics = diagnostics,
             GroupMembers = groupMembers
         };
 
@@ -28,11 +28,11 @@ public sealed record BuilderContext(ParameterExpression Param, Type Type, string
     /// Builds a context from an existing parameter.
     /// </summary>
     public static BuilderContext FromExisting(ParameterExpression param, ExpressionBuilder builder,
-        string hLinqQuery, CultureInfo culture, IHLinqWarnings? warnings = null) =>
+        string hLinqQuery, CultureInfo culture, IHLinqDiagnostics? diagnostics = null) =>
         new(param, param.Type, hLinqQuery, builder)
         {
             Culture = culture,
-            Warnings = warnings
+            Diagnostics = diagnostics
         };
 
     public Expression ToExpression(ITreeElement element) => Builder.ToExpression(this, element);

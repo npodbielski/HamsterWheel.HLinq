@@ -3,6 +3,14 @@
 
 # Introduction
 
+Query your API through its query string - `where`, `select`, `orderBy`, `groupBy`, `skip` and `take` are
+translated to LINQ and applied to an `IQueryable` of your choice: an EF context against a database engine,
+or an in-memory collection. There are also extensions for ASP.NET Core, a client package, and function
+packs per database engine.
+```http request
+GET /demo/db?where[x.firstName.StartsWith(A)].skip[10].take[3].select[x.firstName,x.lastName]
+```
+
 ## Reference links
 
 - [Hamster Wheel](https://internetexception.com/why-hamster-wheel/)
@@ -12,13 +20,19 @@
 
 # What's contained in this project
 
-This project contains of two main parts:
+The project splits into two parts: the packages running inside your API, and the client used to build queries against such an API.
+
+Server side:
 - main package: HamsterWheel.HLinq that main implementation of HTTP Linq resource language
 - HamsterWheel.HLinq.Abstractions package that can be used to further develop extensions for HLinq and adding functionalities missing from main package
 - HamsterWheel.HLinq.AspNet package contains helpers for HLinq integration with Asp.NET core framework
 - HamsterWheel.HLinq.PgSql package with PostgreSql specific functions for use in HLinq queries
 - HamsterWheel.HLinq.MySql package with the MySQL and MariaDB provider functions for use in HLinq queries
 - HamsterWheel.HLinq.Sqlite package with EF Core SQLite functions for use in HLinq queries
+- HamsterWheel.HLinq.SqlServer package with EF Core SQL Server functions for use in HLinq queries
+- HamsterWheel.HLinq.Lang.Pl package with Polish keywords for HLinq queries
+
+Client side:
 - HamsterWheel.HLinq.Client package with fluent API for building HLinq queries on top of HttpClient
 
 
@@ -29,7 +43,11 @@ Navigation:
    - [Configuring HLinq inside API](#configuring-hlinq-inside-api)
      - [Default limit of records returned](#default-limit-of-records-returned)
      - [Overriding user requested number of records](#overriding-user-requested-number-of-records)
+     - [Query limits](#query-limits)
      - [Adding EF DB Functions](#adding-ef-db-functions)
+ - [Validating a query](#validating-a-query)
+   - [Validation error codes](#validation-error-codes)
+   - [With what validation can help](#with-what-validation-can-help)
  - [How to use on the client](#how-to-use-on-the-client)
    - [Syntax](#syntax)
      - [White space management](#white-space-management)
@@ -68,7 +86,7 @@ Below you can find instructions how to get you started using HLinq on the server
 
 First, reference AspNet package:
 ```xml
-<PackageReference Include="HamsterWheel.HLinq.AspNet" Version="0.14.0" />
+<PackageReference Include="HamsterWheel.HLinq.AspNet" Version="0.15.0" />
 ```
 
 After that add initialization of HLinq:
@@ -108,7 +126,7 @@ First you need to install package and configure it inside the host. Those are si
 
 Reference AspNet package:
 ```xml
-<PackageReference Include="HamsterWheel.HLinq.AspNet" Version="0.14.0" />
+<PackageReference Include="HamsterWheel.HLinq.AspNet" Version="0.15.0" />
 ```
 
 Initialize HLinq:
@@ -138,6 +156,17 @@ If a user is trying to fetch a huge quantity of data from the API by specifing i
 ```csharp
 builder.Services.ConfigureHLinq(c => c.HLinqOptions.HttpDefaultMaxTakeRecords = 100);
 ```
+
+### Query limits
+A query longer than the limit, or asking for more properties than the limit, is rejected before it is read:
+```csharp
+builder.Services.ConfigureHLinq(c =>
+{
+    c.HLinqOptions.MaximumQueryLength = 2048;        // default 4096 characters
+    c.HLinqOptions.MaximumNumberOfProperties = 20;   // default 100 properties
+});
+```
+`MaximumQueryLength` is the maximum allowed length of hlinq query, in characters. `MaximumNumberOfProperties` is the maximum number of properties a query may ask for, counting the properties a nested `select` writes as well. A query over either limit is invalid as a whole: the error does not specify a root name and only one error is returned.
 
 ### Adding EF DB Functions
 In Linq you can use DB functions from inside the C# code. Those functions are not evaluated on the .net side but translated in SQL and evaluated by the DB engine. HLinq allows you to use them, but it is not aware of your environment.
@@ -334,7 +363,7 @@ app.MapGet("/demo/sidekicks", (HLinqQuery<Sidekick> query, CancellationToken can
 {
     var sidekicks = query.ApplyTo(Sidekick.Sidekicks.AsQueryable(), cancellationToken);
 
-    foreach (var warning in query.Warnings.Reported)
+    foreach (var warning in query.Diagnostics.Warnings)
     {
         logger.LogWarning("HLinq chose {Member} of {Type} of {Competitors}", warning.Member, warning.Type,
             string.Join(", ", warning.Competitors));
@@ -507,6 +536,16 @@ Both sides of a comparison can be properties - a side starting with the entity l
 GET /data?where[x.Password==x.PasswordRepeat]
 ```
 The two properties have to be comparable with each other, `where[x.Name==x.Id]` reports that they are not.
+
+Two properties of different types can still be compared when one can be converted to the other:
+
+- nullable and not nullable: `where[x.Int==x.NullableInt]` compares two `int?` values;
+- a narrow and a wide number: `where[x.Int==x.Long]` compares two `long`s - two numbers meet in the smallest number that holds every value of both (`int` and `uint` in `long`, `uint` and `byte` in `uint`, the narrow widths in `int`);
+- an enum and an integral number: `where[x.Status==x.Level]` compares the numbers behind both;
+- an enum and a text: `where[x.Status==x.Name]` compares the text with the enum's string representation - its member's name, so `Status = Deleted` matches `Name = Deleted` and not `Name = 3`;
+- a `decimal` and a `double` or `float`: `where[x.Price==x.Rate]` compares two `double`s - a `decimal` of more digits than a `double` keeps about 17 is compared as its closest `double`, so its last digits are gone.
+
+When the engine finds no common type for both values it throws an error naming them - `where[x.Flag==x.Text]`, `where[x.Id==x.Int]`, `where[x.Children==x.Name]` - so you know there is a problem rather than silently process wrong results. A signed number and a `ulong` have no number that holds the values of both, so they are never compared and no math runs between them.
 
 To filter by records that do not have value use null keyword:
 ```http request
@@ -704,6 +743,30 @@ Constant values (`Substring(0,2)`) are converted using query culture the same wa
 
 Method return value can be assigned to arbitrary property. If you will omit assignment HLinq will use method name: `U=x.Name.ToUpper()` answers `U`, `x.Name.ToUpper()` answers `ToUpper`. If you will ask HLinq for two unnamed calls to the same method, only the last will be returned. Set explicit name to both to make sure both are returned.
 
+It is possible to build a property out of an expression written with `+ - * /`:
+```http request
+GET /data/persons?select[FullName=x.Name%2B%22%20%22%2Bx.Surname]
+GET /data/persons?select[N=x.Total%2Bx.Count*2]
+GET /data/persons?select[N=(x.A%2Bx.B)*2]
+```
+
+You have to provide name for property carying result of such operation in your query, i.e. `FullName=` in first example. Math operators can work with incompatible types. For example you can add `decimal` and `double` which is not possible in C# without the cast. HLinq queries does not have cast operation so engine have to figure out the best common type itself and cast one or both values to that type. Auto casting is designed to work the same as it works in C# with implicit casting. If engine will not be able to find sensible way to run math opearation on two values it will throw an error. Details for auto casting are [here](#filtering).
+
+Some math operations can only be used within `()` otherwise it would clash with existing syntax: `where[x.Id==77774169-BB9D-4DF9-A4A7-52019C4A445D]`, `where[x.Name==a+b]` and `select[Date=2023-10-12]`. `-` minus character in those queries is part of the value not subtraction. When you want `-` to be treated as calculation put it inside circle braces: `select[N=(2022-12-31)]`. It will cause HLinq to select property `N` that equals `1979` and without them it would be single string value. In some cases you may want to have mathematical operator part of the value instead, then it needs to be inside double quotes (`x.Name+"test+"`). 
+
+Over HTTP the operators need to be encoded (`+` as `%2B`, `"` as `%22`), otherwise addition operator, `+` would be just a ` `. In a direct query via extension methods it can be provided without http encode, for example: `select[FullName=x.Name+" "+x.Surname]`.
+
+Math operators can be used in `where` and in ordering roots:
+```http request
+GET /data/persons?where[x.Total-x.Paid>5]
+GET /data/persons?where[x.Name.ToUpper()%2Bx.Name==q]
+GET /data/persons?orderBy[x.Total-x.Paid]
+GET /data/persons?orderBy[(x.A%2Bx.B)*2]
+```
+
+It works also for `thenBy` and `groupBy`. Bear in mind that `where[(2-1)>x.Int]` is not allowed because it is not clear if `[()]` is a group of math expression. If you want to compare property with calculated constant write it: `where[x.Int<(2-1)]`. A computed value is converted to property type if necessary, exactly as not computed value: `2012-10-10` is a string that is coverted to date if it is compared to property with a date.
+`where[(2*1000+1)>x.Date]` is calculate to be `2001` and is converted to 1st January 2001, while `where[(x.A+x.B)>x.Date]`, where `A` is `int` and `B` is `Decimal` have no common type.
+
 HLinq creates a new type on the fly to be serialized to JSON and returns it to the client. This means that other properties of the original type are not returned.
 Selecting is not an exclusive operation. You need to be specific by providing which properties you are interested in. You cannot exclude properties by excluding them from the query.
 
@@ -775,6 +838,13 @@ GET /demo/memory?select[nyKey=x.key].groupBy[x.Status].select[x.key,x.myKey]
 ```
 This will allow to row inside the grouping to have both properties: original `key` and group `key`.
 
+The rows of a group can also be selected explicitly: `Rows=x.Rows.select(...)` changes set of properties in `Rows`, the same way in `select[]` - `a.City`, becomes `City`. It can be also referenced via `x.City` in subsequent parts of the query.
+In `select` after `groupBy` `x.Key` can be also used to reference group key:
+```http request
+GET /data/persons?groupBy[x.Status].select[Rows=x.Rows.select(a.Name,x.Key)]
+```
+Both spellings answer the same rows, so `Rows=x.Rows.select(a.Name)` and `select[a.Name]`-style members cannot be mixed in one `select` - the rows would be selected twice. An aggregate is not a row member and rides beside them: `select[C=x.Count(),Rows=x.Rows.select(a.Name)]`. `Rows=` may only select the group's own rows - `Rows=x.Addresses.select(...)` is refused, a collection of the row is not the group's rows - and no other member may take the name `Rows`.
+
 `take`, `skip`, `orderBy`, `where` and `count` written after a `groupBy` work on groups: 
 - `take[2]` keeps two groups
 - `count[]` answers how many groups there are.
@@ -822,6 +892,7 @@ To do this use any number of `thanBy` or `thanByDescending` roots after `orderBy
 ```http request
 GET /demo/memory?orderBy[x.Name].thenBy[x.realName]
 ```
+The key may be a computation written with `+ - * /`, the same shape a filter reads: `orderBy[x.Total-x.Paid]`, `orderBy[(x.A+x.B)*2]`, see [Selecting](#selecting).
 
 ## Using the C # client
 
@@ -978,6 +1049,21 @@ public class DescendingWord() : TokenWord<OrderByDescending>("↓");
 GET /demo/db?↓[x.firstName]
 ```
 
+## Using built-in HLinq converters
+
+HLinq uses `IDefaultConverter` for converting string values in the query to actual CLR types. You can use this converter in your own application:
+
+```csharp
+var age = DefaultConverter.Instance.ConvertTo<int>("21");
+var when = DefaultConverter.Instance.ConvertTo<DateTime>("\"2023-10-12\"", culture);
+```
+
+You can also customize this converter, with your own custom implementations:
+
+```csharp
+var converter = new DefaultConverter([.. DefaultConverter.GetDefaultConverters(), new MyConverter()], new NullKeyword());
+```
+
 ## Custom filters
 
 It is also possible to extend HLinq by writing custom expression converters. For example, if you need very complex filtering rules that require one or two simple parameters, you can write a custom converter.
@@ -1084,13 +1170,187 @@ collection.Where(x => x.Enum == RandomEnum.One).Select(c => new { c.Name, c.Enum
 ```
 
 
+# Validating a query
+To validate a query without running anything, use the `Validate` method:
+```csharp
+var errors = HLinqQuery<Person>.Validate(dependenciesBag, "where[x.Nope==1].select[x.Texto]");
+```
+`dependenciesBag` is the `HLinqBinderDependenciesBag` from DI and the text is the hlinq query to validate (`where[x.Int>0]`, or the whole request's query string). An already bound `HLinqQuery<T>` validates with `query.Validate()`, and any object or collection with `obj.ValidateHLinq(query)` - the same way `ExecuteHLinq` is used to run a query. A validation endpoint of an API can look like this:
+```csharp
+app.MapPost("/persons/validate", (ValidateRequest request, HLinqBinderDependenciesBag dependenciesBag) =>
+    Results.Ok(HLinqQuery<Person>.Validate(dependenciesBag, request.Query)));
+```
+The result is the list of all problems with the query, or nothing if the query is valid: `where[x.Nope==1&&x.Texto==2&&x.Into>3]` returns three errors at once. Each one says what is wrong, where it is, and what was possible there.
+
+An invalid query applied with `ApplyTo` throws, and the exception it throws carries the same list of errors on its `Errors` property.
+
+Over HTTP an invalid query answers with its first error in `title` and with the other details and the other errors (if any) in `errors`:
+`GET /demo/db?where[x.Nope==1]`
+
+```json
+{
+  "title": "Invalid property path 'Nope' for entity 'Person'. Available properties at this point are: 'id', 'firstName', 'lastName', 'email', 'ipAddress', 'addresses'",
+  "status": 400,
+  "errors": [
+    {
+      "errorCode": "unknown-member",
+      "rootKeyword": "where",
+      "text": "Nope",
+      "message": "Invalid property path 'Nope' for entity 'Person'. Available properties at this point are: 'id', 'firstName', 'lastName', 'email', 'ipAddress', 'addresses'",
+      "examples": [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "ipAddress",
+        "addresses"
+      ]
+    }
+  ]
+}
+```
+
+`GET /demo/db?where[x.Nope==1].select[x.Texto]` - two errors, one per root:
+
+```json
+{
+  "title": "Invalid property path 'Nope' for entity 'Person'. Available properties at this point are: 'id', 'firstName', 'lastName', 'email', 'ipAddress', 'addresses'",
+  "status": 400,
+  "errors": [
+    {
+      "errorCode": "unknown-member",
+      "rootKeyword": "where",
+      "text": "Nope",
+      "message": "Invalid property path 'Nope' for entity 'Person'. Available properties at this point are: 'id', 'firstName', 'lastName', 'email', 'ipAddress', 'addresses'",
+      "examples": [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "ipAddress",
+        "addresses"
+      ]
+    },
+    {
+      "errorCode": "unknown-member",
+      "rootKeyword": "select",
+      "text": "Texto",
+      "message": "Invalid property path 'Texto' for entity 'Person'. Available properties at this point are: 'id', 'firstName', 'lastName', 'email', 'ipAddress', 'addresses'",
+      "examples": [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "ipAddress",
+        "addresses"
+      ]
+    }
+  ]
+}
+```
+
+`GET /demo/db?take[abc]`
+
+```json
+{
+  "title": "Constant value of 'abc' can not be converted to type 'System.Int32'",
+  "status": 400,
+  "errors": [
+    {
+      "errorCode": "impossible-conversion",
+      "rootKeyword": "take",
+      "text": "abc",
+      "message": "Constant value of 'abc' can not be converted to type 'System.Int32'",
+      "examples": [
+        "System.Int32"
+      ]
+    }
+  ]
+}
+```
+
+`GET /demo/db?where[x.FirstName==x.Id]`
+
+```json
+{
+  "title": "Cannot compare a value of type 'String' with a value of type 'Int32' - use properties of the same type, or compare a property with a value of its type.",
+  "status": 400,
+  "errors": [
+    {
+      "errorCode": "invalid-comparison",
+      "rootKeyword": "where",
+      "text": "String vs Int32",
+      "message": "Cannot compare a value of type 'String' with a value of type 'Int32' - use properties of the same type, or compare a property with a value of its type.",
+      "examples": []
+    }
+  ]
+}
+```
+
+`GET /demo/db?where[10 20]`
+
+The query string is an invalid query, so the endpoint returns only the error details, with `rootKeyword` being null:
+
+```json
+{
+  "title": "HLinq query 'where[10 20]' is invalid at character 6: '10 20]'. Was expecting for example: ']'.",
+  "status": 400,
+  "errors": [
+    {
+      "errorCode": "invalid-query",
+      "rootKeyword": null,
+      "text": "10 20]",
+      "message": "HLinq query 'where[10 20]' is invalid at character 6: '10 20]'. Was expecting for example: ']'.",
+      "examples": [
+        "]"
+      ]
+    }
+  ]
+}
+```
+`errors` is always provided when the query is invalid. A query that does not parse answers with a single error. A response that has this property is an error.
+
+## Validation error codes
+Every error item contains an `errorCode` property. Here is the list of codes and what they mean:
+
+| code | what it says |
+| --- | --- |
+| `unknown-member` | no member of that name - `examples` are the possible members |
+| `impossible-conversion` | a string value of a constant provided in a query cannot be converted to its destination type (`take[abc]`) |
+| `invalid-comparison` | two values in a comparison cannot be compared (`where[x.Name>x.Int]`) - `text` names both types |
+| `constant-only-comparison` | two constants in a comparison, which is an invalid query (`where[1==1]`) |
+| `not-a-condition` | an invalid condition was provided |
+| `invalid-method-parameters` | the set of method parameters provided in a query does not match any overload - `examples` are its signatures |
+| `not-an-aggregate` | the name is no aggregate function - `examples` are the aggregates available |
+| `aggregate-needs-group` | an aggregate function used in an incorrect context, with nothing to fold |
+| `invalid-paging-value` | the value provided in a paging root is invalid (`take[-5]`) |
+| `duplicate-member-name` | two properties of the query were named the same |
+| `root-not-allowed` | the query used a root token in an incorrect context |
+| `invalid-query` | the query could not be parsed - `text` is the slice that stopped the parse |
+| `query-too-long` | longer than `MaximumQueryLength` |
+| `too-many-properties` | more properties than `MaximumNumberOfProperties` |
+| `unknown-culture` | the culture specified in the query was not recognized |
+| `refused` | general case for an invalid query, the sentence is the whole answer |
+
+`rootKeyword` is the name of the root where the error occurred (`where`, `select`, `orderBy`, `orderByDescending`, `thenBy`, `thenByDescending`, `groupBy`, `skip`, `take`, `count`). It is not translated - a query written in Polish says `where` here too. It is null when the whole query is invalid: it was too long, or used too many properties, or it was completely wrong. `message` is the sentence for a human reading a log; its wording is not a contract, `errorCode` is.
+
+## With what validation can help
+Validation operates on the CLR type that is the `IQueryable` generic argument when the query is applied. Because of that it does not know what the `IQueryable` source is and cannot check beyond the same validation the C# compiler gives you when writing Linq queries.
+
+Whether the underlying `IQueryable` provider - be it a database or an in-memory collection - will actually be able to answer such a query is an entirely different problem. An example is a DB function used incorrectly: even when the function name is right it may depend on the context, or it may only be usable with specific types. Beyond the function name and whether the parameters fit the function's signature, HLinq does not know that, so the function fails at the engine, exactly as the same call written by hand in Linq does. The packs measure that surface per engine (see [Db functions in a query](docs/db-functions/README.md)).
+
 # Roadmap
 - [x] Add support for grouping - `groupBy[key]` answers one entry per key with the rows under it, see [Grouping](#grouping)
 - [x] Add support for nested counts `[NumberOfAddresses=x.Addresses.Count()]` - a call over a collection is answered by the server in the same statement, see [Grouping](#grouping)
 - [x] Add support for nested type selects: `select[Addresses=x.Addresses.select(a.Street,a.City)]` - a shaped collection per row, joined by the server in one statement, see [Selecting](#selecting)
 - [x] Add support for methods in select: `select[R=reverse(x.Name)]` - the value of a call names the column it answers, an unnamed call names itself by the method, see [Selecting](#selecting)
+- [x] Select a group's rows explicitly: `groupBy[x.Status].select[Rows=x.Rows.select(a.Name)]` - the one spelling of the name `Rows`, other members of that name refused with the reason, see [Grouping](#grouping)
 - [x] Add support for other than bool methods in filters: `where[DateDiffDay(x.DateOfBirth, x.DateOfDeath)>36500]` - a function answering with a value is compared with what it returned, see [Db functions in a query](docs/db-functions/README.md)
-- [ ] Add support for property operation in select: `select[FullName=x.Name+' '+x.Surname]`
-- [ ] Deeper query analysis - a pass over the whole parsed query, not one clause at a time: every property path, method name and constant checked against the entity and the provider, so a query with an error anywhere is refused before anything runs (#2)
+- [x] Add support for property operation in select: `select[FullName=x.Name+" "+x.Surname]` - a value of the expression is a member, a call, a quoted text or a written number, the member must be renamed, and what `+ - * /` do is what the same expression written by hand in Linq does, see [Selecting](#selecting)
+- [x] Write math in a filter and in an ordering: `where[x.Total-x.Paid>5]`, `orderBy[(x.A+x.B)*2]`, `where[x.Date<=(2022-12-31)]` - bare after a member, a group where a value stands, and a folded constant meets the compared type through the converters, see [Selecting](#selecting)
+- [x] Query validation - `HLinqQuery<T>.Validate(...)` answers a query against a type without running it, every thing it gets wrong at once, each named by a code, see [Validating a query](#validating-a-query) (#2)
 - [x] Add support for other DBs - SQL Server, MySQL (and MariaDB) and SQLite packs beside Postgres, each installed by its own `Add...ToHLinq()` call
-- [x] Add support for changing grammar rules - the language is extended by registering words (pattern + adjacency rule), validated at startup, see the grammar design in AGENTS.md 
+- [x] Add support for changing grammar rules - the language is extended by registering words (pattern + adjacency rule), validated at startup, see the grammar design in AGENTS.md
+- [ ] Test membership of a written list: `where[[Paid,New].contains(x.Status)]` - a written collection is the source of the `Contains` every LINQ knows, the same shape a call over a member already has; measured: EF answers it as `WHERE ... IN (...)` on all three packs
+- [ ] Add `distinct[]` - deduplicate what a projection answers, so counting the distinct values of a column is `select[x.Status].distinct[].count[]` and not a `groupBy` shaped like an answer
+- [ ] Fold a whole column the way `count[]` counts it: `sum[x.Age]`, `avg[x.Balance]`, `min`/`max` - measured: EF answers each as a scalar subquery on all three packs; the answer shape (rows or one number) waits for the union-type decision (#24) 

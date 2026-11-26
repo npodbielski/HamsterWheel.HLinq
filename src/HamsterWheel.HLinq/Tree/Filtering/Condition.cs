@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tokens;
@@ -15,26 +16,30 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
     {
     }
 
-    public ILogicalOperatorToken? LogicalOpToken { get; }
-
     private Condition(ILogicalOperatorToken logicalOpToken) :
         base([(TokenBase)logicalOpToken]) => LogicalOpToken = logicalOpToken;
 
-    private ITreeElement Left => Children[0];
-    private ITreeElement Right => Children[2];
-
-    private ComparisonOperation? Comparison => GetChildOfType<ComparisonOperation>();
-
+    private ComparisonOperation? Comparison => this.GetChildOfType<ComparisonOperation>();
     private bool IsComparisonOrEqualityOp => _isComparison ??= Comparison is not null;
     private bool IsFlagCheck => Children.Length == 1;
-
     private bool IsMethod => _isMethod ??= GetMethod() is not null;
+    public ILogicalOperatorToken? LogicalOpToken { get; }
 
-    private Method? GetMethod() => GetChildOfType<Method>();
+    private Method? GetMethod() => this.GetChildOfType<Method>();
+
+    /// <summary>
+    /// The children split at the comparison operator, each side in the order the query wrote.
+    /// </summary>
+    private (IReadOnlyList<ITreeElement> Left, IReadOnlyList<ITreeElement> Right) Sides()
+    {
+        var operatorAt = Array.IndexOf(Children, Comparison ??
+                                                 throw new ComparisonConditionMustHaveComparisonTokenException());
+        return ([.. Children.Take(operatorAt)], [.. Children.Skip(operatorAt + 1)]);
+    }
 
     public sealed class Parser : ElementParserBase<Condition>
     {
-        protected override Type[] ValidParents { get; } = [typeof(WhereRoot), typeof(ConditionGroup)];
+        public override Type[] ValidParents { get; } = [typeof(WhereRoot), typeof(ConditionGroup)];
         public override IToken[] ExampleTokens => ConditionExampleTokens;
 
         public static IToken[] ConditionExampleTokens { get; } =
@@ -55,110 +60,68 @@ public sealed partial class Condition : TreeBranch, ILogicalOperationGroupBranch
             };
     }
 
-    public sealed class Converter(IConverterFactory converterFactory) : ElementToExpressionConverter<Condition>
+    public sealed class Converter(IDefaultConverter converter) : ElementToExpressionConverter<Condition>
     {
         protected override Expression Build(IBuilderContext context, Condition condition)
         {
             if (condition.IsComparisonOrEqualityOp)
             {
-                Expression? left = null;
-                Expression? right = null;
-
-                if (condition.Left is Method method)
-                {
-                    var conditionBuilderContext = new ArithmeticComparisonConditionBuilderContext(context);
-                    left = converterFactory.GetToExpressionConverterFor<Method>()
-                        .Build(conditionBuilderContext, method);
-                    conditionBuilderContext.ComparisonType = left.Type;
-                    right = conditionBuilderContext.ToExpression(condition.Right);
-                }
-                else if (condition.Right is Method reversedMethod)
-                {
-                    var conditionBuilderContext = new ArithmeticComparisonConditionBuilderContext(context);
-                    right = converterFactory.GetToExpressionConverterFor<Method>()
-                        .Build(conditionBuilderContext, reversedMethod);
-                    conditionBuilderContext.ComparisonType = right.Type;
-                    left = conditionBuilderContext.ToExpression(condition.Left);
-                }
-                else if (condition.Left is Property property)
-                {
-                    var conditionBuilderContext = new ArithmeticComparisonConditionBuilderContext(context);
-                    left = converterFactory.GetToExpressionConverterFor<Property>()
-                        .Build(conditionBuilderContext, property);
-                    right = conditionBuilderContext.ToExpression(condition.Right);
-                }
-                else if (condition.Right is Property reversedProperty)
-                {
-                    //the query compared a value with a property (`where[10<x.Int]`); the property is
-                    //what gives the compared type away, so it is built first
-                    var conditionBuilderContext = new ArithmeticComparisonConditionBuilderContext(context);
-                    right = converterFactory.GetToExpressionConverterFor<Property>()
-                        .Build(conditionBuilderContext, reversedProperty);
-                    left = conditionBuilderContext.ToExpression(condition.Left);
-                }
-                else if (condition.Left is EntityLeaf)
-                {
-                    var conditionBuilderContext = new ArithmeticComparisonConditionBuilderContext(context)
-                    {
-                        ComparisonType = context.Type
-                    };
-                    left = context.Param;
-                    right = conditionBuilderContext.ToExpression(condition.Right);
-                }
-
-                if (left is null || right is null)
-                {
-                    throw new ConditionElementMustHaveLeftAndRightException();
-                }
-
-                var comparison = condition.Comparison?.Comparison ??
-                                 throw new ComparisonConditionMustHaveComparisonTokenException();
-
-                try
-                {
-                    return comparison switch
-                    {
-                        Equality => Expression.Equal(left, right),
-                        GreaterOrEqualThan => Expression.GreaterThanOrEqual(left, right),
-                        GreaterThan => Expression.GreaterThan(left, right),
-                        Inequality => Expression.NotEqual(left, right),
-                        LessThan => Expression.LessThan(left, right),
-                        LessOrEqualThan => Expression.LessThanOrEqual(left, right),
-                        _ => throw new ComparisonConditionMustHaveComparisonTokenException()
-                    };
-                }
-                catch (Exception e) when (e is InvalidOperationException or ArgumentException)
-                {
-                    //the two sides have no comparison operator in common, i.e. `where[x.Name==x.Int]`
-                    throw new ComparisonOperandTypesCannotBeComparedException(left.Type, right.Type);
-                }
+                return BuildComparison(context, condition);
             }
 
             if (condition.IsMethod)
             {
-                var property = condition.GetChildOfType<Property>();
-                var methodCallContext = new MethodCallConditionBuilderContext(context);
-                if (property is not null)
+                //a call that answers no yes-or-no stands in the wrong place: `where[x.Count()]`
+                //folds a collection to a number, and a number is no condition
+                var call = context.Builder.BuildValue(context, condition.Children);
+                if (call.Type == typeof(bool))
                 {
-                    methodCallContext.ToExpression(property);
+                    return call;
                 }
-
-                return methodCallContext.ToExpression(GetMethod(condition));
             }
 
-            if (condition.IsFlagCheck)
+            if (!condition.IsFlagCheck)
             {
-                var left = context.ToExpression(condition.Left);
-                if (left.Type == typeof(bool))
-                {
-                    return left;
-                }
+                throw new NotSupportedConditionException();
             }
 
-            throw new NotSupportedConditionException();
+            var left = context.ToExpression(condition.Children[0]);
+            return left.Type == typeof(bool) ? left : throw new NotSupportedConditionException();
         }
 
-        private static Method GetMethod(Condition condition) =>
-            condition.GetChildOfType<Method>() ?? throw new ConditionMethodChildElementMissingException();
+        private Expression BuildComparison(IBuilderContext context, Condition condition)
+        {
+            var (left, right) = condition.Sides();
+            var builder = context.Builder;
+
+            //the side that says what is compared is built first: a value the query wrote becomes
+            //whatever the side it stands against answers, so it cannot be built before that
+            var comparisonContext = new ArithmeticComparisonConditionBuilderContext(context, converter);
+            Expression leftExpression;
+            Expression rightExpression;
+            if (builder.AnswersWithItsOwnType(left))
+            {
+                leftExpression = builder.BuildValue(comparisonContext, left);
+                comparisonContext.ComparisonType = leftExpression.Type;
+                rightExpression = builder.BuildValue(comparisonContext, right);
+            }
+            else if (builder.AnswersWithItsOwnType(right))
+            {
+                rightExpression = builder.BuildValue(comparisonContext, right);
+                comparisonContext.ComparisonType = rightExpression.Type;
+                leftExpression = builder.BuildValue(comparisonContext, left);
+            }
+            else
+            {
+                //both sides are written values: no type of the row says what they are, and nothing
+                //here reads the CLR type of a constant to guess it
+                throw new ConditionElementMustHaveLeftAndRightException();
+            }
+
+            var comparison = condition.Comparison?.Comparison ??
+                             throw new ComparisonConditionMustHaveComparisonTokenException();
+
+            return builder.BuildComparison(comparison, leftExpression, rightExpression);
+        }
     }
 }

@@ -1,3 +1,5 @@
+using HamsterWheel.HLinq.Exceptions;
+using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Tokens;
 
 namespace HamsterWheel.HLinq.Pipeline.Parser;
@@ -12,6 +14,26 @@ public sealed class ParsingContext(IHLinqQuery root) : IParsingContext
     public Stack<IGrowingElementContext> Parents { get; set; } = [];
     public string SourceQueryString { get; } = root.SourceQueryString;
 
+    public bool GroupingApplied { get; set; }
+
+    public void CheckAfterGroup()
+    {
+        if (!GroupingApplied || CurrentBranch is not { } clause)
+        {
+            return;
+        }
+
+        foreach (var property in clause.Properties())
+        {
+            var path = property.GetPath(SourceQueryString);
+            if (path.Length > 0
+                && string.Equals(path[0], GroupingState.RowsName, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new RowsCannotBeOrderedOrFilteredException();
+            }
+        }
+    }
+
     public void Push(ITreeElement newElement)
     {
         Current.Children.Add(newElement);
@@ -21,5 +43,11 @@ public sealed class ParsingContext(IHLinqQuery root) : IParsingContext
 
     public void GoToParent() => Current = Parents.Pop();
 
-    public void RemoveStartTokens(int number) => Tokens = Tokens[number..];
+    public void RemoveStartTokens(int number)
+    {
+        if (number > 0)
+        {
+            Tokens = Tokens[number..];
+        }
+    }
 }

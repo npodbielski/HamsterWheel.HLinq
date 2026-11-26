@@ -15,11 +15,14 @@ namespace HamsterWheel.HLinq.Tree.Grouping;
 
 public sealed class GroupByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot, IProjectionMembers
 {
-    public IReadOnlyList<ITreeElement> MemberSources =>
-        [.. Children.OfType<PropertyAssignment>()];
-
-    public bool NeedsObjectInitializer =>
-        MemberSources.Count > 1 || MemberSources.OfType<PropertyAssignment>().Any(a => a.NeedsObjectInitializer);
+    private bool NeedsObjectInitializer
+    {
+        get
+        {
+            var childrenOfType = this.ChildrenOfType<PropertyAssignment>();
+            return childrenOfType.Count > 1 || childrenOfType.Any(a => a.NeedsObjectInitializer);
+        }
+    }
 
     public sealed class Parser : ElementParserBase<GroupByRoot>
     {
@@ -48,7 +51,9 @@ public sealed class GroupByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
                     [RightSquareBracket.Empty]);
             }
 
+            context.GroupingApplied = true;
             context.CurrentBranch?.Finish(context, [bracket]);
+            context.CurrentBranch?.Children.RefuseDuplicateSelects(context.SourceQueryString);
             context.RemoveStartTokens(1);
         }
 
@@ -62,17 +67,17 @@ public sealed class GroupByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
     {
         protected override Expression Build(IBuilderContext context, GroupByRoot element)
         {
+            var memberSources = element.ChildrenOfType<PropertyAssignment>();
             //groupBy[x.Status] or a composite groupBy[x.Vendor, x.Status]
             if (!element.NeedsObjectInitializer)
             {
-                return element.MemberSources.Select(e => context.Builder.ToExpression(context, e))
+                return memberSources.Select(e => context.Builder.ToExpression(context, e))
                     .OfType<MemberExpression>().First();
             }
 
-            var properties = element.MemberSources.Select(context.ToPropInfo).ToArray();
+            var properties = memberSources.Select(context.ToPropInfo).ToArray();
             var type = DynamicFactory.CreateType(properties.Select(p => (p.Name, p.Type)));
-            var memberBindings = element.MemberSources
-                .Select(e => context.ToMemberAssignment(e, type)).Cast<MemberBinding>();
+            var memberBindings = memberSources.Select(e => context.ToMemberAssignment(e, type)).Cast<MemberBinding>();
 
             return Expression.MemberInit(Expression.New(type), memberBindings);
         }
@@ -88,36 +93,34 @@ public sealed class GroupByRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
             if (context.Grouping is { } outer)
             {
                 var innerKey = builder.GetProjection(outer.RowType, groupBy, hLinqQuery, culture,
-                    context.Warnings);
+                    context.Diagnostics);
 
                 return context.Next(context.Queryable, context.CurrentResultType, context.Count,
                     builder.Nest(outer, innerKey.Expression));
             }
 
             var rowType = context.CurrentResultType;
-            var key = builder.GetProjection(rowType, groupBy, hLinqQuery, culture, context.Warnings);
+            var key = builder.GetProjection(rowType, groupBy, hLinqQuery, culture, context.Diagnostics);
+            var state = StateOf(rowType, key.ResultType);
 
             var groupByMethod = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.GroupBy),
                 infos => infos is [_, { ParameterType.IsGenericType: true }] &&
                          infos[1].ParameterType.GenericTypeArguments[0].GetGenericTypeDefinition() ==
                          typeof(Func<,>), rowType, key.ResultType);
 
-            var grouping = (IQueryable)groupByMethod.Invoke(null, [context.Queryable, key.Expression])!;
-
-            var state = StateOf(grouping, rowType, key.ResultType);
-
-            return context.Next(grouping, state.GroupingItemType, grouping: state);
+            return context.NextByCalling(state.GroupingItemType,
+                source => (IQueryable)groupByMethod.Invoke(null, [source, key.Expression])!,
+                grouping: state);
         }
     }
 
-    private static GroupingState StateOf(IQueryable grouping, Type rowType, Type keyType)
+    private static GroupingState StateOf(Type rowType, Type keyType)
     {
         var groupingItemType = typeof(IGrouping<,>).MakeGenericType(keyType, rowType);
         var groupParam = Expression.Parameter(groupingItemType, "g");
         var keyMember = Expression.Property(groupParam, GroupingState.KeyName);
         var rowParam = Expression.Parameter(rowType, "row");
         var rowSelector = Expression.Lambda(typeof(Func<,>).MakeGenericType(rowType, rowType), rowParam, rowParam);
-        return new GroupingState(grouping, rowType, keyType, groupingItemType, groupParam, keyMember,
-            rowSelector, rowType);
+        return new GroupingState(rowType, keyType, groupingItemType, groupParam, keyMember, rowSelector, rowType);
     }
 }

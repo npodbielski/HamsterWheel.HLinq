@@ -24,3 +24,20 @@ public class TestsFallbackConverter : FallbackConverterBase
         return (true, JsonSerializer.Deserialize(value!.ToString()!, to));
     }
 }
+//an int conversion of a host, ahead of the engine's own reading of an int
+public sealed class ShiftedIntConverter : IConfigurableValueConverter
+{
+    public const int Shift = 1979;
+
+    public int Priority => 999;
+
+    public (bool success, object? result) TryConvert(object? value, Type to, CultureInfo? culture = null)
+    {
+        if (to != typeof(int) || value is not string)
+        {
+            return (false, null);
+        }
+
+        return (true, Shift);
+    }
+}

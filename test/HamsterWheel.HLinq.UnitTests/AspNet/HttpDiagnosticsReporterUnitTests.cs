@@ -8,26 +8,12 @@ using Microsoft.Extensions.Logging;
 namespace HamsterWheel.HLinq.UnitTests.AspNet;
 
 /// <summary>
-/// What a request hears about the members its query could not decide between: one header line per
-/// choice, none at all when the application asked for none, and a word that there were more than the
-/// response was willing to carry.
+/// What a request hears about members its query could not decide between.
 /// </summary>
-public class HttpResponseWarningsUnitTests
+public class HttpDiagnosticsReporterUnitTests
 {
-    private static HLinqMemberWarning Warning(int of) =>
-        new(HLinqMemberWarningReason.AmbiguousName, "Name", "Demo.Ranked", ["Name", "NAME"],
-            $"where[x.nAmE=={of}]");
 
-    private readonly RecordedLog<HttpResponseWarnings> _log = new();
-
-    private HttpResponseWarnings Sink(DefaultHttpContext context, bool asHeaders = true) =>
-        new(new HttpContextAccessor
-        {
-            HttpContext = context
-        }, new HLinqOptions
-        {
-            EmitWarnings = asHeaders
-        }, _log);
+    private readonly RecordedLog<HttpDiagnosticsReporter> _log = new();
 
     [Fact]
     public void WhenAWarningIsReported_ThenTheResponseCarriesItOnAHeaderLineOfItsOwn()
@@ -97,7 +83,7 @@ public class HttpResponseWarningsUnitTests
 
         //assert
         context.Response.Headers.ContainsKey("X-HLinq-Warning").Should().BeFalse();
-        sink.Reported.Should().HaveCount(1);
+        sink.Warnings.Should().HaveCount(1);
         _log.Lines.Should().HaveCount(1);
     }
 
@@ -109,16 +95,29 @@ public class HttpResponseWarningsUnitTests
         var sink = Sink(context);
 
         //act
-        for (var i = 0; i < HttpResponseWarnings.HeaderLimit + 2; i++)
+        for (var i = 0; i < HttpDiagnosticsReporter.HeaderLimit + 2; i++)
         {
             sink.Report(Warning(i));
         }
 
         //assert
         var header = context.Response.Headers["X-HLinq-Warning"].ToArray();
-        header.Should().HaveCount(HttpResponseWarnings.HeaderLimit + 1);
+        header.Should().HaveCount(HttpDiagnosticsReporter.HeaderLimit + 1);
         header.Last().Should().Be("more=\"true\"");
-        sink.Reported.Should().HaveCount(HttpResponseWarnings.HeaderLimit + 2);
-        _log.Lines.Should().HaveCount(HttpResponseWarnings.HeaderLimit + 2);
+        sink.Warnings.Should().HaveCount(HttpDiagnosticsReporter.HeaderLimit + 2);
+        _log.Lines.Should().HaveCount(HttpDiagnosticsReporter.HeaderLimit + 2);
     }
+
+    private static HLinqMemberWarning Warning(int of) =>
+        new(HLinqMemberWarningReason.AmbiguousName, "Name", "Demo.Ranked", ["Name", "NAME"],
+            $"where[x.nAmE=={of}]");
+
+    private HttpDiagnosticsReporter Sink(DefaultHttpContext context, bool asHeaders = true) =>
+        new(new HttpContextAccessor
+        {
+            HttpContext = context
+        }, new HLinqOptions
+        {
+            EmitWarnings = asHeaders
+        }, _log);
 }

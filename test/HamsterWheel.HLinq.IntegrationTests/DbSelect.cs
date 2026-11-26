@@ -4,6 +4,7 @@ using System.Text.Json;
 using FluentAssertions;
 using HamsterWheel.HLinq.Client;
 using HamsterWheel.HLinq.Demo.Data;
+using Microsoft.AspNetCore.Mvc;
 
 namespace HamsterWheel.HLinq.IntegrationTests;
 
@@ -107,8 +108,24 @@ partial class DbDataTests
         ]);
     }
 
-    private static string Json(object value) =>
-        JsonSerializer.Serialize(value, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+    [Theory]
+    [InlineData("select[x.FirstName,x.FirstName]")]
+    [InlineData("select[Z=x.FirstName,Z=x.LastName]")]
+    [InlineData("select[Z=x.FirstName,Z=x.Id]")]
+    [InlineData("select[S=x.Addresses.select(Z=a.Street,Z=a.City)]")]
+    public async Task WhenTwoMembersAnswerUnderOneName_ThenReturns400WithTheReason(string query)
+    {
+        //act
+        //database is never asked which of the two values it should answer
+        var response = await fixture.Client.GetAsync($"/demo/db?{query}.take[10]");
+
+        //assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var error = (await response.Content.ReadFromJsonAsync<ProblemDetails>()).Should().NotBeNull()
+            .And.BeOfType<ProblemDetails>().Which;
+        error.Status.Should().Be(400);
+        error.Title.Should().MatchEquivalentOf("*answers two values*");
+    }
 
     [Fact]
     public async Task WhenSelectCallRenamed_ThenServerAnswersTheCall()
@@ -117,7 +134,7 @@ partial class DbDataTests
         var response = await fixture.Client.GetAsync("/demo/db?select[U=x.FirstName.ToUpper()].take[10]");
         response.EnsureSuccessStatusCode();
 
-        //assert - the server folds the call, exactly as the same Linq written by hand
+        //assert
         Json(await response.Content.ReadFromJsonAsync<JsonElement>()).Should().Be(
             Json(Persons.Select(x => new { U = x.FirstName.ToUpper() }).Take(10).ToList()));
     }
@@ -145,4 +162,7 @@ partial class DbDataTests
         Json(await response.Content.ReadFromJsonAsync<JsonElement>()).Should().Be(
             Json(Persons.Select(x => new { R = x.FirstName.Substring(0, 2) }).Take(10).ToList()));
     }
+
+    private static string Json(object value) =>
+        JsonSerializer.Serialize(value, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 }

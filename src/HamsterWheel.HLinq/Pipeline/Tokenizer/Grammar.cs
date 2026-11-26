@@ -59,51 +59,55 @@ public class Grammar(IEnumerable<IHLinqWord> tokenWords) : IGrammar
             ]),
             new GrammarRule<RangeOperator>(false, [static pt => pt is [.., Take or Skip, LeftSquareBracket]]),
             new GrammarRule<And>(false,
-                [static pt => pt is [.., NameOrValue or PropertyName or RightCircleBracket]]),
+                [static pt => pt is [.., NameOrValue or PropertyName or RightCircleBracket or MathOperand]]),
             new GrammarRule<Or>(false,
-                [static pt => pt is [.., NameOrValue or PropertyName or RightCircleBracket]]),
+                [static pt => pt is [.., NameOrValue or PropertyName or RightCircleBracket or MathOperand]]),
             new GrammarRule<Entity>(false,
             [
                 static pt => pt is
                     [.., LeftSquareBracket or And or Or or Comma or LeftCircleBracket or Assignment or
-                        IComparisonToken]
+                        IComparisonToken or IMathOperatorToken]
             ]),
             new GrammarRule<Comma>(false,
-                [static pt => pt is [.., NameOrValue or PropertyName or RightCircleBracket]]),
+                [static pt => pt is [.., NameOrValue or PropertyName or RightCircleBracket or MathOperand]]),
             new GrammarRule<Dot>(false,
             [
                 static pt => pt is [.., Entity or PropertyName or RightSquareBracket or SubEntity]
             ]),
             new GrammarRule<Assignment>(false,
                 [static pt => pt.Count > 0 && pt is [.., NameOrValue]],
-                insideClauseOf: typeof(Select)),
+                insideRootOf: [typeof(Select)]),
             new GrammarRule<Equality>(false,
-                [static pt => pt is [.., NameOrValue or PropertyName or Entity or RightCircleBracket]],
-                outsideClauseOf: typeof(Select)),
+                [static pt => pt is [.., NameOrValue or PropertyName or Entity or RightCircleBracket or MathOperand]],
+                outsideRootOf: [typeof(Select)]),
             new GrammarRule<Inequality>(false,
-                [static pt => pt is [.., NameOrValue or PropertyName or Entity or RightCircleBracket]],
-                outsideClauseOf: typeof(Select)),
+                [static pt => pt is [.., NameOrValue or PropertyName or Entity or RightCircleBracket or MathOperand]],
+                outsideRootOf: [typeof(Select)]),
             new GrammarRule<LessOrEqualThan>(false,
-                [static pt => pt is [.., NameOrValue or PropertyName or Entity or RightCircleBracket]],
-                outsideClauseOf: typeof(Select)),
+                [static pt => pt is [.., NameOrValue or PropertyName or Entity or RightCircleBracket or MathOperand]],
+                outsideRootOf: [typeof(Select)]),
             new GrammarRule<LessThan>(false,
-                [static pt => pt is [.., NameOrValue or PropertyName or Entity or RightCircleBracket]],
+                [static pt => pt is [.., NameOrValue or PropertyName or Entity or RightCircleBracket or MathOperand]],
                 nextCharsRefused: endsComparison,
-                outsideClauseOf: typeof(Select)),
+                outsideRootOf: [typeof(Select)]),
             new GrammarRule<GreaterOrEqualThan>(false,
-                [static pt => pt is [.., NameOrValue or PropertyName or Entity or RightCircleBracket]],
-                outsideClauseOf: typeof(Select)),
+                [static pt => pt is [.., NameOrValue or PropertyName or Entity or RightCircleBracket or MathOperand]],
+                outsideRootOf: [typeof(Select)]),
             new GrammarRule<GreaterThan>(false,
-                [static pt => pt is [.., NameOrValue or PropertyName or Entity or RightCircleBracket]],
+                [static pt => pt is [.., NameOrValue or PropertyName or Entity or RightCircleBracket or MathOperand]],
                 nextCharsRefused: endsComparison,
-                outsideClauseOf: typeof(Select)),
+                outsideRootOf: [typeof(Select)]),
             new GrammarRule<LeftCircleBracket>(false,
             [
-                static pt => pt is [.., LeftSquareBracket or And or Or or MethodName or LeftCircleBracket]
+                static pt => pt is
+                    [.., LeftSquareBracket or And or Or or MethodName or LeftCircleBracket]
+                    or [.., IMathOperatorToken]
+                    or [.., Assignment]
+                    or [.., IComparisonToken]
             ]),
             new GrammarRule<RightCircleBracket>(false,
             [
-                static pt => pt is [.., NameOrValue or PropertyName or RightCircleBracket],
+                static pt => pt is [.., NameOrValue or PropertyName or RightCircleBracket or MathOperand],
                 static pt => pt is [.., LeftCircleBracket]
             ]),
             new GrammarRule<LeftSquareBracket>(false,
@@ -117,19 +121,52 @@ public class Grammar(IEnumerable<IHLinqWord> tokenWords) : IGrammar
             new GrammarRule<RightSquareBracket>(false,
                 [
                     static pt => pt is
-                        [.., PropertyName or NameOrValue or RightCircleBracket or LeftSquareBracket or RangeOperator]
+                        [
+                            .., PropertyName or NameOrValue or RightCircleBracket or LeftSquareBracket or RangeOperator
+                                or MathOperand
+                        ]
                 ]
             ),
             new GrammarRule<MethodName>(false,
             [
-                static pt => pt is [.., Dot or LeftSquareBracket or IComparisonToken or Assignment]
+                static pt => pt is [.., Dot or LeftSquareBracket or IComparisonToken or Assignment
+                    or IMathOperatorToken]
             ]),
             new GrammarRule<SubEntity>(false,
             [
-                static pt => pt is [.., LeftCircleBracket or Comma or Assignment] && InsideCircleBrackets(pt)
-            ], insideClauseOf: typeof(Select))
+                static pt => pt is [.., LeftCircleBracket or Comma or Assignment or IMathOperatorToken]
+                && InsideCircleBrackets(pt)
+            ], insideRootOf: [typeof(Select)]),
+            new GrammarRule<Plus>(false,
+                [GetMathOperatorPreviousTokens], insideRootOf: MathRoots),
+            new GrammarRule<Minus>(false,
+                [GetMathOperatorPreviousTokens], insideRootOf: MathRoots),
+            new GrammarRule<Multiply>(false,
+                [GetMathOperatorPreviousTokens], insideRootOf: MathRoots),
+            new GrammarRule<Divide>(false,
+                [GetMathOperatorPreviousTokens], insideRootOf: MathRoots),
+            new GrammarRule<MathOperand>(false,
+            [
+                static pt => pt is [.., IMathOperatorToken],
+                static pt => pt is [.., IMathOperatorToken, LeftCircleBracket] or
+                    [.., Assignment, LeftCircleBracket] or
+                    [.., IComparisonToken, LeftCircleBracket] or
+                    [.., LeftCircleBracket, LeftCircleBracket]
+            ], insideRootOf: MathRoots),
         ];
     }
+
+    /// <summary>
+    /// The roots that read a computed value: a member of a select, a side of a comparison, a key.
+    /// </summary>
+    private static readonly Type[] MathRoots =
+    [
+        typeof(Select), typeof(Where), typeof(OrderBy), typeof(OrderByDescending),
+        typeof(ThenBy), typeof(ThenByDescending)
+    ];
+
+    private static bool GetMathOperatorPreviousTokens(IReadOnlyList<IToken> pt) =>
+        pt is [.., PropertyName or RightCircleBracket or MathOperand];
 
     private static bool InsideCircleBrackets(IReadOnlyList<IToken> previousTokens)
     {

@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using FluentAssertions;
-using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
@@ -13,11 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace HamsterWheel.HLinq.UnitTests.Providers;
 
 /// <summary>
-/// What a grouping with aggregates asks of the engine: the aggregate is computed by the server in
-/// the grouped subquery - a <c>GROUP BY</c> with <c>HAVING</c> and <c>ORDER BY agg</c> - never
-/// client-side. The grouped queries below are query text through the whole pipeline - tokenizer,
-/// parser, appliers - stopped at the statement the provider would be asked, in every provider
-/// pack; the Postgres integration suite repeats the check against a live server.
+/// A grouping with aggregates is computed by the server, never client-side, in every pack.
 /// </summary>
 public class GroupAggregateTranslationUnitTests
 {
@@ -103,10 +98,7 @@ public class GroupAggregateTranslationUnitTests
     }
 
     /// <summary>
-    /// The query an HLinq query text becomes, before anyone enumerates it: every clause runs
-    /// through the appliers the endpoint runs and the grouping's projection stands at the end, so
-    /// <c>ToQueryString</c> shows exactly the statement the server would be asked. The applier
-    /// itself cannot be used here - it materializes, and these contexts have no server.
+    /// The grouped statement the server would be asked, before anyone enumerates it.
     /// </summary>
     private IQueryable ServerQueryOf(DbContext context, string query)
     {
@@ -141,13 +133,11 @@ public class GroupAggregateTranslationUnitTests
         var builder = Builder();
         var tokens = Services.Tokenizer.Tokenize(clause);
         var tree = new HLinqParser(Services.Parsers).TestParseEntryPoint<Owner>(clause, tokens);
-        return builder.GetSelect(typeof(Owner), tree.GetAll<SelectRoot>().First(), clause,
-            warnings: new HLinqWarnings()).Expression;
+        return builder.GetSelect(typeof(Owner), tree.GetAll<SelectRoot>().First(), clause).Expression;
     }
 
     /// <summary>
-    /// The shape the navigation count walks: a row and the collection under it, with the members
-    /// the query text names (`Children`, and `Name` for the other measurements).
+    /// The shape the navigation count walks: a row and the collection under it.
     /// </summary>
     public class Owner
     {

@@ -40,6 +40,12 @@ public sealed class CountRoot(IToken[] tokens) : TreeBranch(tokens)
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Count),
                 infos => infos.Length == 1, context.CurrentResultType);
 
+            //validating does not ask a source how many rows it has
+            if (context.ValidateMode)
+            {
+                return context.Next(null, typeof(int));
+            }
+
             return context.Next(null, typeof(int), (int)method.Invoke(null, [context.Queryable])!);
         }
     }

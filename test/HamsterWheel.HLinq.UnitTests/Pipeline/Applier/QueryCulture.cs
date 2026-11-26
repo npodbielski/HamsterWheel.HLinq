@@ -2,20 +2,14 @@ using AutoFixture.Xunit3;
 using FluentAssertions;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline;
-using HamsterWheel.HLinq.Pipeline.Applier;
-using HamsterWheel.HLinq.Pipeline.Applier.Builders;
-using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Request;
 using HamsterWheel.HLinq.UnitTests.TestUtils.Dummies;
 using HamsterWheel.HLinq.UnitTests.TestUtils.Fixtures.AutoData;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace HamsterWheel.HLinq.UnitTests.Pipeline.Applier;
 
 /// <summary>
-/// Any culture the runtime knows is a culture a request may ask for. A request that names nothing is
-/// read in the invariant culture and a request that names a name is refused, so no query is ever read
-/// in a culture nobody asked for.
+/// A request names a culture, asks for none, or is refused.
 /// </summary>
 public partial class HLinqQueryApplierUnitTests
 {
@@ -24,7 +18,7 @@ public partial class HLinqQueryApplierUnitTests
     public void Apply_WhenRequestNamesPolish_ThenReadsItsValuesInPolish(
         [CollectionSize(100)] DummyEntity[] entities)
     {
-        //arrange - there a comma is where the fraction starts
+        //arrange
         var hLinqQuery = Parse("""culture=pl-PL&where[x.Decimal>"1,2"]""");
 
         //act
@@ -39,7 +33,7 @@ public partial class HLinqQueryApplierUnitTests
     public void Apply_WhenRequestNamesAnEnglishCulture_ThenReadsItsValuesInIt(
         [CollectionSize(100)] DummyEntity[] entities)
     {
-        //arrange - and there the same characters group thousands
+        //arrange
         var hLinqQuery = Parse("""culture=en-GB&where[x.Decimal>"1,2"]""");
 
         //act
@@ -60,7 +54,7 @@ public partial class HLinqQueryApplierUnitTests
         //act
         var actual = NewApplier().Apply(entities.AsQueryable(), hLinqQuery);
 
-        //assert - here the comma groups thousands, and a request that names nothing means this
+        //assert
         actual.Should().BeEquivalentTo(entities.Where(x => x.Decimal > 12m));
     }
 
@@ -75,7 +69,7 @@ public partial class HLinqQueryApplierUnitTests
         //act
         var actual = NewApplier().Apply(entities.AsQueryable(), hLinqQuery);
 
-        //assert - naming nothing and naming the invariant culture are the same request
+        //assert
         actual.Should().BeEquivalentTo(entities.Where(x => x.Decimal > 12m));
     }
 
@@ -100,7 +94,7 @@ public partial class HLinqQueryApplierUnitTests
     [InlineData("culture=en-GB&")]
     public void Apply_WhenAValueHoldsAnUnquotedComma_ThenTheQueryIsRefusedInEveryCulture(string culture)
     {
-        //arrange - an unquoted comma belongs to no value, in any culture: it separates the arguments of a
+        //arrange
         //method, so here it separates two values where a filter expects one and the closing bracket
         var parse = () => Parse($"""{culture}where[x.Decimal>1,2]""");
 
@@ -114,7 +108,7 @@ public partial class HLinqQueryApplierUnitTests
     public void Apply_WhenACommaCultureReadsADotValue_ThenItIsRefusedAndNotReadAsGrouped(
         [CollectionSize(100)] DummyEntity[] entities)
     {
-        //arrange - there the fraction starts where the comma is, so `2.5` is no number: reading it as 25
+        //arrange
         //would answer a question nobody asked
         var hLinqQuery = Parse("""culture=pl-PL&where[x.Decimal>2.5]""");
         var apply = () => NewApplier().Apply(entities.AsQueryable(), hLinqQuery);
@@ -129,7 +123,7 @@ public partial class HLinqQueryApplierUnitTests
     public void Apply_WhenADotCultureReadsADotValue_ThenItIsReadAsAFraction(
         [CollectionSize(100)] DummyEntity[] entities)
     {
-        //arrange - and where the fraction starts at the dot, the same text is the number it says
+        //arrange
         var hLinqQuery = Parse("""culture=en-GB&where[x.Decimal>2.5]""");
 
         //act
@@ -139,10 +133,7 @@ public partial class HLinqQueryApplierUnitTests
         actual.Should().BeEquivalentTo(entities.Where(x => x.Decimal > 2.5m));
     }
 
-    private static HLinqQueryApplier NewApplier() =>
-        new(ServicesCollection.Provider.GetRequiredService<IElementApplierFactory>(),
-            ServicesCollection.Provider.GetRequiredService<IMethodsCache>(),
-            ServicesCollection.Provider.GetRequiredService<IExpressionBuilder>());
+    private static HLinqQueryApplier NewApplier() => ServicesCollection.NewApplier();
 
     private static HLinqQuery<DummyEntity> Parse(string request) =>
         HLinqQuery<DummyEntity>.Parse(ServicesCollection.BinderDependenciesBag, request);

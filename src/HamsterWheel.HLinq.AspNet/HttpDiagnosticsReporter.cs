@@ -4,14 +4,12 @@ using Microsoft.Extensions.Primitives;
 namespace HamsterWheel.HLinq.AspNet;
 
 /// <summary>
-/// The warnings of a request, written to its response as they arrive and logged either way. They are
-/// known while the query is applied to data, which is after an endpoint read the query and before it
-/// wrote a byte of the answer - so a header still fits.
+/// Reports hlinq warnings to http response
 /// </summary>
-public class HttpResponseWarnings(
+public class HttpDiagnosticsReporter(
     IHttpContextAccessor httpContextAccessor,
     IHLinqOptions options,
-    ILogger<HttpResponseWarnings> logger) : HLinqWarnings
+    ILogger<HttpDiagnosticsReporter> logger) : HLinqDiagnostics
 {
     /// <summary>
     /// How many of them a response names. Kestrel caps the whole header block of a response, and a
@@ -39,7 +37,7 @@ public class HttpResponseWarnings(
             return;
         }
 
-        if (Reported.Count <= HeaderLimit)
+        if (Warnings.Count <= HeaderLimit)
         {
             response.Headers.Append(HLinqMemberWarning.Header, value);
             return;

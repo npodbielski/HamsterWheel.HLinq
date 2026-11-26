@@ -33,18 +33,6 @@ public partial class RandomDataTests(DemoFixture fixture)
     public async Task WhenQuotedDecimalReachesItsType_ThenCanFilter() =>
         await FilterAndAssert("""where[x.Decimal>"1.5"]""", x => x.Decimal > 1.5m);
 
-    private async Task FilterAndAssert(string query, Func<RandomData, bool> expected)
-    {
-        //act
-        var response = await fixture.Client.GetAsync($"/demo/random?{query}");
-
-        //assert - the quotes say the text is one value, they do not make it a string
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var data = await response.Content.ReadFromJsonAsync<RandomData[]>(
-            ResponseHLinqClientQueryBuilder.DefaultJsonSerializerOptions);
-        data.Should().BeEquivalentTo(RandomData.Get().Where(expected));
-    }
-
     [Fact]
     public async Task WhenQuotedCommaReachesADecimal_ThenItGroupsThousands() =>
         await FilterAndAssert("""where[x.Decimal>"1,2"]""", x => x.Decimal > 12m);
@@ -54,13 +42,18 @@ public partial class RandomDataTests(DemoFixture fixture)
         await FilterAndAssert("where[x.Double>1e3]", x => x.Double > 1_000);
 
     [Fact]
-    public async Task WhenNumberIsWrittenInParentheses_ThenReturns400()
+    public async Task WhenNumberIsWrittenInParentheses_ThenTheParenthesesGroupIt()
     {
         //act
         var response = await fixture.Client.GetAsync("/demo/random?where[x.Int>(5)]");
 
-        //assert - `(5)` is not how the query language writes minus five
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        //assert
+        //number answers on its own; a converter that read `(5)` as minus five was refused on purpose,
+        //so the parentheses group and never turn a number into its negative
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var data = await response.Content.ReadFromJsonAsync<RandomData[]>(
+            ResponseHLinqClientQueryBuilder.DefaultJsonSerializerOptions);
+        data.Should().BeEquivalentTo(RandomData.Get().Where(x => x.Int > 5));
     }
 
     [Fact]
@@ -69,7 +62,19 @@ public partial class RandomDataTests(DemoFixture fixture)
         //act
         var response = await fixture.Client.GetAsync("/demo/random?where[x.Int>\"abc\"]");
 
-        //assert - quoting asks for the text to be read as an Int32, it does not exempt it from being one
+        //assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    private async Task FilterAndAssert(string query, Func<RandomData, bool> expected)
+    {
+        //act
+        var response = await fixture.Client.GetAsync($"/demo/random?{query}");
+
+        //assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var data = await response.Content.ReadFromJsonAsync<RandomData[]>(
+            ResponseHLinqClientQueryBuilder.DefaultJsonSerializerOptions);
+        data.Should().BeEquivalentTo(RandomData.Get().Where(expected));
     }
 }

@@ -11,7 +11,8 @@ namespace HamsterWheel.HLinq.Tree.Filtering;
 /// The name of an aggregate is resolved from Enumerable's own signatures rather than a list kept
 /// here, so what a query may name changes only when LINQ does.
 /// </summary>
-public sealed partial class AggregateMethodToExpressionConverter(IAggregatesCache cache) : IAggregateMethodToExpressionConverter
+public sealed partial class AggregateMethodToExpressionConverter(IAggregatesCache cache)
+    : IAggregateMethodToExpressionConverter
 {
     public Expression BuildOverEntity(IBuilderContext context, IMethod method)
     {
@@ -74,6 +75,22 @@ public sealed partial class AggregateMethodToExpressionConverter(IAggregatesCach
         return Resolve(context, method, item).Method.ReturnType;
     }
 
+    /// <summary>
+    /// The type an aggregate written on the subject of the clause answers.
+    /// </summary>
+    public Type ReturnTypeOverSubject(IBuilderContext context, IMethod method)
+    {
+        var name = method.GetName(context.HLinqQuery);
+        if (!cache.IsAggregateName(name))
+        {
+            throw new NotAnAggregateException(name, cache.Names());
+        }
+
+        return cache.ItemOf(context.Type) is not { } item
+            ? throw new EntityAggregateNeedsGroupException(name)
+            : Resolve(context, method, item).Method.ReturnType;
+    }
+
     private (MethodInfo Method, (ParameterExpression Row, MemberExpression Member)? Value) Resolve(
         IBuilderContext context, IMethod method, Type item)
     {
@@ -83,7 +100,7 @@ public sealed partial class AggregateMethodToExpressionConverter(IAggregatesCach
 
         if (arguments.Length > 0 &&
             (argumentPath is null || arguments.Length != argumentPath.Length
-                                    || arguments.Any(a => a is not Property)))
+                                  || arguments.Any(a => a is not Property)))
         {
             throw new AggregateArgumentsException(name,
                 argumentPath is null

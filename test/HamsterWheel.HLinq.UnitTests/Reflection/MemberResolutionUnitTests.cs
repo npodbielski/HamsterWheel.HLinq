@@ -18,17 +18,6 @@ public class MemberResolutionUnitTests
         Services.ConverterFactory, new ParametersConverter(Services.WrittenValues, Services.DefaultConverter), [],
         Services.WrittenValues, null!);
 
-    private static (string value, MemberExpression? expression)[] Text(params string[] values) =>
-        [.. values.Select(v => (v, (MemberExpression?)null))];
-
-    private LambdaExpression Filter(string query)
-    {
-        var tokens = Services.Tokenizer.Tokenize(query);
-        var tree = _parser.TestParseEntryPoint<RankedEntity>(query, tokens);
-
-        return _sut.GetFilter(typeof(RankedEntity), tree.GetAll<WhereRoot>().First(), query);
-    }
-
     [Fact]
     public void Resolve_WhenTwoPropertiesDifferOnlyInCase_ThenTheOneSpelledAsTheQueryWroteItWins()
     {
@@ -206,6 +195,17 @@ public class MemberResolutionUnitTests
 
         resolution.Member!.GetParameters().Single().ParameterType.Should().Be(expected);
         resolution.Reason.Should().Be(ResolutionReason.OrdinalTieBreak);
+    }
+
+    private static (string value, MemberExpression? expression)[] Text(params string[] values) =>
+        [.. values.Select(v => (v, (MemberExpression?)null))];
+
+    private LambdaExpression Filter(string query)
+    {
+        var tokens = Services.Tokenizer.Tokenize(query);
+        var tree = _parser.TestParseEntryPoint<RankedEntity>(query, tokens);
+
+        return _sut.GetFilter(typeof(RankedEntity), tree.GetAll<WhereRoot>().First(), query);
     }
 
 #if !NETSTANDARD

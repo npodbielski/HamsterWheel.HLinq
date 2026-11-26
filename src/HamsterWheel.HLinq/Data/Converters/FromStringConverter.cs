@@ -91,19 +91,19 @@ public class FromStringConverter(INullKeyword nullKeyword) : IConfigurableValueC
                 typeof(int),
                 (s, culture) => int.TryParse(s, IntegralNumberStyles, culture, out var number)
                     ? number
-                    : throw new InvalidConstantStringToTypeConversionException(s, typeof(int))
+                    : ParseIntegral(s, culture, typeof(int), int.MinValue, int.MaxValue)
             },
             {
                 typeof(long),
                 (s, culture) => long.TryParse(s, IntegralNumberStyles, culture, out var number)
                     ? number
-                    : throw new InvalidConstantStringToTypeConversionException(s, typeof(long))
+                    : ParseIntegral(s, culture, typeof(long), long.MinValue, long.MaxValue)
             },
             {
                 typeof(short),
                 (s, culture) => short.TryParse(s, IntegralNumberStyles, culture, out var number)
                     ? number
-                    : throw new InvalidConstantStringToTypeConversionException(s, typeof(short))
+                    : ParseIntegral(s, culture, typeof(short), short.MinValue, short.MaxValue)
             },
             {
                 typeof(TimeSpan),
@@ -126,6 +126,30 @@ public class FromStringConverter(INullKeyword nullKeyword) : IConfigurableValueC
             }
 #endif
         };
+
+    //a text that is a number with a fraction or exponent is still read as an integral value
+    //when it is a whole number that fits; "1.0" is one, "1.5" is not, "foobar" never was
+    private static object ParseIntegral(string s, CultureInfo culture, Type to, double min, double max)
+    {
+        if (!double.TryParse(s, FloatingNumberStyles, culture, out var d)
+            || d != Math.Floor(d)
+            || d < min
+            || d > max)
+        {
+            throw new InvalidConstantStringToTypeConversionException(s, to);
+        }
+
+        try
+        {
+            return Convert.ChangeType(d, to, CultureInfo.InvariantCulture);
+        }
+        catch (OverflowException)
+        {
+            //long.MaxValue is not a precise double, so the range check above can let its
+            //successor through
+            throw new InvalidConstantStringToTypeConversionException(s, to);
+        }
+    }
 
     /// <summary>
     /// Says whether a text a query writes parses as a value of the type, in the culture the query

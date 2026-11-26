@@ -14,7 +14,7 @@ public sealed record MethodCallConditionBuilderContext(IBuilderContext BuilderCo
     public MemberExpression? MethodSource { get; set; }
     public string HLinqQuery { get; } = BuilderContext.HLinqQuery;
     public CultureInfo Culture { get; } = BuilderContext.Culture;
-    public IHLinqWarnings? Warnings { get; } = BuilderContext.Warnings;
+    public IHLinqDiagnostics? Diagnostics { get; } = BuilderContext.Diagnostics;
     public IReadOnlyDictionary<string, MemberExpression>? GroupMembers { get; } = BuilderContext.GroupMembers;
 
     public Expression ToExpression(ITreeElement element) => BuilderContext.Builder.ToExpression(this, element);

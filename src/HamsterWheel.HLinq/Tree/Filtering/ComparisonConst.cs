@@ -15,7 +15,7 @@ public sealed class ComparisonConst(NameOrValue value) : TreeLeaf([value])
     // ReSharper disable once UnusedType.Global - Used by Parser
     public sealed class Parser : ElementParserBase<ComparisonConst>
     {
-        protected override Type[] ValidParents { get; } = [typeof(Condition)];
+        public override Type[] ValidParents { get; } = [typeof(Condition)];
         public override IToken[] ExampleTokens { get; } = [NameOrValue.Empty];
 
         protected override ComparisonConst? BuildBranch(IParsingContext context)

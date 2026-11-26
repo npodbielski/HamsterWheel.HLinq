@@ -1,5 +1,4 @@
 using FluentAssertions;
-using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Tree.Selecting;
@@ -12,10 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace HamsterWheel.HLinq.UnitTests.Providers;
 
 /// <summary>
-/// A call written in select is the same expression a hand-written Linq projection writes, so each
-/// engine's own translator answers it - the projection built from the query text is asked what SQL
-/// it would produce, in every provider pack, stopped at <c>ToQueryString</c> exactly as the group
-/// aggregate tests do; the Postgres integration suite repeats the check against a live server.
+/// A call in select answers as the hand-written projection, in every provider pack.
 /// </summary>
 public class SelectCallTranslationUnitTests
 {
@@ -77,9 +73,7 @@ public class SelectCallTranslationUnitTests
     }
 
     /// <summary>
-    /// The whole pipeline through the appliers the endpoint runs, stopped at the grouped statement
-    /// the provider would be asked - the group aggregate tests' shape, with a call among the
-    /// group's members.
+    /// The whole pipeline, stopped at the statement the provider would be asked.
     /// </summary>
     private static IQueryable GroupedSql(DbContext context, string query)
     {
@@ -126,7 +120,7 @@ public class SelectCallTranslationUnitTests
         var tokens = Services.Tokenizer.Tokenize(query);
         var tree = new HLinqParser(Services.Parsers).TestParseEntryPoint<Row>(query, tokens);
         var selector = builder.GetSelect(typeof(Row),
-            tree.GetAll<SelectRoot>().First(), query, warnings: new HLinqWarnings()).Expression;
+            tree.GetAll<SelectRoot>().First(), query).Expression;
 
         var source = (IQueryable)context.Set<Row>();
         var method = typeof(Queryable).GetMethods()
@@ -139,8 +133,7 @@ public class SelectCallTranslationUnitTests
     }
 
     /// <summary>
-    /// The row shape of the provider measurements: a text column to call on and a collection to
-    /// call inside, the same one the nested select and group aggregate translations walk.
+    /// The row shape of the provider measurements.
     /// </summary>
     public class Row
     {

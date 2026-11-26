@@ -12,7 +12,11 @@ public interface IBuilderContext
     IExpressionBuilder Builder { get; }
     string HLinqQuery { get; }
     CultureInfo Culture { get; }
-    IHLinqWarnings? Warnings { get; }
+    /// <summary>
+    /// All query errors and warnings
+    /// </summary>
+    IHLinqDiagnostics? Diagnostics { get; }
+
 
     /// <summary>
     /// Group keys. Null otherwise.

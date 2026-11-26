@@ -15,7 +15,7 @@ public class EntityLeaf(IToken token) : TreeLeaf([token]), IMethodParamElement
     {
         public override IToken[] ExampleTokens { get; } = [Entity.Empty];
 
-        protected override Type[] ValidParents { get; } =
+        public override Type[] ValidParents { get; } =
         [
             typeof(Condition), typeof(OrderByRoot), typeof(OrderByDescendingRoot), typeof(ThenByRoot),
             typeof(ThenByDescendingRoot)

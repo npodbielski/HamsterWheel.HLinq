@@ -12,7 +12,7 @@ namespace HamsterWheel.HLinq.Tree.Paging;
 public sealed partial class SkipRoot(IToken[] tokens) : TreeBranch(tokens), ITreeRoot
 {
     private string GetSkipNumber(string query) =>
-        (GetChildOfType<SkipOrTakeConstant>() ?? throw new MissingSkipValueException()).Value.GetValue(query);
+        (this.GetChildOfType<SkipOrTakeConstant>() ?? throw new MissingSkipValueException()).Value.GetValue(query);
 
     // ReSharper disable once UnusedType.Global - Used by Parser
     public sealed class Parser : ElementParserBase<SkipRoot>
@@ -61,14 +61,14 @@ public sealed partial class SkipRoot(IToken[] tokens) : TreeBranch(tokens), ITre
 
             if (skipNumber < 0)
             {
-                throw new NegativePagingBoundException("skip", skipNumber.Value);
+                throw new InvalidPagingValueException("skip", skipNumber.Value);
             }
 
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Skip),
                 typeParams: context.CurrentResultType);
 
-            return context.Next((IQueryable)method.Invoke(null, [context.Queryable, skipNumber])!,
-                context.CurrentResultType, context.Count);
+            return context.NextByCalling(context.CurrentResultType,
+                source => (IQueryable)method.Invoke(null, [source, skipNumber])!, context.Count);
         }
     }
 }

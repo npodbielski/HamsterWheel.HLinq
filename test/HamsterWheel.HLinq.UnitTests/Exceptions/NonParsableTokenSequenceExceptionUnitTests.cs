@@ -11,8 +11,9 @@ public class NonParsableTokenSequenceExceptionUnitTests
     public void Message_WhenCalledWithOneParser_ThenItIsMentionedInMessage()
     {
         //arrange
-        var hlinqQueryString = "foo[].bar[]";
-        var expected = $"HLinq query '{hlinqQueryString}' is invalid at character 0: '{hlinqQueryString}'. Was expecting for example: 'where[x.Name==Jan]'.";
+        const string hlinqQueryString = "foo[].bar[]";
+        const string expected =
+            $"HLinq query '{hlinqQueryString}' is invalid at character 0: '{hlinqQueryString}'. Was expecting for example: 'where[x.Name==Jan]'.";
 
         //act
         var actual = new NonParsableTokenSequenceException("foo[].bar[]",

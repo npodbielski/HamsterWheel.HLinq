@@ -14,7 +14,7 @@ public sealed class MethodConstParam(IToken[] tokens) : TreeLeaf(tokens), IMetho
     public sealed class Parser : ElementParserBase<MethodConstParam>
     {
         public override IToken[] ExampleTokens { get; } = [NameOrValue.Empty];
-        protected override Type[] ValidParents { get; } = [typeof(Method)];
+        public override Type[] ValidParents { get; } = [typeof(Method)];
 
         protected override MethodConstParam? BuildBranch(IParsingContext context) =>
             context.Tokens switch

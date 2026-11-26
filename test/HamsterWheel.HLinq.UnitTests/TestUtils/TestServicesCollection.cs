@@ -1,4 +1,6 @@
 using HamsterWheel.HLinq.Data.Converters;
+using HamsterWheel.HLinq.Pipeline;
+using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Pipeline.Tokenizer;
@@ -21,6 +23,11 @@ public class TestServicesCollection
     public IWrittenValueParser WrittenValues => Provider.GetRequiredService<IWrittenValueParser>();
     public IDefaultConverter DefaultConverter => Provider.GetRequiredService<IDefaultConverter>();
     public IParametersConverter ParametersConverter => Provider.GetRequiredService<IParametersConverter>();
+    public IHLinqOptions Options => Provider.GetRequiredService<IHLinqOptions>();
+    public IElementApplierFactory ApplierFactory => Provider.GetRequiredService<IElementApplierFactory>();
+    public IExpressionBuilder ExpressionBuilder => Provider.GetRequiredService<IExpressionBuilder>();
+
+    public HLinqQueryApplier NewApplier() => new(ApplierFactory, MethodsCache, ExpressionBuilder, Options);
 
     private static ServiceProvider CreateDefault()
     {

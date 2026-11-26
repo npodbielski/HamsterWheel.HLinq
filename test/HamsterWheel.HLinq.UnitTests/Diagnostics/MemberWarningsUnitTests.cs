@@ -9,28 +9,17 @@ using HamsterWheel.HLinq.UnitTests.TestUtils;
 namespace HamsterWheel.HLinq.UnitTests.Diagnostics;
 
 /// <summary>
-/// A parse says which member its query got only when the rules could not say it: two members answered,
-/// every rule ranked them equal, and an ordinal comparison chose.
+/// A parse warns only when the ranking rules could not decide the member.
 /// </summary>
 public class MemberWarningsUnitTests
 {
     private static readonly TestServicesCollection Services = new();
-    private readonly HLinqWarnings _warnings = new();
+    private readonly HLinqDiagnostics _diagnostics = new();
 
     private readonly ExpressionBuilder _sut = new(Services.PropertiesCache, Services.MethodsCache,
         Services.ConverterFactory, new ParametersConverter(Services.WrittenValues, Services.DefaultConverter), [], Services.WrittenValues, null!);
 
     private readonly IHLinqParser _parser = new HLinqParser(Services.Parsers);
-
-    private void Filter(string query) => Filter<RankedEntity>(query);
-
-    private void Filter<TEntity>(string query) where TEntity : class
-    {
-        var tokens = Services.Tokenizer.Tokenize(query);
-        var tree = _parser.TestParseEntryPoint<TEntity>(query, tokens);
-
-        _sut.GetFilter(typeof(TEntity), tree.GetAll<WhereRoot>().First(), query, warnings: _warnings);
-    }
 
     [Fact]
     public void WhenTwoMembersAnswerANameAndNeitherIsSpelledAsTheQueryWroteIt_ThenTheWarningNamesBoth()
@@ -39,7 +28,7 @@ public class MemberWarningsUnitTests
         Filter("where[x.nAmE==abc]");
 
         //assert
-        var warning = _warnings.Reported.Single();
+        var warning = _diagnostics.Warnings.Single();
         warning.Reason.Should().Be(HLinqMemberWarningReason.AmbiguousName);
         warning.Member.Should().Be("Name");
         warning.Competitors.Should().BeEquivalentTo(["Name", "name"]);
@@ -54,7 +43,7 @@ public class MemberWarningsUnitTests
         Filter("where[x.Name==abc]");
 
         //assert
-        _warnings.Reported.Should().BeEmpty();
+        _diagnostics.Warnings.Should().BeEmpty();
     }
 
     [Fact]
@@ -64,21 +53,31 @@ public class MemberWarningsUnitTests
         Filter("where[x.Service.Sub(abc)]");
 
         //assert
-        _warnings.Reported.Should().BeEmpty();
+        _diagnostics.Warnings.Should().BeEmpty();
     }
 
     [Fact]
     public void WhenTwoOverloadsBindTheArgumentAndNoRuleSeparatesThem_ThenTheWarningNamesTheCall()
     {
-        //act - the argument is a one-character `char` and a member of the enum at once, so no rule tells
+        //act
         //the two overloads apart and an ordinal comparison of their signatures decides
         Filter<TiedEntity>("where[x.Service.Sub(A)]");
 
         //assert
-        var warning = _warnings.Reported.Single();
+        var warning = _diagnostics.Warnings.Single();
         warning.Reason.Should().Be(HLinqMemberWarningReason.AmbiguousCall);
         warning.Member.Should().Be("Sub(Char)");
         warning.Competitors.Should().BeEquivalentTo(["Sub(Char)", "Sub(TiedEnum)"]);
+    }
+
+    private void Filter(string query) => Filter<RankedEntity>(query);
+
+    private void Filter<TEntity>(string query) where TEntity : class
+    {
+        var tokens = Services.Tokenizer.Tokenize(query);
+        var tree = _parser.TestParseEntryPoint<TEntity>(query, tokens);
+
+        _sut.GetFilter(typeof(TEntity), tree.GetAll<WhereRoot>().First(), query, diagnostics: _diagnostics);
     }
 
 }

@@ -239,6 +239,21 @@ partial class DefaultConverterUnitTests
         actual.Should().Be(new TimeSpan(days, hours, minutes, 0) + TimeSpan.FromMilliseconds(milliseconds));
     }
 
+    [Theory]
+    [InlineData("PT5M", 0, 0, 5, 0)]
+    [InlineData("PT1H30M", 0, 1, 30, 0)]
+    [InlineData("P1DT2H", 1, 2, 0, 0)]
+    [InlineData("PT0.5S", 0, 0, 0, 500)]
+    public void ConvertToT1_WhenCalledWithIso8601Duration_ThenReturnsTheDuration(string stringValue,
+        int days, int hours, int minutes, int milliseconds)
+    {
+        //act
+        var actual = _sut.ConvertTo<TimeSpan>(stringValue);
+
+        //assert
+        actual.Should().Be(new TimeSpan(days, hours, minutes, 0) + TimeSpan.FromMilliseconds(milliseconds));
+    }
+
     [Fact]
     public void ConvertToT1_WhenNullAsNullableTimeSpan_ThenCanConvertToNull()
     {

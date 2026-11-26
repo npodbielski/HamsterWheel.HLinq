@@ -16,12 +16,14 @@ public static class AspNetInstaller
         var hlinqOptions = new HLinqOptions
         {
             HttpDefaultMaxTakeRecords = configuration.HLinqOptions.HttpDefaultMaxTakeRecords,
-            EmitWarnings = configuration.HLinqOptions.EmitWarnings
+            EmitWarnings = configuration.HLinqOptions.EmitWarnings,
+            MaximumQueryLength = configuration.HLinqOptions.MaximumQueryLength,
+            MaximumNumberOfProperties = configuration.HLinqOptions.MaximumNumberOfProperties
         };
 
         serviceCollection.AddSingleton<IHLinqOptions>(hlinqOptions);
         serviceCollection.AddHttpContextAccessor();
-        serviceCollection.AddScoped<IHLinqWarnings, HttpResponseWarnings>();
+        serviceCollection.AddScoped<IHLinqDiagnostics, HttpDiagnosticsReporter>();
         serviceCollection.AddControllers(options =>
             options.ModelBinderProviders.Insert(0, new HLinqQueryBinderProvider()));
 

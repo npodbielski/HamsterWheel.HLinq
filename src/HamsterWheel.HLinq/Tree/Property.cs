@@ -10,22 +10,29 @@ using HamsterWheel.HLinq.Tree.Selecting;
 
 namespace HamsterWheel.HLinq.Tree;
 
-public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamElement
+public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IProperty
 {
     public string[] GetPath(string hLinqQuery) =>
-        [.. Tokens.OfType<PropertyName>().Select(t => t.GetValue(hLinqQuery))];
+        [.. this.GetTokensOf<PropertyName>().Select(t => t.GetValue(hLinqQuery))];
 
     public string GetValue(string hLinqQuery) => GetPath(hLinqQuery).JoinWithDot();
 
+    /// <summary>
+    /// The last segment of the path: <c>contact</c> in <c>x.customer.address.contact</c>.
+    /// </summary>
+    public string GetLastName(string hLinqQuery) =>
+        this.GetTokensOf<PropertyName>().Last().GetValue(hLinqQuery);
+
+    // ReSharper disable once UnusedType.Global -> used by parser
     public sealed class Parser : ElementParserBase<Property>
     {
         public override IToken[] ExampleTokens { get; } = [Entity.Empty, Dot.Empty, PropertyName.Empty];
 
-        protected override Type[] ValidParents { get; } =
+        public override Type[] ValidParents { get; } =
         [
             typeof(Condition), typeof(Method), typeof(OrderByRoot), typeof(OrderByDescendingRoot),
             typeof(ThenByRoot), typeof(ThenByDescendingRoot), typeof(PropertyAssignment),
-            typeof(NestedSelect)
+            typeof(NestedSelect), typeof(MathTerm), typeof(MathGroup)
         ];
 
         protected override Property? BuildBranch(IParsingContext context)
@@ -66,6 +73,7 @@ public sealed class Property(IToken[] tokens) : TreeLeaf(tokens), IMethodParamEl
         }
     }
 
+    // ReSharper disable once UnusedType.Global -> used by Applier
     public sealed class Converter : ElementToExpressionConverter<Property>
     {
         protected override Expression Build(IBuilderContext context, Property element)

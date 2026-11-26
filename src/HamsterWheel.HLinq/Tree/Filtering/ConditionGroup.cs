@@ -19,9 +19,10 @@ public sealed class ConditionGroup : TreeBranch, ILogicalOperationGroupBranch
 
     public ILogicalOperatorToken? LogicalOpToken => Tokens.OfType<ILogicalOperatorToken>().SingleOrDefault();
 
+    // ReSharper disable once UnusedType.Global -> used by Parser
     public sealed class Parser : ElementParserBase<ConditionGroup>
     {
-        protected override Type[] ValidParents { get; } = [typeof(WhereRoot), typeof(ConditionGroup)];
+        public override Type[] ValidParents { get; } = [typeof(WhereRoot), typeof(ConditionGroup)];
 
         public override IToken[] ExampleTokens { get; } =
             [LeftCircleBracket.Empty, .. Condition.Parser.ConditionExampleTokens, RightCircleBracket.Empty];
@@ -48,5 +49,6 @@ public sealed class ConditionGroup : TreeBranch, ILogicalOperationGroupBranch
         }
     }
 
+    // ReSharper disable once UnusedType.Global -> used by Applier
     public sealed class Converter : ConditionalLogicalOperationConverter<ConditionGroup>;
 }

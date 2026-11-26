@@ -8,13 +8,13 @@ public static class TreeBranchExtensions
     /// <summary>
     /// Returns every <see cref="Property" /> in the tree.
     /// </summary>
-    public static IEnumerable<Property> Properties(this ITreeBranch branch)
+    public static IEnumerable<IProperty> Properties(this ITreeBranch branch)
     {
         foreach (var child in branch.Children)
         {
             switch (child)
             {
-                case Property property:
+                case IProperty property:
                     yield return property;
                     break;
                 case ITreeBranch nested:

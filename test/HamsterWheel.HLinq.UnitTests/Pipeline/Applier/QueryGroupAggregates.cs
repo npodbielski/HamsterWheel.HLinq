@@ -62,7 +62,7 @@ partial class HLinqQueryApplierUnitTests
         //act
         var actual = AsDictionary(ApplyAggregated("groupBy[x.Name].where[x.Count()>0].orderBy[x.Max(x.Int)]"));
 
-        //assert - New (max 30) before Paid (40) before Sent (50)
+        //assert
         actual.Keys.Should().ContainInOrder("New", "Paid", "Sent");
     }
 
@@ -72,7 +72,7 @@ partial class HLinqQueryApplierUnitTests
         //act
         var actual = AsDictionary(ApplyAggregated("groupBy[x.Name].where[x.Count()>0].orderByDescending[x.Count()]"));
 
-        //assert - the two-row group first, the one-row groups keep their arrival order
+        //assert
         actual.Keys.First().Should().Be("New");
     }
 
@@ -99,7 +99,7 @@ partial class HLinqQueryApplierUnitTests
     [Fact]
     public void Apply_WhenGroupByThenSelectAggregateWithRowSelect_ThenRowsTakeTheSelectedShape()
     {
-        //act - one select naming a row member and an aggregate: the member shapes the rows, the
+        //act
         //aggregate rides beside Key and Rows
         var actual = AggregatesOf(ApplyAggregated("groupBy[x.Name].select[x.Text,C=x.Count()]"));
 
@@ -115,7 +115,7 @@ partial class HLinqQueryApplierUnitTests
         //act
         var actual = AggregatesOf(ApplyAggregated("groupBy[x.Name].groupBy[x.Int].select[C=x.Count()]"));
 
-        //assert - the aggregate counts the outer group's rows, written above the inner grouping it
+        //assert
         //keeps answering the groups of the chain
         ValueOf(actual["New"], "C").Should().Be(2);
         ValueOf(actual["Paid"], "C").Should().Be(1);
@@ -124,11 +124,21 @@ partial class HLinqQueryApplierUnitTests
     [Fact]
     public void Apply_WhenGroupByThenSelectAggregateNamedKey_ThenRefusedWithTheReason()
     {
-        //act - the answer already names Key; a second property of that name has no meaning
+        //act
         var act = () => ApplyAggregated("groupBy[x.Name].select[Key=x.Count()]");
 
         //assert
-        act.Should().Throw<AggregateMethodToExpressionConverter.AggregateNameCollisionException>();
+        act.Should().Throw<GroupAggregateNameCollisionException>();
+    }
+
+    [Fact]
+    public void Apply_WhenGroupByThenSelectTwoAggregatesOfOneName_ThenRefusedWithTheReason()
+    {
+        //act
+        var act = () => ApplyAggregated("groupBy[x.Name].select[A=x.Count(),A=x.Sum(x.Int)]");
+
+        //assert
+        act.Should().Throw<GroupAggregateNameCollisionException>();
     }
 
     [Fact]
@@ -144,7 +154,7 @@ partial class HLinqQueryApplierUnitTests
     [Fact]
     public void Apply_WhenGroupByThenCountWithPredicate_ThenRefusedUntilConditionsInsideCallsExist()
     {
-        //act - a condition inside the parentheses is the nested-conditions grammar, which the
+        //act
         //tokenizer does not read yet - the query is refused where it is written
         var act = () => ApplyAggregated("groupBy[x.Name].where[x.Count(x.Int>5)>1]");
 
@@ -155,7 +165,7 @@ partial class HLinqQueryApplierUnitTests
     [Fact]
     public void Apply_WhenNotGroupedByThenEntityAggregate_ThenRefusedWithTheReason()
     {
-        //act - there is no group to aggregate over when nothing was grouped
+        //act
         var act = () => ApplyAggregated("where[x.Count()>2]");
 
         //assert
@@ -173,6 +183,29 @@ partial class HLinqQueryApplierUnitTests
     }
 
     [Fact]
+    public void Apply_WhenTheRowsAreCollections_ThenAnAggregateFoldsEachOfThem()
+    {
+        //arrange
+        var actual = Apply("select[x.Children].where[x.Count()>1]", RowsWithChildren().AsQueryable());
+
+        //assert
+        var lists = ((System.Collections.IEnumerable)actual).Cast<object>().ToList();
+        lists.Should().HaveCount(1);
+        ((System.Collections.IEnumerable)lists[0]).Cast<object>().Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void Apply_WhenTheRowsAreCollections_ThenASelectAnswersTheirAggregate()
+    {
+        //act
+        var actual = Apply("select[x.Children].select[C=x.Count()]", RowsWithChildren().AsQueryable());
+
+        //assert
+        actual.Should().BeAssignableTo<object[]>();
+        ((object[])actual).Select(e => e.GetType().GetProperty("C")!.GetValue(e)).Should().Equal(2, 1);
+    }
+
+    [Fact]
     public void Apply_WhenEntityCallIsNotAnAggregate_ThenRefusedWithTheAggregateNames()
     {
         //act
@@ -185,17 +218,17 @@ partial class HLinqQueryApplierUnitTests
     [Fact]
     public void Apply_WhenGroupByThenWhereAny_ThenKeepsTheNonEmptyGroups()
     {
-        //act - Any folds a collection like Count does, so a group answers it too
+        //act
         var actual = AsDictionary(ApplyAggregated("groupBy[x.Name].where[x.Any()]"));
 
-        //assert - every group of the data has a row, none is emptied
+        //assert
         actual.Should().HaveCount(3);
     }
 
     [Fact]
     public void Apply_WhenGroupByThenAggregateWithPredicateShapedArgument_ThenRefused()
     {
-        //act - the arguments an aggregate binds are the member it folds; Enumerable's First takes
+        //act
         //a predicate where this shape puts a selector, and a condition inside the brackets is
         //another grammar this language does not write yet
         var act = () => ApplyAggregated("groupBy[x.Name].select[C=x.First(x.Int)]");
@@ -207,7 +240,7 @@ partial class HLinqQueryApplierUnitTests
     [Fact]
     public void Apply_WhenAggregateTakesAValueArgument_ThenRefusedWithTheReason()
     {
-        //act - the argument of an aggregate is the member its selector reads; a written value
+        //act
         //has no slot in the binding and is refused rather than silently dropped
         var act = () => ApplyAggregated("groupBy[x.Name].select[C=x.First(5)]");
 
@@ -218,7 +251,7 @@ partial class HLinqQueryApplierUnitTests
     [Fact]
     public void Apply_WhenNavigationCountInSelect_ThenAnswersTheCountPerRow()
     {
-        //arrange - the dummies of the shared fixture carry their children
+        //arrange
         var rows = new[]
         {
             new DummyEntity("a"),
@@ -228,7 +261,7 @@ partial class HLinqQueryApplierUnitTests
         rows[0].Children.AddRange([new NestedDummyEntity(), new NestedDummyEntity()]);
         rows[1].Children.Add(new NestedDummyEntity());
 
-        //act - the roadmap's nested count: a call over a navigation collection in a value position
+        //act
         var actual = Apply("select[N=x.Children.Count()]", rows.AsQueryable());
 
         //assert
@@ -238,7 +271,7 @@ partial class HLinqQueryApplierUnitTests
     [Fact]
     public void Apply_WhenNavigationBareMax_ThenAnswersTheGreatestValue()
     {
-        //arrange - a collection whose own values are numbers, so `Max()` has a greatest one;
+        //arrange
         //a shape of its own: a collection of values on the shared dummy would widen what the
         //provider packs can bind there
         var rows = new[]
@@ -247,7 +280,7 @@ partial class HLinqQueryApplierUnitTests
             new PriceList([1]),
         };
 
-        //act - the bare Min/Max of a list of numbers, in a value position
+        //act
         var actual = ApplyOver("select[H=x.Prices.Max(),L=x.Prices.Min()]", rows.AsQueryable());
 
         //assert
@@ -260,7 +293,7 @@ partial class HLinqQueryApplierUnitTests
     [Fact]
     public void Apply_WhenBareMaxOverValuesThatDoNotCompare_ThenRefusedWithTheReason()
     {
-        //act - the children of a dummy are rows, and a row does not compare to another row
+        //act
         var act = () => ApplyAggregated("select[H=x.Children.Max()]");
 
         //assert
@@ -270,7 +303,7 @@ partial class HLinqQueryApplierUnitTests
     [Fact]
     public void Apply_WhenGroupByThenBareMax_ThenRefusedWithTheReason()
     {
-        //act - the rows of a group are the items and a whole row has no greatest value
+        //act
         var act = () => ApplyAggregated("groupBy[x.Name].orderBy[x.Max()]");
 
         //assert
@@ -283,20 +316,10 @@ partial class HLinqQueryApplierUnitTests
         public List<int> Prices { get; set; } = [.. prices];
     }
 
-    private object ApplyOver(string queryString, IQueryable<PriceList> queryable)
-    {
-        var hlinqQuery = new Request.HLinqQuery<PriceList>
-        {
-            SourceQueryString = queryString
-        };
-        _parser.Parse(hlinqQuery, _tokenizer.Tokenize(queryString));
-        return _sut.Apply(queryable, hlinqQuery);
-    }
-
     [Fact]
     public void Apply_WhenNavigationAggregateOverNotACollection_ThenRefusedWithTheReason()
     {
-        //act - a string is not a collection to count
+        //act
         var act = () => ApplyAggregated("select[N=x.Name.Count()]");
 
         //assert
@@ -325,4 +348,26 @@ partial class HLinqQueryApplierUnitTests
 
     private static object ValueOf(object entry, string name) =>
         entry.GetType().GetProperty(name)!.GetValue(entry)!;
+
+    private static DummyEntity[] RowsWithChildren()
+    {
+        var rows = new[]
+        {
+            new DummyEntity("a"),
+            new DummyEntity("b"),
+        };
+        rows[0].Children.AddRange([new NestedDummyEntity(), new NestedDummyEntity()]);
+        rows[1].Children.Add(new NestedDummyEntity());
+        return rows;
+    }
+
+    private object ApplyOver(string queryString, IQueryable<PriceList> queryable)
+    {
+        var hlinqQuery = new Request.HLinqQuery<PriceList>
+        {
+            SourceQueryString = queryString
+        };
+        _parser.Parse(hlinqQuery, _tokenizer.Tokenize(queryString));
+        return _sut.Apply(queryable, hlinqQuery);
+    }
 }

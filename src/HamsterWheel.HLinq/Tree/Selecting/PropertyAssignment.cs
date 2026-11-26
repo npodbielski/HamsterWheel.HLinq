@@ -10,43 +10,65 @@ using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
 using HamsterWheel.HLinq.Tokens.Selecting;
 using HamsterWheel.HLinq.Tree.Filtering;
+using HamsterWheel.HLinq.Tree.Grouping;
+using static System.Linq.Expressions.Expression;
 
 namespace HamsterWheel.HLinq.Tree.Selecting;
 
-public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tokens)
+public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tokens), IPropertyAssignment
 {
     private string? _value;
 
-    public bool NeedsObjectInitializer => NewPropName != null || NestedSelect is not null || Call is not null;
+    public bool NeedsObjectInitializer =>
+        NewPropName != null || NestedSelect is not null || Call is not null || IsMathExpression;
 
-    private Property? Property => field ??= Children.OfType<Property>().FirstOrDefault();
-
-    public Property? NestedSelectProperty => field ??= NestedSelect is null
+    public IProperty? NestedSelectProperty => field ??= NestedSelect is null
         ? null
         : Property;
 
-    public InnerProperty? NestedSelectInnerProperty => field ??= NestedSelect is null
+    public IInnerProperty? NestedSelectInnerProperty => field ??= NestedSelect is null
         ? null
         : Children.OfType<InnerProperty>().FirstOrDefault();
-
-    private InnerProperty? InnerProperty => field ??= Children.OfType<InnerProperty>().FirstOrDefault();
-
-    private NestedSelect? NestedSelect => field ??= Children.OfType<NestedSelect>().FirstOrDefault();
-
-    private InitializerPropertyName? NewPropName =>
-        field ??= Children.OfType<InitializerPropertyName>().FirstOrDefault();
 
     /// <summary>
     /// A call written as the value of this assignment (<c>C=x.Count()</c>, <c>N=x.Addresses.Count()</c>).
     /// </summary>
-    public Method? Call => field ??= Children.OfType<Method>().SingleOrDefault();
+    internal Method? Call => field ??= Children.OfType<Method>().SingleOrDefault();
 
     /// <summary>
-    /// The call standing on the entity of the query itself - after a grouping, the aggregate of the group.
+    /// Whether the query wrote an operator in this member: its value is an expression.
     /// </summary>
-    public Method? EntityAggregate => Call is { IsEntity: true } call ? call : null;
+    public bool IsMathExpression => Children.Any(child => child is MathTerm or MathGroup);
 
-    public string? AggregateName(string hLinqQuery) => NewPropName?.GetName(hLinqQuery);
+    /// <summary>
+    /// The call standing on the entity of the clause - after a grouping, the group's aggregate.
+    /// </summary>
+    public IMethod? GroupAggregate => Call is { IsGroupAggregate: true } call && !IsMathExpression ? call : null;
+
+    public INestedSelect? NestedSelect => field ??= Children.OfType<INestedSelect>().FirstOrDefault();
+
+    private IInnerProperty? InnerProperty => field ??= Children.OfType<IInnerProperty>().FirstOrDefault();
+
+    private IInitializerPropertyName? NewPropName =>
+        field ??= Children.OfType<IInitializerPropertyName>().FirstOrDefault();
+
+    private Property? Property => field ??= this.GetChildOfType<Property>();
+
+    /// <summary>
+    /// The name the query wrote for this member, null when it wrote none.
+    /// </summary>
+    public string? ExplicitPropertyName(string hLinqQuery) => NewPropName?.GetName(hLinqQuery);
+
+    /// <summary>
+    /// The name a call answers under: the one the query wrote, or the method's own.
+    /// </summary>
+    public string? FinalPropertyName(string hLinqQuery) =>
+        ExplicitPropertyName(hLinqQuery)
+        ?? (IsMathExpression
+            ? null
+            : Call?.GetName(hLinqQuery)
+                ?? Property?.GetLastName(hLinqQuery)
+                ?? InnerProperty?.GetLastName(hLinqQuery));
 
     private string GetValue(string hLinqQuery) =>
         _value ??= (Children.OfType<InitializerConstantValue>().FirstOrDefault() ??
@@ -55,10 +77,10 @@ public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tok
     // ReSharper disable once UnusedType.Global - Used by Parser
     public sealed class Parser : ElementParserBase<PropertyAssignment>
     {
-        protected override Type[] ValidParents { get; } =
+        public override Type[] ValidParents { get; } =
         [
             typeof(SelectRoot),
-            typeof(Grouping.GroupByRoot),
+            typeof(GroupByRoot),
             typeof(NestedSelect)
         ];
 
@@ -76,9 +98,9 @@ public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tok
                 case [Comma, SubEntity, Dot, ..]:
                     return new PropertyAssignment([context.Tokens[0]]);
                 case [NameOrValue, Assignment, ..]:
+                case [LeftCircleBracket, ..]:
                 case [Entity, Dot, ..]:
                 case [SubEntity, Dot, ..]:
-                    return new PropertyAssignment([]);
                 case [MethodName, LeftCircleBracket, ..]:
                     return new PropertyAssignment([]);
                 default:
@@ -99,6 +121,13 @@ public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tok
     {
         protected override PropInfo GetPropInfo(IBuilderContext context, PropertyAssignment element)
         {
+            if (element.IsMathExpression)
+            {
+                var expressionName = element.NewPropName?.GetName(context.HLinqQuery) ??
+                                     throw new MathExpressionNeedsANameException();
+                return new(expressionName, context.Builder.FoldMath(context, element.Children).Type);
+            }
+
             if (element.NestedSelect is { } nested)
             {
                 var name = element.NewPropName?.GetName(context.HLinqQuery) ??
@@ -107,9 +136,9 @@ public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tok
                 return new(name, nestedSelects.GetResultType(element, nested, context));
             }
 
-            if (element is { Call: { } call, EntityAggregate: null })
+            if (element.Call is { } call)
             {
-                var callName = element.NewPropName?.GetName(context.HLinqQuery) ?? call.GetName(context.HLinqQuery);
+                var callName = element.FinalPropertyName(context.HLinqQuery) ?? call.GetName(context.HLinqQuery);
                 return new(callName, MethodCallType(context, element, call));
             }
 
@@ -136,15 +165,27 @@ public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tok
         protected override MemberAssignment Build(IBuilderContext context, PropertyAssignment element,
             Type destinationType)
         {
-            if (element is { Call: { } call, EntityAggregate: null })
+            if (element.IsMathExpression)
             {
-                var callName = element.NewPropName?.GetName(context.HLinqQuery) ?? call.GetName(context.HLinqQuery);
+                var expressionName = element.NewPropName?.GetName(context.HLinqQuery) ??
+                                     throw new MathExpressionNeedsANameException();
+                var expressionResolution = props.Resolve(destinationType, expressionName);
+                expressionResolution.Report(context);
+                var expressionProperty = expressionResolution.Member ??
+                                         throw new InvalidPropertyPathException(destinationType, expressionName,
+                                             [.. destinationType.GetProperties().Select(p => p.Name)]);
+                return Bind(expressionProperty, context.Builder.FoldMath(context, element.Children));
+            }
+
+            if (element.Call is { } call)
+            {
+                var callName = element.FinalPropertyName(context.HLinqQuery) ?? call.GetName(context.HLinqQuery);
                 var callResolution = props.Resolve(destinationType, callName);
                 callResolution.Report(context);
                 var callProperty = callResolution.Member ??
                                    throw new InvalidPropertyPathException(destinationType, callName,
                                        [.. destinationType.GetProperties().Select(p => p.Name)]);
-                return Expression.Bind(callProperty, MethodCall(context, element, call));
+                return Bind(callProperty, MethodCall(context, element, call));
             }
 
             var propName = element.NewPropName?.GetName(context.HLinqQuery) ??
@@ -157,7 +198,7 @@ public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tok
                                    [.. destinationType.GetProperties().Select(p => p.Name)]);
             if (element.NestedSelect is { } nested)
             {
-                return Expression.Bind(propertyInfo, nestedSelects.Build(element, nested, context));
+                return Bind(propertyInfo, nestedSelects.Build(element, nested, context));
             }
 
             if (element.Property is not null)
@@ -167,18 +208,18 @@ public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tok
                     InitializerPropertyType = propertyInfo.PropertyType
                 };
                 var expression = (MemberExpression)initializerContext.Builder.ToExpression(context, element.Property);
-                return Expression.Bind(propertyInfo, expression);
+                return Bind(propertyInfo, expression);
             }
 
             if (element.InnerProperty is not null)
             {
-                return Expression.Bind(propertyInfo, context.ToExpression(element.InnerProperty));
+                return Bind(propertyInfo, context.ToExpression(element.InnerProperty));
             }
 
             //if this is constant value assignment just assign it
             var value = TransformValueForType(context, element, propertyInfo);
-            return Expression.Bind(propertyInfo,
-                Expression.Constant(converter.ConvertTo(propertyInfo.PropertyType, value, context.Culture)));
+            return Bind(propertyInfo,
+                Constant(converter.ConvertTo(propertyInfo.PropertyType, value, context.Culture)));
         }
 
         private Expression MethodCall(IBuilderContext context, PropertyAssignment element,
@@ -190,47 +231,40 @@ public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tok
                 return aggregates.BuildOverEntity(context, call);
             }
 
-            if (element.Property is not null || element.InnerProperty is not null)
+            if (element.Property is null && element.InnerProperty is null)
             {
-                var callContext = new MethodCallConditionBuilderContext(context)
-                {
-                    MethodSource = CallSource(context, element)
-                };
-                return instanceMethods.BuildInstance(callContext, call, parametersConverter);
+                return staticMethods.BuildStatic(context, call, parametersConverter);
             }
 
-            return staticMethods.BuildStatic(context, call, parametersConverter);
+            var callContext = new MethodCallConditionBuilderContext(context)
+            {
+                MethodSource = CallSource(context, element)
+            };
+            return instanceMethods.BuildInstance(callContext, call, parametersConverter);
         }
 
-        private Type MethodCallType(IBuilderContext context, PropertyAssignment element,
-            Method call)
+        private Type MethodCallType(IBuilderContext context, PropertyAssignment element, Method call)
         {
             if (call.IsEntity)
             {
-                return aggregates.ReturnType(context, call, context.Type);
+                return aggregates.ReturnTypeOverSubject(context, call);
             }
 
-            if (element.Property is not null || element.InnerProperty is not null)
+            if (element.Property is null && element.InnerProperty is null)
             {
-                var source = CallSource(context, element);
-                //the aggregate keeps first refusal here exactly as in the instance converter:
-                //a Count/Any/Max written on a collection is its aggregate, not its instance
-                //method, and one written on anything else is refused the very same way
-                if (aggregatesCache.IsAggregateName(call.GetName(context.HLinqQuery)))
-                {
-                    return aggregates.ReturnType(context, call, source.Type);
-                }
-
-                return call.ResolveInstanceMethod(context, source.Type, MemberName(element, context)).ReturnType;
+                return call.ResolveStaticMethod(context).ReturnType;
             }
 
-            return call.ResolveStaticMethod(context).ReturnType;
+            var source = CallSource(context, element);
+            return aggregatesCache.IsAggregateName(call.GetName(context.HLinqQuery))
+                ? aggregates.ReturnType(context, call, source.Type)
+                : call.ResolveInstanceMethod(context, source.Type, MemberName(element, context)).ReturnType;
         }
 
         private static string MemberName(PropertyAssignment element, IBuilderContext context) =>
-            element.Property?.GetPath(context.HLinqQuery).LastOrDefault() ??
+            element.Property?.GetLastName(context.HLinqQuery) ??
             element.InnerProperty?.GetLastName(context.HLinqQuery) ??
-            throw new ExpressionConverter.PropertyAssignmentWithoutPropertyCannotBeTranslatedException();
+            throw new PropertyAssignmentWithoutPropertyCannotBeTranslatedException();
 
         private static MemberExpression CallSource(IBuilderContext context, PropertyAssignment element)
         {
@@ -241,13 +275,12 @@ public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tok
                     .Member;
             }
 
-            var property = element.Property ??
-                           throw new ExpressionConverter.PropertyAssignmentWithoutPropertyCannotBeTranslatedException();
+            var property = element.Property ?? throw new PropertyAssignmentWithoutPropertyCannotBeTranslatedException();
             var path = property.GetPath(context.HLinqQuery);
             return context.Builder.GetProperty(context.Type, context.Param, path, context).Member;
         }
 
-        private static Type InnerMemberType(INestedScopeBuilderContext scope, InnerProperty inner) =>
+        private static Type InnerMemberType(INestedScopeBuilderContext scope, IInnerProperty inner) =>
             scope.Builder
                 .GetProperty(scope.InnerType, scope.InnerSource, inner.GetPath(scope.HLinqQuery), scope)
                 .Member.Type;
@@ -259,7 +292,7 @@ public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tok
         /// <see cref="InitializerPropertyName"/>.
         /// </summary>
         private static string? TargetProperty(PropertyAssignment element, IBuilderContext context) =>
-            element.Property?.GetPath(context.HLinqQuery).LastOrDefault() ??
+            element.Property?.GetLastName(context.HLinqQuery) ??
             element.InnerProperty?.GetLastName(context.HLinqQuery);
 
         private static string TransformValueForType(IBuilderContext context, PropertyAssignment element,
@@ -311,9 +344,5 @@ public sealed partial class PropertyAssignment(IToken[] tokens) : TreeBranch(tok
             element.Property is not null
                 ? (MemberExpression)context.Builder.ToExpression(context, element.Property)
                 : throw new PropertyAssignmentWithoutPropertyCannotBeTranslatedException();
-
-        public class PropertyAssignmentWithoutPropertyCannotBeTranslatedException()
-            : HLinqQueryException(
-                $"{nameof(PropertyAssignment)} cannot be translated to Expression if it does not contain source '{nameof(Property)}' information.");
     }
 }

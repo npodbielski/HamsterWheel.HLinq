@@ -198,7 +198,7 @@ public class HLinqObjectExtensionsTests
         //act
         var actual = (object[])rows.ExecuteHLinq("groupBy[x.Enum]");
 
-        //assert - every group answers its key and the rows standing under it
+        //assert
         actual.Should().HaveCount(3);
         RowsOf(actual, RandomEnum.One).Length.Should().Be(2);
         RowsOf(actual, RandomEnum.Two).Length.Should().Be(1);
@@ -241,7 +241,7 @@ public class HLinqObjectExtensionsTests
         //arrange
         var rows = GroupedRows();
 
-        //act - K names a row member so it shapes the rows of the group, while the count rides
+        //act
         //beside Key and Rows of the group itself
         var actual = (object[])rows.ExecuteHLinq("groupBy[x.Enum].select[K=x.Enum,C=x.Count()]");
 
@@ -280,8 +280,30 @@ public class HLinqObjectExtensionsTests
         var actual = (object[])rows.ExecuteHLinq(
             "groupBy[x.Enum].where[x.Count()>0].orderBy[x.Max(x.Int)]");
 
-        //assert - One (max 30) before Two (40) before Longer (50)
+        //assert
         actual.Select(g => KeyOf(g)).Should().ContainInOrder(RandomEnum.One, RandomEnum.Two, RandomEnum.Longer);
+    }
+
+    [Fact]
+    public void ValidateHLinq_WhenQueryIsOfTheItemsOfTheCollection_ThenNothingIsAnswered()
+    {
+        //act
+        var errors = new[] { new { Name = "aa" } }.ValidateHLinq("where[x.Name==aa]");
+
+        //assert
+        errors.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ValidateHLinq_WhenQueryNamesNoMember_ThenEveryErrorOfItIsAnswered()
+    {
+        //act
+        var errors = new[] { new { Name = "aa" } }.ValidateHLinq("where[x.Nope==1&&x.Texto==2]");
+
+        //assert
+        errors.Select(e => (e.ErrorCode, e.RootKeyword, e.Text)).Should().Equal(
+            ("unknown-member", "where", "Nope"),
+            ("unknown-member", "where", "Texto"));
     }
 
     //three groups, the One group carries two rows with their own numbers to aggregate over

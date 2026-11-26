@@ -4,15 +4,16 @@ using HamsterWheel.HLinq.Tokens.Selecting;
 
 namespace HamsterWheel.HLinq.Tree.Selecting;
 
-public sealed class InitializerPropertyName(NameOrValue name) : TreeLeaf([name])
+public sealed class InitializerPropertyName(NameOrValue name) : TreeLeaf([name]), IInitializerPropertyName
 {
     private string? _name;
     public string GetName(string hLinqQuery) => _name ??= Tokens.OfType<NameOrValue>().First().GetValue(hLinqQuery);
 
+    // ReSharper disable once UnusedType.Global -> used by Parser
     public sealed class Parser : ElementParserBase<InitializerPropertyName>
     {
         public override IToken[] ExampleTokens { get; } = [NameOrValue.Empty];
-        protected override Type[] ValidParents { get; } = [typeof(PropertyAssignment)];
+        public override Type[] ValidParents { get; } = [typeof(PropertyAssignment)];
 
         protected override InitializerPropertyName? BuildBranch(IParsingContext context) =>
             context.Tokens is [NameOrValue name, Assignment, ..] ? new InitializerPropertyName(name) : null;

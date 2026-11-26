@@ -4,7 +4,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
-        <Description>Linq to HTTP Query Language. Allows your api endpoints to be queried via HTTP Query String in a way that resembles EF Linq queries to your DB entities or any other backend supported by Linq. Exposes simple way to select, filter, order and group your data with easy paging support. Extensible, fast and easy to localize.</Description>
+        <Description>Query your API through its query string - where, select, orderBy, groupBy, skip and take are translated to LINQ and applied to an IQueryable of your choice: an EF context against a database engine, or an in-memory collection. There are also extensions for ASP.NET Core, a client package, and function packs per database engine.</Description>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -35,10 +35,7 @@
         <Compile Update="Pipeline\Tokenizer\HLinqTokenizer.Exceptions.cs">
           <DependentUpon>HLinqTokenizer.cs</DependentUpon>
         </Compile>
-        <Compile Update="Pipeline\Tokenizer\HLinqTokenizer.Net90.cs">
-          <DependentUpon>HLinqTokenizer.cs</DependentUpon>
-        </Compile>
-        <Compile Update="Pipeline\Tokenizer\HLinqTokenizer.NetStandard.cs">
+        <Compile Update="Pipeline\Tokenizer\HLinqTokenizer.Net100.cs">
           <DependentUpon>HLinqTokenizer.cs</DependentUpon>
         </Compile>
         <Compile Update="Pipeline\Tokenizer\HLinqTokenizer.Language.cs">
@@ -50,10 +47,40 @@
         <Compile Update="Tree\Filtering\AggregateMethodToExpressionConverter.Exceptions.cs">
           <DependentUpon>AggregateMethodToExpressionConverter.cs</DependentUpon>
         </Compile>
+        <Compile Update="Tokens\TokenBase.Net100.cs">
+          <DependentUpon>TokenBase.cs</DependentUpon>
+        </Compile>
+        <Compile Update="ExtensionMethods\StringArrayExtensions.Net100.cs">
+          <DependentUpon>StringArrayExtensions.cs</DependentUpon>
+        </Compile>
+        <Compile Update="ExtensionMethods\StringExtensions.Net100.cs">
+          <DependentUpon>StringExtensions.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Applier\Builders\ExpressionBuilder.Comparison.cs">
+          <DependentUpon>ExpressionBuilder.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Applier\Builders\ExpressionBuilder.Math.cs">
+          <DependentUpon>ExpressionBuilder.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Applier\Builders\ExpressionBuilder.Value.cs">
+          <DependentUpon>ExpressionBuilder.cs</DependentUpon>
+        </Compile>
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-        <Compile Remove="**\*.Net90.cs" />
+        <Compile Remove="**\*.Net100.cs" />
+        <Compile Update="ExtensionMethods\StringArrayExtensions.NetStandard.cs">
+            <DependentUpon>StringArrayExtensions.cs</DependentUpon>
+        </Compile>
+        <Compile Update="ExtensionMethods\StringExtensions.NetStandard.cs">
+            <DependentUpon>StringExtensions.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Pipeline\Tokenizer\HLinqTokenizer.NetStandard.cs">
+            <DependentUpon>HLinqTokenizer.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Tokens\TokenBase.NetStandard.cs">
+            <DependentUpon>TokenBase.cs</DependentUpon>
+        </Compile>
     </ItemGroup>
 
     <ItemGroup>

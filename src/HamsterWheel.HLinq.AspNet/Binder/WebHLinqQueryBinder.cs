@@ -6,9 +6,6 @@ namespace HamsterWheel.HLinq.AspNet.Binder;
 /// <summary>
 /// Used from Controllers of ASP.NET application to bind HLinqQuery
 /// </summary>
-/// <param name="parser"></param>
-/// <param name="tokenizer"></param>
-/// <param name="methodsCache"></param>
 public class WebHLinqQueryBinder(HLinqBinderDependenciesBag dependenciesBag) : HLinqQueryBinder(dependenciesBag), IModelBinder
 {
     public Task BindModelAsync(ModelBindingContext bindingContext)
@@ -18,8 +15,8 @@ public class WebHLinqQueryBinder(HLinqBinderDependenciesBag dependenciesBag) : H
         var httpQueryString = bindingContext.HttpContext.Request.QueryString;
         var queryString = httpQueryString.ToString();
         var query = BindQuery(queryString, bindingContext.ModelType);
-        query.Warnings = bindingContext.HttpContext.RequestServices.GetService<IHLinqWarnings>()
-                         ?? query.Warnings;
+        query.Diagnostics = bindingContext.HttpContext.RequestServices.GetService<IHLinqDiagnostics>()
+                            ?? query.Diagnostics;
 
         bindingContext.Result = ModelBindingResult.Success(query);
 

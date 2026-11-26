@@ -1,18 +1,21 @@
 using System.Globalization;
+using HamsterWheel.HLinq.Data.Converters;
 using System.Linq.Expressions;
 using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Pipeline.Parser;
 
 namespace HamsterWheel.HLinq.Pipeline.Applier.Builders;
 
-public sealed record ArithmeticComparisonConditionBuilderContext(IBuilderContext BuilderContext) : IArithmeticComparisonConditionBuilderContext
+public sealed record ArithmeticComparisonConditionBuilderContext(
+    IBuilderContext BuilderContext,
+    IDefaultConverter Converter) : IArithmeticComparisonConditionBuilderContext
 {
     public ParameterExpression Param { get; } = BuilderContext.Param;
     public Type Type { get; } = BuilderContext.Type;
     public IExpressionBuilder Builder { get; } = BuilderContext.Builder;
     public string HLinqQuery { get; } = BuilderContext.HLinqQuery;
     public CultureInfo Culture { get; } = BuilderContext.Culture;
-    public IHLinqWarnings? Warnings { get; } = BuilderContext.Warnings;
+    public IHLinqDiagnostics? Diagnostics { get; } = BuilderContext.Diagnostics;
     public IReadOnlyDictionary<string, MemberExpression>? GroupMembers { get; } = BuilderContext.GroupMembers;
 
     public Type? ComparisonType { get; set; }

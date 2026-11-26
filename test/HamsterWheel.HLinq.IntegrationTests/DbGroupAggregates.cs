@@ -39,9 +39,6 @@ public class DbGroupAggregates(DemoFixture fixture) : IAsyncLifetime
         await Context.DisposeAsync();
     }
 
-    private static IHLinqQueryApplier Applier(DemoFixture fixture) =>
-        fixture.DemoTestHost.Services.GetRequiredService<IHLinqQueryApplier>();
-
     //a last name shared by the seeded people, so a group has rows to count - picked from the
     //names read into memory, EF translates no ordering by a group's own count
     private string SharedLastName =>
@@ -224,4 +221,7 @@ public class DbGroupAggregates(DemoFixture fixture) : IAsyncLifetime
             }
         }
     }
+
+    private static IHLinqQueryApplier Applier(DemoFixture fixture) =>
+        fixture.DemoTestHost.Services.GetRequiredService<IHLinqQueryApplier>();
 }

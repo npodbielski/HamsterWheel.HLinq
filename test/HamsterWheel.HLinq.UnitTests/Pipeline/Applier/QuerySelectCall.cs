@@ -1,4 +1,5 @@
 using FluentAssertions;
+using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline;
 using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
@@ -11,10 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace HamsterWheel.HLinq.UnitTests.Pipeline.Applier;
 
 /// <summary>
-/// A call written as a member of the select answers the row the way the same call written by hand
-/// in Linq answers it: a rename names the answer, an unnamed call names itself by the method,
-/// written arguments and the culture of the request reach the method, and a call nothing can bind
-/// is refused by name.
+/// A call in a select answers the row like the same call written by hand in Linq.
 /// </summary>
 partial class HLinqQueryApplierUnitTests
 {
@@ -50,15 +48,16 @@ partial class HLinqQueryApplierUnitTests
     }
 
     [Fact]
-    public void Apply_WhenTwoUnnamedCallsOfTheSameMethod_ThenOneColumnAnswersTheLastOfThem()
+    public void Apply_WhenTwoUnnamedCallsOfTheSameMethod_ThenRefusedWithTheReason()
     {
         var entities = new[] { new DummyEntity("Ann") { Text = "bob" } };
 
-        //act - both calls name themselves `ToUpper` and one column carries the last of them
-        var actual = ApplyDummy("select[x.Name.ToUpper(),x.Text.ToUpper()]", entities);
+        //act
+        //which of them an engine answers is not the same answer everywhere
+        var act = () => ApplyDummy("select[x.Name.ToUpper(),x.Text.ToUpper()]", entities);
 
         //assert
-        Json(actual).Should().Be(Json(new[] { new { ToUpper = "bob".ToUpper() } }));
+        act.Should().Throw<MemberNameCollisionException>();
     }
 
     [Fact]
@@ -171,7 +170,8 @@ partial class HLinqQueryApplierUnitTests
         var applier = new HLinqQueryApplier(
             provider.GetRequiredService<IElementApplierFactory>(),
             provider.GetRequiredService<IMethodsCache>(),
-            provider.GetRequiredService<IExpressionBuilder>());
+            provider.GetRequiredService<IExpressionBuilder>(),
+            provider.GetRequiredService<IHLinqOptions>());
         return applier.Apply(entities.AsQueryable(), hlinqQuery);
     }
 }

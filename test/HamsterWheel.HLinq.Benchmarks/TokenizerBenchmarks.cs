@@ -14,7 +14,9 @@ namespace HamsterWheel.HLinq.Benchmarks;
 public class TokenizerBenchmarks
 {
     // representative queries: plain, dots in value, date constant, dead-prefix keywords,
-    // range, wide select, full chain
+    // range, wide select, full chain, math in a filter and as an ordering key;
+    // groupByOnly and takeOne are the controls of a grammar change: clauses whose group of words
+    // the math operators are not part of
     private static readonly Dictionary<string, string> Queries = new()
     {
         ["whereInt"] = "where[x.Int==5]",
@@ -25,7 +27,13 @@ public class TokenizerBenchmarks
         ["orderByDescending"] = "orderByDescending[x.Name]",
         ["takeRange"] = "take[10..20]",
         ["nestedSelect"] = "select[x.Name,addresses=x.Addresses.select(a.Street,a.City)]",
-        ["select27"] = BuildWideSelectQuery(27)
+        ["select27"] = BuildWideSelectQuery(27),
+        ["whereName"] = "where[x.Name==John]",
+        ["groupByOnly"] = "groupBy[x.Name]",
+        ["takeOne"] = "take[10]",
+        ["whereDifference"] = "where[x.Int-x.Int>5]",
+        ["whereFoldedGroup"] = "where[x.Int>(2*3)]",
+        ["orderByKey"] = "orderBy[x.Int+1]"
     };
 
     public static IEnumerable<string> QueryKeys => Queries.Keys;

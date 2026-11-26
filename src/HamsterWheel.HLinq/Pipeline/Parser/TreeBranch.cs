@@ -25,6 +25,4 @@ public abstract class TreeBranch(IToken[] startingTokens) : ITreeBranch
             Tokens = [.. Tokens, .. endingTokens];
         }
     }
-
-    protected T? GetChildOfType<T>() where T : ITreeElement => Children.OfType<T>().SingleOrDefault();
 }

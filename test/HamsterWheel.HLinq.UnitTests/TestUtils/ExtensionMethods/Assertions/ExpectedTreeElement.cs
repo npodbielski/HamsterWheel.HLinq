@@ -1,5 +1,6 @@
 using HamsterWheel.HLinq.Tree;
 using HamsterWheel.HLinq.Tree.Filtering;
+using HamsterWheel.HLinq.Tree.Ordering;
 using HamsterWheel.HLinq.Tree.Paging;
 using HamsterWheel.HLinq.Tree.Selecting;
 
@@ -35,6 +36,30 @@ public class ExpectedTreeElement(
 
     public static ExpectedTreeElement InitializerConstantValue(string value) =>
         new(typeof(InitializerConstantValue), tokens: [ExpectedToken.Assignment, ExpectedToken.NameOrValue(value)]);
+
+    //join
+    public static ExpectedTreeElement MathTerm(ExpectedToken op, params ExpectedTreeElement[] children) =>
+        new(typeof(MathTerm), children, [op]);
+
+    public static ExpectedTreeElement MathText(string text) =>
+        new(typeof(MathConstant), tokens: [ExpectedToken.Quoted(text)]);
+
+    public static ExpectedTreeElement MathNumber(string number) =>
+        new(typeof(MathConstant), tokens: [ExpectedToken.Number(number)]);
+
+    public static ExpectedTreeElement MathValue(string value) =>
+        new(typeof(MathConstant), tokens: [ExpectedToken.NameOrValue(value)]);
+
+    public static ExpectedTreeElement MathGroup(params ExpectedTreeElement[] children) =>
+        new(typeof(MathGroup), children,
+            [ExpectedToken.LeftCircleBracket, ExpectedToken.RightCircleBracket]);
+
+    //ordering
+    public static ExpectedTreeElement OrderByRoot(params ExpectedTreeElement[] children) =>
+        new(typeof(OrderByRoot), children);
+
+    public static ExpectedTreeElement ThenByRoot(params ExpectedTreeElement[] children) =>
+        new(typeof(ThenByRoot), children);
 
     //where
     public static ExpectedTreeElement WhereRoot(params ExpectedTreeElement[] children) =>

@@ -71,7 +71,7 @@ internal class GrammarValidator(IGrammar grammar, IHLinqWord[] allWords)
                 //...nor in the same clause, which is how `=` (rename, select only) and `==` (compare,
                 //everywhere else) can both be keywords without either carrying a next-character rule
                 if (!ClauseRootsOf(words)
-                        .Any(root => RuleOf(shorter).MatchesClauseRoot(root) && RuleOf(longer).MatchesClauseRoot(root)))
+                        .Any(root => RuleOf(shorter).MatchesRoot(root) && RuleOf(longer).MatchesRoot(root)))
                 {
                     continue;
                 }

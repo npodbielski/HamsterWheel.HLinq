@@ -1,4 +1,5 @@
 using System.Collections;
+using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Request;
@@ -51,6 +52,33 @@ public static class HLinqObjectExtensions
         var result =
             EntryPoint.DependenciesBag.QueryApplier.ApplyGetType(list.AsQueryable(), hLinqQuery, itemType);
         return isCollection ? result.Data : (result.Data?.FirstOrDefault() ?? result.Count);
+    }
+
+    /// <summary>
+    /// Validates the query against the type of the object or of the items of the collection,
+    /// without running anything.
+    /// </summary>
+    public static IReadOnlyList<HLinqError> ValidateHLinq<T>(this T? obj, string query) where T : class
+    {
+        if (obj is null)
+        {
+            throw new ArgumentNullException(nameof(obj));
+        }
+
+        var itemType = obj is not IEnumerable enumerable
+            ? obj.GetType()
+            : enumerable.GetType().GetInterface(typeof(IEnumerable<>).FullName!)?.GenericTypeArguments[0]
+              ?? throw new ExpectedImplementationOfIEnumerableException();
+
+        if (!query.StartsWith("select[") && !query.Contains('['))
+        {
+            query = $"select[{query}]";
+        }
+
+        var validate = MethodsCache.GetStaticOrThrow(typeof(HLinqQuery<>).MakeGenericType(itemType),
+            nameof(HLinqQuery<object>.Validate), parameters => parameters.Length == 2);
+
+        return (IReadOnlyList<HLinqError>)validate.Invoke(null, [EntryPoint.DependenciesBag, query])!;
     }
 
     private static List<T> CreateList<T>(this T obj) => [obj];

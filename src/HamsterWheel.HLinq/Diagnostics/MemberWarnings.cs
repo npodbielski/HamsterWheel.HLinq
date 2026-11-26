@@ -14,12 +14,12 @@ internal static class MemberWarnings
     /// </summary>
     public static void Report<T>(this MemberResolution<T> resolution, IBuilderContext? context)
         where T : MemberInfo =>
-        context?.Warnings.Report(resolution, context.HLinqQuery);
+        context?.Diagnostics.Report(resolution, context.HLinqQuery);
 
-    private static void Report<T>(this IHLinqWarnings? warnings, MemberResolution<T> resolution,
+    private static void Report<T>(this IHLinqDiagnostics? diagnostics, MemberResolution<T> resolution,
         string query) where T : MemberInfo
     {
-        if (warnings is null
+        if (diagnostics is null
             || resolution.Reason != ResolutionReason.OrdinalTieBreak
             || resolution.Competitors.Count < 2
             || resolution.Member is null)
@@ -27,7 +27,7 @@ internal static class MemberWarnings
             return;
         }
 
-        warnings.Report(new HLinqMemberWarning(
+        diagnostics.Report(new HLinqMemberWarning(
             typeof(T) == typeof(PropertyInfo)
                 ? HLinqMemberWarningReason.AmbiguousName
                 : HLinqMemberWarningReason.AmbiguousCall,

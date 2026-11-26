@@ -29,14 +29,20 @@ explicit `alpha` → `master` MR.
 
 ## Comments and documentation
 
+- **Comments state what the code does and its contract** — never history ("we switched to X
+  because Y was not working"), justification or speculation ("otherwise the caller would read it
+  as 500"), or plan references ("the plan mentioned A but it is not possible so we use B").
+  Keep comments as short as they can be; future work goes in `TODO(scope): ...` markers, not
+  prose. History lives in git and the issue tracker.
 - **No one-line summary comments.** Do not add doc comments that merely restate
   what the code says (a `<summary>` echoing the member name, or a "see also"
   pointer); the name and signature are the documentation. Write a comment only
   for the *why* that the code cannot show, and put cross-cutting design rules
   here in AGENTS.md rather than repeating them in code.
-- **Code comments must be readable without repo history.** No issue numbers,
-  plan step names ("S4"), or MR references in source comments — say what the
-  code does and why, in itself; history lives in git and the issue tracker.
+- **A documented member carries its `<summary>` and nothing else.** No
+  `<remarks>`, no `//` comment above or below the doc block — what does not fit
+  twenty words is either not summary material (a `//` comment where the code
+  needs it, away from the block) or design material (AGENTS.md).
 
 ## Code style
 
@@ -46,9 +52,31 @@ explicit `alpha` → `master` MR.
 - **Braces on every loop and branch body**, even single statements, and one
   statement per line (no `foreach x foreach y yield return z;` chains, no
   `if (x) return;`).
-- **Multi-line XML doc blocks.** `/// <summary>` opens on its own line, text on
-  following lines, `/// </summary>` closes on its own line — never a one-line
-  doc comment.
+- **XML doc summaries are twenty words or less.** A summary is read in the tooltip of one
+  member, not as a paragraph; what does not fit is design and belongs in AGENTS.md or in a
+  comment where the code needs it. `<summary>` and `</summary>` each always get a line of
+  their own — never text flowing after the opening tag or before the closing one:
+
+  ```csharp
+  // allowed
+  /// <summary>
+  /// My class.
+  /// </summary>
+
+  // disallowed - one line
+  /// <summary>My class.</summary>
+  ```
+
+## Test conventions
+
+- **A test reads as arrange, act, assert**, marked by the bare comments `//arrange`, `//act`
+  and `//assert` — the comment is the marker and nothing else, never a sentence after it.
+  Where the lines of one section answer for another, one combined marker says so
+  (`//act + assert`); a section that is empty is skipped, not explained.
+- **Helper methods of a test class live below its tests** — the tests are read top-down and
+  the helpers are what they lean on; a helper between two tests breaks the list.
+- **Test files follow the comment rules of code**: a summary of a test class or helper is
+  twenty words or less and carries nothing around it.
 
 ## Versioning
 
@@ -96,8 +124,47 @@ explicit `alpha` → `master` MR.
 4. Push the branch and monitor the pipeline via the GitLab API until green.
    **Do not merge — wait for approval.**
 
+## The three stages
+
+The query is built in three stages and each reads only what the stage before it
+produced:
+
+1. **the tokenizer** turns the text into tokens (`HLinqTokenizer`), reading
+   nothing but the current window;
+2. **the parser** turns tokens into a tree of elements (`HLinqParser`, the tree
+   types under `Tree/`); this is where the query's own facts get committed — a
+   clause root is parsed, a grouping is applied, the order of the roots is
+   fixed — and therefore where the questions those facts decide get answered:
+   which member of a select shapes a group's rows, whether a call stands beside
+   a group or shapes a row, and what a clause may name after a `groupBy`;
+3. **the applier** turns the tree into `IQueryable` calls, with the expressions
+   the builders produce; it builds out of decisions the tree already says.
+
+So a stage never reaches forward: the parser does not consult the queryable or
+the provider, and the applier does not re-read the query text or
+re-derive from tokens what the built tree already answers. When an applier finds
+itself asking what a word of the query *meant*, that question belongs to the
+parse. A clause that needs to know whether a `groupBy` came before it asks the
+parsing context (`IParsingContext.GroupingApplied`) while it is parsed, never the
+queryable the applier happens to hold. Three questions are deliberately not
+the parse's, because they are answered against a type and not against the text:
+what a name resolves to in the host's CLR type (member resolution), whether the
+subject a call hangs on has anything to fold (a row that is itself a collection
+folds like any LINQ source, with no `groupBy` in the query), and what a provider
+can translate (the packs, measured per engine).
+
 ## Design rules
 
+- **A clause reads its values by what answers them, never by a position among its
+  children.** A call written over a member is two children of the clause - the member
+  and the call - so `where[x.Children.Count()>1]` holds four children around the
+  operator and `where[x.Int>1]` holds three. `ConditionExpression` is what a clause reads as
+  one value (the call, with the member it hangs on, or the single element written in
+  place of a call), and `Condition.Sides` splits the children at the operator and hands
+  each side to it; the ordering roots read their one value the same way. A converter
+  that indexes `Children` by hand therefore breaks the moment the query writes a call,
+  and a comparison builds the side that says what is compared first, because a value the
+  query wrote becomes whatever the side it stands against is.
 - **The tokenizer stays a single window walk: no backtracking, no peeking at
   syntax.** For each window (text after the last committed token),
   `HLinqTokenizer` evaluates the grammar half of every candidate word once
@@ -123,7 +190,7 @@ explicit `alpha` → `master` MR.
   group. A token
   of another clause is therefore never asked anything. This is not lookahead:
   the clause is a committed fact, the same kind of fact adjacency reads. The
-  question a rule answers about the clause (`MatchesClauseRoot`) is separate
+  question a rule answers about the clause (`MatchesRoot`) is separate
   from its matchers — see the next rule.
 - **One grammar rule per token, declared as adjacency matchers only.** The
   characters that end a free-text token (its delimiters) are *derived* from
@@ -139,7 +206,12 @@ explicit `alpha` → `master` MR.
   no keyword swallowing a longer one it competes with *in a clause where both are
   allowed*) against the words of one language, so a language with words of its
   own (`AddTranslatedKeyword`, `AddWord`) is checked as it is built;
-  call it in tests when touching grammar.
+  call it in tests when touching grammar. What a grammar answers — which element
+  opens a query, whose child each element is, what word spells a token, which
+  tokens a token stands after and before, which clause root it is a word of — is
+  recorded per class for the invariant language and compared across every language
+  of one tokenizer (`GrammarFactsData`, `GrammarFactsUnitTests`), so a widened
+  matcher shows up as the line of the class and the question it changed in.
 - **One grammar per language, one word object per token.** A language is the
   words of one culture plus the invariant ones, and two cultures never share a
   grammar: the characters that end a free-text token are *derived* from the words

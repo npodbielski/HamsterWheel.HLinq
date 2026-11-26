@@ -11,9 +11,9 @@ namespace HamsterWheel.HLinq.Tree.Selecting;
 /// Nested select: <c>x.Addresses.select(...)</c> in
 /// <c>persons?select[x.Addresses.select(a.City,a.Street)]</c>.
 /// </summary>
-public sealed class NestedSelect(IToken[] tokens) : TreeBranch(tokens)
+public sealed class NestedSelect(IToken[] tokens) : TreeBranch(tokens), INestedSelect
 {
-    public IReadOnlyList<PropertyAssignment> Members => field ??= [.. Children.OfType<PropertyAssignment>()];
+    public IReadOnlyList<IPropertyAssignment> Members => field ??= [.. Children.OfType<PropertyAssignment>()];
 
     // ReSharper disable once UnusedType.Global - Used by Parser
     public sealed class Parser(IGrammar grammar) : ElementParserBase<NestedSelect>
@@ -23,7 +23,7 @@ public sealed class NestedSelect(IToken[] tokens) : TreeBranch(tokens)
         /// clause names the call with it - the tree it opens is this one under every spelling.
         /// </summary>
         private readonly string[] _selectWords = grammar.KeywordsOf(typeof(Select));
-        protected override Type[] ValidParents { get; } = [typeof(PropertyAssignment)];
+        public override Type[] ValidParents { get; } = [typeof(PropertyAssignment)];
 
         public override IToken[] ExampleTokens { get; } =
         [
@@ -54,6 +54,7 @@ public sealed class NestedSelect(IToken[] tokens) : TreeBranch(tokens)
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);
+            context.CurrentBranch?.Children.RefuseDuplicateSelects(context.SourceQueryString);
             context.RemoveStartTokens(1);
         }
     }

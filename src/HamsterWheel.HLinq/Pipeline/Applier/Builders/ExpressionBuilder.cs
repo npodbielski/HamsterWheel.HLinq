@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
-using DynamicAnonymousType;
 using HamsterWheel.HLinq.Data.Converters;
 using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.Exceptions;
@@ -12,13 +11,14 @@ using HamsterWheel.HLinq.Tree.Filtering;
 using HamsterWheel.HLinq.Tree.Selecting;
 using static System.Linq.Expressions.Expression;
 using static System.StringComparison;
+using static DynamicAnonymousType.DynamicFactory;
 using static HamsterWheel.HLinq.Pipeline.Applier.Builders.BuilderContext;
 using static HamsterWheel.HLinq.Reflection.EfDbFunctionsMatcher;
 using static HamsterWheel.HLinq.Reflection.MemberRanking;
 
 namespace HamsterWheel.HLinq.Pipeline.Applier.Builders;
 
-public sealed class ExpressionBuilder(
+public sealed partial class ExpressionBuilder(
     IPropertiesCache props,
     IMethodsCache methods,
     IConverterFactory converterFactory,
@@ -27,13 +27,12 @@ public sealed class ExpressionBuilder(
     IWrittenValueParser writtenValues,
     IAggregateMethodToExpressionConverter aggregates) : IExpressionBuilder
 {
-    private IAggregateMethodToExpressionConverter _aggregates = aggregates;
     public IParametersConverter GetParametersConverter() => parametersConverter;
 
     public LambdaExpression GetFilter(Type source, IWhereRoot query, string hLinqQuery,
-        CultureInfo? culture = null, IHLinqWarnings? warnings = null)
+        CultureInfo? culture = null, IHLinqDiagnostics? diagnostics = null)
     {
-        var context = From(source, this, hLinqQuery, culture ?? CultureInfo.InvariantCulture, warnings);
+        var context = From(source, this, hLinqQuery, culture ?? CultureInfo.InvariantCulture, diagnostics);
         var body = BuildBody(context, query);
 
         var delegateType = typeof(Func<,>).MakeGenericType(source, typeof(bool));
@@ -42,14 +41,14 @@ public sealed class ExpressionBuilder(
     }
 
     public (LambdaExpression Expression, Type PropType) GetProperty(Type source, ITreeRoot query,
-        string hLinqQuery, CultureInfo? culture = null, IHLinqWarnings? warnings = null) =>
-        GetProperty(source, (ITreeBranch)query, hLinqQuery, culture, warnings);
+        string hLinqQuery, CultureInfo? culture = null, IHLinqDiagnostics? diagnostics = null) =>
+        GetProperty(source, (ITreeBranch)query, hLinqQuery, culture, diagnostics);
 
     public (LambdaExpression Expression, Type ResultType) GetSelect(Type source, ISelectRoot query,
-        string hLinqQuery, CultureInfo? culture = null, IHLinqWarnings? warnings = null,
+        string hLinqQuery, CultureInfo? culture = null, IHLinqDiagnostics? diagnostics = null,
         IReadOnlyDictionary<string, MemberExpression>? groupMembers = null)
     {
-        var context = From(source, this, hLinqQuery, culture ?? CultureInfo.InvariantCulture, warnings,
+        var context = From(source, this, hLinqQuery, culture ?? CultureInfo.InvariantCulture, diagnostics,
             groupMembers);
         var expression = BuildBody(context, query);
         Expression body;
@@ -73,9 +72,9 @@ public sealed class ExpressionBuilder(
     }
 
     public (LambdaExpression Expression, Type ResultType) GetProjection(Type source, IProjectionMembers query,
-        string hLinqQuery, CultureInfo? culture = null, IHLinqWarnings? warnings = null)
+        string hLinqQuery, CultureInfo? culture = null, IHLinqDiagnostics? diagnostics = null)
     {
-        var context = From(source, this, hLinqQuery, culture ?? CultureInfo.InvariantCulture, warnings);
+        var context = From(source, this, hLinqQuery, culture ?? CultureInfo.InvariantCulture, diagnostics);
         var body = BuildBody(context, query);
         var delegateType = typeof(Func<,>).MakeGenericType(source, body.Type);
         return (Lambda(delegateType, body, context.Param), body.Type);
@@ -141,7 +140,7 @@ public sealed class ExpressionBuilder(
             }
             else if (own is not null && groupMembers.ContainsKey(path[0]))
             {
-                context.Warnings?.Report(new HLinqMemberWarning(
+                context.Diagnostics?.Report(new HLinqMemberWarning(
                     HLinqMemberWarningReason.AmbiguousName,
                     own.Name,
                     own.DeclaringType?.ToString() ?? sourceType.ToString(),
@@ -178,15 +177,14 @@ public sealed class ExpressionBuilder(
             : BuildGrouping(state, NestedRowShape(state), NestedRows(state));
 
     public LambdaExpression GroupAggregateSelector(GroupingState state, IMethod method,
-        string hLinqQuery, CultureInfo culture, IHLinqWarnings? warnings = null)
+        string hLinqQuery, CultureInfo culture, IHLinqDiagnostics? diagnostics = null)
     {
-        var context = FromExisting(state.GroupParam, this, hLinqQuery, culture, warnings);
-        var body = _aggregates.BuildOverEntity(context, method);
+        var context = FromExisting(state.GroupParam, this, hLinqQuery, culture, diagnostics);
+        var body = aggregates.BuildOverEntity(context, method);
         return Lambda(typeof(Func<,>).MakeGenericType(state.GroupingItemType, body.Type), body, state.GroupParam);
     }
 
-    public GroupingState Nest(GroupingState state, LambdaExpression innerKey) =>
-        state with { InnerKey = innerKey };
+    public GroupingState Nest(GroupingState state, LambdaExpression innerKey) => state with { InnerKey = innerKey };
 
     private static Type NestedRowShape(GroupingState state) =>
         typeof(Group<,>).MakeGenericType(state.InnerKey!.ReturnType, state.RowShape);
@@ -229,14 +227,34 @@ public sealed class ExpressionBuilder(
     }
 
     public (LambdaExpression Expression, Type ResultType) GroupRowSelector(GroupingState state,
-        ISelectRoot select, string hLinqQuery, CultureInfo culture, IHLinqWarnings? warnings)
+        ISelectRoot select, string hLinqQuery, CultureInfo culture, IHLinqDiagnostics? diagnostics = null)
     {
         var groupMembers = new Dictionary<string, MemberExpression>(StringComparer.OrdinalIgnoreCase)
         {
             [GroupingState.KeyName] = state.KeyMember
         };
 
-        return GetSelect(state.RowType, select, hLinqQuery, culture, warnings, groupMembers);
+        return select is SelectRoot { RowsSelection: { } rowsSelect }
+            ? GroupRowsSelection(state, rowsSelect, hLinqQuery, culture, diagnostics, groupMembers)
+            : GetSelect(state.RowType, select, hLinqQuery, culture, diagnostics, groupMembers);
+    }
+
+    private (LambdaExpression Expression, Type ResultType) GroupRowsSelection(GroupingState state,
+        INestedSelect rowsSelect, string hLinqQuery, CultureInfo culture, IHLinqDiagnostics? diagnostics,
+        IReadOnlyDictionary<string, MemberExpression> groupMembers)
+    {
+        var members = rowsSelect.Members;
+        var context = From(state.RowType, this, hLinqQuery, culture, diagnostics, groupMembers);
+        var scope = new NestedScopeBuilderContext(context, context.Param, state.RowType);
+
+        var shape = CreateType(members.Select(m =>
+        {
+            var prop = scope.ToPropInfo(m);
+            return (prop.Name, prop.Type);
+        }));
+
+        var body = MemberInit(New(shape), members.Select(m => scope.ToMemberAssignment(m, shape)));
+        return (Lambda(typeof(Func<,>).MakeGenericType(state.RowType, shape), body, context.Param), shape);
     }
 
     private static MethodCallExpression RowsOfGroup(ParameterExpression groupParam, Type rowType,
@@ -253,14 +271,13 @@ public sealed class ExpressionBuilder(
             .Single(m => m.Name == nameof(Enumerable.ToList) && m.GetParameters().Length == 1)
             .MakeGenericMethod(rowSelector.ReturnType);
 
-        return Call(toListMethod,
-            Call(selectMethod, groupParam, rowSelector));
+        return Call(toListMethod, Call(selectMethod, groupParam, rowSelector));
     }
 
     private (LambdaExpression Expression, Type PropType) GetProperty(Type source, ITreeBranch query,
-        string hLinqQuery, CultureInfo? culture, IHLinqWarnings? warnings = null)
+        string hLinqQuery, CultureInfo? culture, IHLinqDiagnostics? diagnostics = null)
     {
-        var context = From(source, this, hLinqQuery, culture ?? CultureInfo.InvariantCulture, warnings);
+        var context = From(source, this, hLinqQuery, culture ?? CultureInfo.InvariantCulture, diagnostics);
         var body = BuildBody(context, query);
 
         var propType = body.Type;
@@ -307,10 +324,6 @@ public sealed class ExpressionBuilder(
             return typeof(Group<,>).MakeGenericType(state.KeyType, rowShape);
         }
 
-        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            GroupingState.KeyName, GroupingState.RowsName
-        };
         var properties = new List<(string Name, Type Type)>
         {
             (GroupingState.KeyName, state.KeyType),
@@ -318,15 +331,10 @@ public sealed class ExpressionBuilder(
         };
         foreach (var aggregate in state.Aggregates)
         {
-            if (!names.Add(aggregate.Name))
-            {
-                throw new AggregateMethodToExpressionConverter.AggregateNameCollisionException(aggregate.Name);
-            }
-
             properties.Add((aggregate.Name, aggregate.Selector.ReturnType));
         }
 
-        return DynamicFactory.CreateType(properties);
+        return CreateType(properties);
     }
 
     private class ExpectedMemberOrMemberInitExpressionException() : HLinqQueryException(

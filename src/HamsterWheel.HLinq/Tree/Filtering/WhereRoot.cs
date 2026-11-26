@@ -1,12 +1,10 @@
 using System.Globalization;
-using HamsterWheel.HLinq.Exceptions;
 using HamsterWheel.HLinq.Pipeline.Applier;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
 using HamsterWheel.HLinq.Reflection;
 using HamsterWheel.HLinq.Tokens;
 using HamsterWheel.HLinq.Tokens.Filtering;
-using HamsterWheel.HLinq.Tree.Grouping;
 
 namespace HamsterWheel.HLinq.Tree.Filtering;
 
@@ -18,7 +16,7 @@ public sealed class WhereRoot(IToken[] tokens) : TreeBranch(tokens), IWhereRoot
     public ILogicalOperatorToken? LogicalOpToken => null;
 
     // ReSharper disable once UnusedType.Global - Used by Parser
-    public sealed class Parser : ElementParserBase<WhereRoot>
+    public sealed class Parser : OrderingOrFilteringRootParser<WhereRoot>
     {
         protected override WhereRoot? BuildBranch(IParsingContext context) =>
             context.Tokens switch
@@ -32,18 +30,6 @@ public sealed class WhereRoot(IToken[] tokens) : TreeBranch(tokens), IWhereRoot
         [
             Where.Empty, LeftSquareBracket.Empty, .. Condition.Parser.ConditionExampleTokens, RightSquareBracket.Empty
         ];
-
-        protected override void FinishImpl(IParsingContext context)
-        {
-            if (context.Tokens is not [RightSquareBracket bracket, ..])
-            {
-                throw new InvalidTokenCollectionException(context.SourceQueryString, context.Tokens,
-                    [RightSquareBracket.Empty]);
-            }
-
-            context.CurrentBranch?.Finish(context, [bracket]);
-            context.RemoveStartTokens(1);
-        }
     }
 
     // ReSharper disable once UnusedType.Global - Used by Applier
@@ -52,10 +38,8 @@ public sealed class WhereRoot(IToken[] tokens) : TreeBranch(tokens), IWhereRoot
         protected override IQueryableContext ApplyImpl(IQueryableContext context, WhereRoot where,
             string hLinqQuery, CultureInfo culture)
         {
-            if (context.Grouping is not null)
-            {
-                GroupedResultPropertyValidator.CheckIfPropertyAvailable(where, hLinqQuery);
-            }
+            var filter = builder.GetFilter(context.CurrentResultType, where, hLinqQuery, culture,
+                context.Diagnostics);
 
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Where),
                 infos => infos[1].ParameterType.IsGenericType &&
@@ -63,11 +47,8 @@ public sealed class WhereRoot(IToken[] tokens) : TreeBranch(tokens), IWhereRoot
                          typeof(Func<,>),
                 context.CurrentResultType);
 
-            var filter = builder.GetFilter(context.CurrentResultType, where, hLinqQuery, culture,
-                context.Warnings);
-
-            return context.Next((IQueryable)method.Invoke(null, [context.Queryable, filter])!,
-                context.CurrentResultType, context.Count);
+            return context.NextByCalling(context.CurrentResultType,
+                source => (IQueryable)method.Invoke(null, [source, filter])!, context.Count);
         }
     }
 

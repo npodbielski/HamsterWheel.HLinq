@@ -71,17 +71,17 @@ public sealed partial class HLinqTokenizer : IHLinqTokenizer
                 grammar.GetRuleFor(w.ForType), BuilderFor(w.ForType)))
         ];
 
-        var byClauseRoot = all
+        var byRoot = all
             .Select(w => w.Word.ForType)
             .Where(t => typeof(IClauseRootToken).IsAssignableFrom(t))
             .Distinct()
             .ToDictionary(root => root,
-                root => all.Where(w => w.Rule.MatchesClauseRoot(root)).ToArray());
+                root => all.Where(w => w.Rule.MatchesRoot(root)).ToArray());
 
-        var outsideOfAnyClause = all.Where(w => w.Rule.MatchesClauseRoot(null)).ToArray();
+        var outsideOfAnyRoot = all.Where(w => w.Rule.MatchesRoot(null)).ToArray();
 
-        return new Language(grammar, all, byClauseRoot, outsideOfAnyClause,
-            [.. outsideOfAnyClause.Where(w => w.Rule.CanBeFirst)]);
+        return new Language(grammar, all, byRoot, outsideOfAnyRoot,
+            [.. outsideOfAnyRoot.Where(w => w.Rule.CanBeFirst)]);
     }
 
     private static string NearestCultureName(string culture)
@@ -94,7 +94,7 @@ public sealed partial class HLinqTokenizer : IHLinqTokenizer
     {
         var span = hLinqQuery.AsSpan();
         var allWords = language.Words;
-        var byClauseRoot = language.ByClauseRoot;
+        var byRoot = language.ByRoot;
         var starting = language.Starting;
         List<IToken> tokens = [];
         var candidates = new WordTranslation[allWords.Length];
@@ -104,7 +104,7 @@ public sealed partial class HLinqTokenizer : IHLinqTokenizer
         var previousTokenIndex = 0;
         var candidatesValid = false;
         var windowHasText = false;
-        var clauseWords = language.OutsideOfAnyClause;
+        var rootlessWords = language.OutsideOfAnyRoot;
 
         for (var index = 0; index < span.Length; index++)
         {
@@ -122,7 +122,7 @@ public sealed partial class HLinqTokenizer : IHLinqTokenizer
             if (!candidatesValid)
             {
                 candidateCount = 0;
-                foreach (var word in tokens.Count == 0 ? starting : clauseWords)
+                foreach (var word in tokens.Count == 0 ? starting : rootlessWords)
                 {
                     if (word.Rule.PreviousTokensMatch(tokens))
                     {
@@ -170,12 +170,12 @@ public sealed partial class HLinqTokenizer : IHLinqTokenizer
             tokens.Add(token);
             if (token is IClauseRootToken clauseRoot)
             {
-                if (!byClauseRoot.TryGetValue(clauseRoot.GetType(), out var clause))
+                if (!byRoot.TryGetValue(clauseRoot.GetType(), out var wordsOfRoot))
                 {
-                    clause = allWords;
+                    wordsOfRoot = allWords;
                 }
 
-                clauseWords = clause;
+                rootlessWords = wordsOfRoot;
             }
 
             previousTokenIndex = tokenEnd;

@@ -15,6 +15,12 @@ namespace HamsterWheel.HLinq.Tree.Selecting;
 
 public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoot, ITreeRoot, IProjectionMembers
 {
+    public INestedSelect? RowsSelection { get; private set; }
+
+    /// <summary>
+    /// Whether a <c>groupBy</c> was committed before this select.
+    /// </summary>
+    public bool StandsOnGroups { get; private set; }
     public sealed class Parser : ElementParserBase<SelectRoot>
     {
         public override IToken[] ExampleTokens => SelectRootExampleTokens;
@@ -51,7 +57,77 @@ public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoo
             }
 
             context.CurrentBranch?.Finish(context, [bracket]);
+            var select = (SelectRoot)context.CurrentElement;
+            select.StandsOnGroups = context.GroupingApplied;
+            if (context.GroupingApplied)
+            {
+                ValidateRowsSelectNames(select, context.SourceQueryString);
+                select.RowsSelection = ResolveRowsSelection(select, context.SourceQueryString);
+            }
+
+            select.Children.RefuseDuplicateSelects(context.SourceQueryString);
+
             context.RemoveStartTokens(1);
+        }
+
+        /// <summary>
+        /// Refuse a member whose name the grouped answer already holds, or which two members take.
+        /// </summary>
+        private static void ValidateRowsSelectNames(SelectRoot select, string hLinqQuery)
+        {
+            var taken = new HashSet<string>(GroupingState.GroupReservedNames, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var assignment in select.AggregateAssignments)
+            {
+                var name = assignment.FinalPropertyName(hLinqQuery);
+                if (name is not null && !taken.Add(name))
+                {
+                    throw new GroupAggregateNameCollisionException(name);
+                }
+            }
+        }
+
+        private static INestedSelect? ResolveRowsSelection(SelectRoot select, string hLinqQuery)
+        {
+            IPropertyAssignment? rowsSelection = null;
+            foreach (var member in select.MemberSources)
+            {
+                if (member.GroupAggregate is not null)
+                {
+                    continue;
+                }
+
+                var written = member.ExplicitPropertyName(hLinqQuery);
+                if (written is null || !string.Equals(written, GroupingState.RowsName, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var source = member.NestedSelectProperty?.GetPath(hLinqQuery);
+                var namesTheGroupsRows = source is [var only]
+                                         && string.Equals(only, GroupingState.RowsName,
+                                             StringComparison.OrdinalIgnoreCase);
+                if (!namesTheGroupsRows)
+                {
+                    throw member.NestedSelectProperty is null
+                        ? new GroupRowsNameReservedException(written)
+                        : new GroupRowsSelectSourceException(written);
+                }
+
+                if (rowsSelection is not null)
+                {
+                    throw new GroupRowsSelectedTwiceException();
+                }
+
+                rowsSelection = member;
+            }
+
+            if (rowsSelection is not null && select.RowMemberSources.Any(m => !ReferenceEquals(m, rowsSelection)))
+            {
+                throw new GroupRowsSelectedTwiceException();
+            }
+
+            return rowsSelection?.NestedSelect;
         }
 
         private static SelectRoot ThrowOnEmptySelect(IParsingContext context) =>
@@ -60,9 +136,9 @@ public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoo
     }
 
     // ReSharper disable once UnusedType.Global - Used by Applier
-    public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache) : RootApplierBase<ISelectRoot>
+    public sealed class Applier(IExpressionBuilder builder, IMethodsCache methodsCache) : RootApplierBase<SelectRoot>
     {
-        protected override IQueryableContext ApplyImpl(IQueryableContext context, ISelectRoot select,
+        protected override IQueryableContext ApplyImpl(IQueryableContext context, SelectRoot select,
             string hLinqQuery, CultureInfo culture)
         {
             var aggregateAssignments = select.AggregateAssignments;
@@ -76,9 +152,9 @@ public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoo
                     foreach (var assignment in aggregateAssignments)
                     {
                         aggregates.Add(new GroupAggregate(
-                            assignment.AggregateName(hLinqQuery) ?? assignment.Call!.GetName(hLinqQuery),
-                            builder.GroupAggregateSelector(grouping, assignment.Call!, hLinqQuery, culture,
-                                context.Warnings)));
+                            assignment.FinalPropertyName(hLinqQuery)!,
+                            builder.GroupAggregateSelector(grouping, assignment.GroupAggregate!, hLinqQuery,
+                                culture, context.Diagnostics)));
                     }
 
                     state = grouping with { Aggregates = aggregates };
@@ -90,30 +166,23 @@ public sealed class SelectRoot(IToken[] tokens) : TreeBranch(tokens), ISelectRoo
                 }
 
                 var (rowSelector, rowShape) = builder.GroupRowSelector(state, select, hLinqQuery, culture,
-                    context.Warnings);
+                    context.Diagnostics);
 
                 return context.Next(context.Queryable, grouping.GroupingItemType,
                     context.Count,
                     state with { RowSelector = rowSelector, RowShape = rowShape });
             }
 
-            if (aggregateAssignments.Count > 0)
-            {
-                throw new EntityAggregateNeedsGroupException(
-                    aggregateAssignments[0].Call!.GetName(hLinqQuery));
-            }
-
             var selector = builder.GetSelect(context.CurrentResultType, select, hLinqQuery, culture,
-                context.Warnings);
+                context.Diagnostics);
 
             var method = methodsCache.GetStaticGeneric(typeof(Queryable), nameof(Queryable.Select),
                 infos => infos[1].ParameterType.IsGenericType &&
                          infos[1].ParameterType.GenericTypeArguments[0].GetGenericTypeDefinition() ==
                          typeof(Func<,>), context.CurrentResultType, selector.ResultType);
 
-            return context.Next(
-                (IQueryable)method.Invoke(null, [context.Queryable, selector.Expression])!,
-                selector.ResultType);
+            return context.NextByCalling(selector.ResultType,
+                source => (IQueryable)method.Invoke(null, [source, selector.Expression])!);
         }
     }
 

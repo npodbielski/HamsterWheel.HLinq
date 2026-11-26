@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using FluentAssertions;
-using HamsterWheel.HLinq.Diagnostics;
 using HamsterWheel.HLinq.MySql;
 using HamsterWheel.HLinq.Pipeline.Applier.Builders;
 using HamsterWheel.HLinq.Pipeline.Parser;
@@ -44,8 +43,7 @@ public class ProviderFunctionsUnitTests
         var tree = parser.TestParseEntryPoint<DummyEntity>(query, tokens);
 
         //act
-        var filter = builder.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(), query,
-            warnings: new HLinqWarnings());
+        var filter = builder.GetFilter(typeof(DummyEntity), tree.GetAll<WhereRoot>().First(), query);
 
         return (MethodCallExpression)filter.Body;
     }

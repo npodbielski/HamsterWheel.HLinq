@@ -12,19 +12,6 @@ namespace HamsterWheel.HLinq.UnitTests.Pipeline.Applier;
 
 partial class HLinqQueryApplierUnitTests
 {
-    private static DummyEntity[] Entities(int count) =>
-        [.. Enumerable.Range(0, count).Select(i => new DummyEntity($"entity{i}"))];
-
-    private object Apply(string queryString, IQueryable<DummyEntity> queryable)
-    {
-        var hlinqQuery = new HLinqQuery<DummyEntity>
-        {
-            SourceQueryString = queryString
-        };
-        var tokens = _tokenizer.Tokenize(queryString);
-        _parser.Parse(hlinqQuery, tokens);
-        return _sut.Apply(queryable, hlinqQuery);
-    }
 
     [Theory]
     [InlineData(0, 1)]
@@ -122,9 +109,9 @@ partial class HLinqQueryApplierUnitTests
     [InlineData("skip[-1]")]
     [InlineData("skip[-1].take[-5]")]
     [InlineData("where[x.Name==New].skip[-1]")]
-    public void Apply_WhenNegativePagingBound_ThenThrowsWithoutReachingTheSource(string queryString)
+    public void Apply_WhenInvalidPagingValue_ThenThrowsWithoutReachingTheSource(string queryString)
     {
-        //arrange - a negative LIMIT/OFFSET is rejected by the database itself (i.e. postgres
+        //arrange
         //must not be negative), which would answer a 500 for a merely malformed query
         var entities = Entities(25);
 
@@ -132,7 +119,7 @@ partial class HLinqQueryApplierUnitTests
         var action = () => Apply(queryString, entities.AsQueryable());
 
         //assert
-        action.Should().Throw<NegativePagingBoundException>();
+        action.Should().Throw<InvalidPagingValueException>();
     }
 
     [Theory]
@@ -146,7 +133,7 @@ partial class HLinqQueryApplierUnitTests
         //act
         var actual = (Array)Apply(queryString, entities.AsQueryable());
 
-        //assert - zero is a legal bound, only negatives are refused
+        //assert
         actual.Length.Should().Be(expectedCount);
     }
 
@@ -210,9 +197,23 @@ partial class HLinqQueryApplierUnitTests
         var query = (HLinqQuery<DummyEntity>)binder.BindQuery("take[10..20]", typeof(HLinqQuery<DummyEntity>));
         var actual = query.ApplyTo(entities.AsQueryable());
 
-        //assert - HLinqQuery.ApplyTo appends an empty take[] when the query has no take,
+        //assert
         //a range take is an explicit take so exactly one take root must remain
         query.Children.Should().ContainSingle(c => c is TakeRoot);
         actual.Should().BeEquivalentTo(entities.Skip(10).Take(10));
+    }
+
+    private static DummyEntity[] Entities(int count) =>
+        [.. Enumerable.Range(0, count).Select(i => new DummyEntity($"entity{i}"))];
+
+    private object Apply(string queryString, IQueryable<DummyEntity> queryable)
+    {
+        var hlinqQuery = new HLinqQuery<DummyEntity>
+        {
+            SourceQueryString = queryString
+        };
+        var tokens = _tokenizer.Tokenize(queryString);
+        _parser.Parse(hlinqQuery, tokens);
+        return _sut.Apply(queryable, hlinqQuery);
     }
 }
